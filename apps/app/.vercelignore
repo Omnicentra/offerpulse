@@ -1,0 +1,14 @@
+# Ignore marketing app for faster builds
+../marketing
+
+# Standard ignores
+node_modules
+.next
+out
+.env*.local
+
+# Root level non-essential files
+../../.github
+../../docs
+../../*.md
+!../../README.md

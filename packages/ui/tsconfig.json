@@ -1,0 +1,10 @@
+{
+  "extends": "@offerpulse/config/tsconfig/nextjs.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["**/*.tsx", "**/*.ts"],
+  "exclude": ["node_modules"]
+}

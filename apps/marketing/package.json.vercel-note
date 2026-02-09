@@ -1,0 +1,9 @@
+IMPORTANT: When deploying to Vercel via dashboard:
+
+1. Set Root Directory: apps/marketing
+2. Let Vercel auto-detect everything else
+3. Vercel will automatically detect pnpm from pnpm-lock.yaml in root
+4. Build command will be: pnpm run build (from apps/marketing)
+5. Vercel handles monorepo workspace dependencies automatically
+
+DO NOT override build/install commands unless necessary.

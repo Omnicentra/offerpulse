@@ -1,0 +1,239 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* OfferPulse Electric Brand System */
+    /* Neutrals */
+    --ink: 215 49% 9%;           /* #0B1220 - Headlines */
+    --body: 218 31% 34%;         /* #445066 - Body text */
+    --bg: 220 100% 99%;          /* #FBFCFF - Background */
+    --surface: 0 0% 100%;        /* #FFFFFF - Cards */
+    --border: 220 30% 94%;       /* #E7ECF5 - Borders */
+    
+    /* Primary (Electric) */
+    --primary: 243 95% 66%;      /* #5B5AF7 */
+    --primary-dark: 243 94% 58%; /* #3F3EEB */
+    --primary-tint: 243 100% 97%; /* #EEF0FF */
+    --primary-foreground: 0 0% 100%;
+    
+    /* Signal Mint (Success) */
+    --mint: 142 71% 45%;         /* #22C55E */
+    --mint-tint: 142 80% 95%;    /* #E9FBF1 */
+    
+    /* Warning/Insight */
+    --amber: 38 92% 50%;         /* #F59E0B */
+    --amber-tint: 48 100% 94%;   /* #FFF4E0 */
+    
+    /* Shadcn compatibility mapping */
+    --background: 220 100% 99%;
+    --foreground: 215 49% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 49% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 49% 9%;
+    --muted: 220 30% 96%;
+    --muted-foreground: 218 31% 34%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --input: 220 30% 94%;
+    --ring: 243 95% 66%;
+    --radius: 0.75rem;
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --secondary: 220 30% 96%;
+    --secondary-foreground: 215 49% 9%;
+    --accent: 243 100% 97%;
+    --accent-foreground: 243 95% 66%;
+  }
+
+  .dark {
+    --background: 216 49% 8%;
+    --foreground: 240 20% 99%;
+    --card: 221 39% 11%;
+    --card-foreground: 240 20% 99%;
+    --muted: 219 12% 25%;
+    --muted-foreground: 219 19% 55%;
+    --border: 219 12% 25%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-bg text-body;
+    font-feature-settings: "kern" 1, "liga" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Enhanced focus states for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary/60 ring-offset-2 ring-offset-background;
+  }
+  
+  /* Smooth scroll behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+  
+  /* Better text rendering */
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-ink;
+    font-feature-settings: "kern" 1;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* Electric gradient blobs for hero - subtle and sophisticated */
+.electric-glow {
+  background: 
+    radial-gradient(ellipse 70% 40% at 50% 10%, hsl(var(--primary-tint) / 0.4) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 35% at 90% 40%, hsl(var(--mint-tint) / 0.3) 0%, transparent 60%);
+}
+
+/* Premium button with electric glow */
+.btn-electric {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-dark)) 100%);
+  box-shadow: 
+    0 1px 2px rgba(91, 90, 247, 0.1),
+    0 4px 12px rgba(91, 90, 247, 0.15);
+  transition: all 0.2s ease;
+}
+
+.btn-electric:hover {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 2px 4px rgba(91, 90, 247, 0.15),
+    0 8px 24px rgba(91, 90, 247, 0.25);
+}
+
+/* Pill badge with faint tint */
+.badge-pill {
+  @apply rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider;
+}
+
+/* Pulse line animation */
+@keyframes pulse-line {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.35; }
+}
+.animate-pulse-line {
+  animation: pulse-line 3s ease-in-out infinite;
+}
+
+/* Blur backdrop */
+.backdrop-blur-nav {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Enhanced micro-interactions */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+/* Sophisticated hover states */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(99, 91, 255, 0.15);
+}
+
+/* Simplified hover states - more subtle, less AI-generated feel */
+
+/* Button press effect */
+.btn-press:active {
+  transform: scale(0.98);
+}
+
+/* Smooth underline animation */
+.link-underline {
+  background-image: linear-gradient(transparent, transparent), 
+                    linear-gradient(hsl(var(--primary)), hsl(var(--primary)));
+  background-size: 0 2px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.3s ease-in-out;
+}
+
+.link-underline:hover {
+  background-size: 100% 2px;
+}
+
+/* Logo marquee animation */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+@media (max-width: 768px) {
+  .animate-marquee {
+    animation-duration: 25s;
+  }
+}

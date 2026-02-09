@@ -1,0 +1,15 @@
+# Ignore dashboard app for faster builds
+../app
+
+# Standard ignores
+node_modules
+.next
+.env*.local
+.DS_Store
+*.log
+
+# Root level non-essential files
+../../.github
+../../docs
+../../*.md
+!../../README.md

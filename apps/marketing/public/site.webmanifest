@@ -1,0 +1,16 @@
+{
+  "name": "OfferPulse",
+  "short_name": "OfferPulse",
+  "description": "Competitor offer monitoring for Shopify sellers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#2c4087",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

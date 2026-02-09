@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* OfferPulse Electric Brand System */
+    /* Neutrals */
+    --ink: 215 49% 9%;           /* #0B1220 - Headlines */
+    --body: 218 31% 34%;         /* #445066 - Body text */
+    --bg: 220 100% 99%;          /* #FBFCFF - Background */
+    --surface: 0 0% 100%;        /* #FFFFFF - Cards */
+    --border: 220 30% 94%;       /* #E7ECF5 - Borders */
+    
+    /* Primary (Electric) */
+    --primary: 243 95% 66%;      /* #5B5AF7 */
+    --primary-dark: 243 94% 58%; /* #3F3EEB */
+    --primary-tint: 243 100% 97%; /* #EEF0FF */
+    --primary-foreground: 0 0% 100%;
+    
+    /* Signal Mint (Success) */
+    --mint: 142 71% 45%;         /* #22C55E */
+    --mint-tint: 142 80% 95%;    /* #E9FBF1 */
+    
+    /* Warning/Insight */
+    --amber: 38 92% 50%;         /* #F59E0B */
+    --amber-tint: 48 100% 94%;   /* #FFF4E0 */
+    
+    /* Shadcn compatibility mapping */
+    --background: 220 100% 99%;
+    --foreground: 215 49% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 49% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 49% 9%;
+    --muted: 220 30% 96%;
+    --muted-foreground: 218 31% 34%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --input: 220 30% 94%;
+    --ring: 243 95% 66%;
+    --radius: 0.75rem;
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --secondary: 220 30% 96%;
+    --secondary-foreground: 215 49% 9%;
+    --accent: 243 100% 97%;
+    --accent-foreground: 243 95% 66%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+  }
+}

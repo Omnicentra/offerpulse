@@ -1,0 +1,36 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+.next
+out
+dist
+build
+
+# Dev
+.turbo
+.vercel
+.DS_Store
+
+# Env files
+.env
+.env*.local
+!.env.example
+!.env*.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Cache
+.cache
+.parcel-cache
+
+# Old backups
+_old_*
+*_backup
