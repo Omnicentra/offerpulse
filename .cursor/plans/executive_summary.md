@@ -48,7 +48,7 @@ A monitoring system that:
 - tRPC for type-safe API calls
 - 15 database tables designed for all features
 
-**Time estimate**: 15-20 days
+**Time estimate**: 5-7 days
 **Risk**: Medium (standard setup but lots of moving parts)
 
 ---
@@ -74,7 +74,7 @@ A monitoring system that:
 - Configure alert preferences
 - Invite team members
 
-**Time estimate**: 10-15 days
+**Time estimate**: 5-7 days (mostly straightforward CRUD operations)
 **Risk**: Low (translating existing UI to real backend)
 
 ---
@@ -107,7 +107,7 @@ A monitoring system that:
 - Change detection after each capture
 - Error tracking and retry logic
 
-**Time estimate**: 15-20 days
+**Time estimate**: 7-10 days (scraping complexity is the main challenge)
 **Risk**: High (web scraping is complex, sites vary, need error handling)
 
 ---
@@ -142,7 +142,7 @@ A monitoring system that:
 - Links go directly to the relevant change/recommendation
 - Users can act immediately from their inbox
 
-**Time estimate**: 10-15 days
+**Time estimate**: 4-6 days (well-documented APIs, straightforward integration)
 **Risk**: Low (well-documented APIs, straightforward integration)
 
 ---
@@ -163,17 +163,24 @@ A monitoring system that:
 - New users see example data immediately
 - Confidence to onboard real customers
 
-**Time estimate**: 5-7 days
+**Time estimate**: 3-4 days
 **Risk**: Low (polish and quality assurance)
 
 ---
 
 ## Total Timeline & Resources
 
-### Time Estimate
-- **Minimum**: 8-9 weeks (optimistic, full-time focus)
-- **Realistic**: 10-12 weeks (accounting for unknowns, testing, iteration)
-- **With interruptions**: 14-16 weeks (other priorities, blockers)
+### Time Estimate (for experienced developer)
+- **Minimum**: 24-34 days / 5-7 weeks (full-time focus, no blockers)
+- **Realistic**: 6-8 weeks (accounting for unknowns, testing, iteration, prompt engineering)
+- **With interruptions**: 8-10 weeks (other priorities, part-time work, external dependencies)
+
+### Phase Breakdown
+- **Phase 1** (Foundation): 5-7 days
+- **Phase 2** (Core Backend): 5-7 days  
+- **Phase 3** (Monitoring): 7-10 days ⚠️ Most complex
+- **Phase 4** (Intelligence): 4-6 days
+- **Phase 5** (Polish): 3-4 days
 
 ### Difficulty Breakdown
 - **High complexity**: Phases 1 & 3 (database setup, web scraping)
@@ -181,7 +188,7 @@ A monitoring system that:
 - **Low complexity**: Phase 5 (polish)
 
 ### Resource Requirements
-- **1 full-stack developer** (you)
+- **1 experienced full-stack developer** 
 - **AI API costs**: ~$50-200/month during development (OpenAI)
 - **Infrastructure costs**: ~$50-100/month (Neon DB, Inngest, R2 storage, Resend email)
 
