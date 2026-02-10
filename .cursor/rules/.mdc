@@ -1,0 +1,88 @@
+---
+alwaysApply: false
+---
+  You are an expert in TypeScript, Node.js, Next.js App Router, React, tRPC, Shadcn UI, Radix UI, Tailwind, Better-auth and Drizzle.
+  
+  Code Style and Structure
+  - Write concise, technical TypeScript code with accurate examples.
+  - Use functional and declarative programming patterns; avoid classes.
+  - Prefer iteration and modularization over code duplication.
+  - Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+  - Structure files: exported component, subcomponents, helpers, static content, types.
+  
+  Naming Conventions
+  - Use lowercase with dashes for directories (e.g., components/auth-wizard).
+  - Also use kebab-case naming convention for component file names e.g. components/ai-workflow-dialog.tsx
+  - Favor named exports for components.
+  
+  TypeScript Usage
+  - Use TypeScript for all code; prefer interfaces over types.
+  - Avoid enums; use maps instead.
+  - Use functional components with TypeScript interfaces.
+  - Avoid the use of 'any' type
+  
+  Syntax and Formatting
+  - Use the "function" keyword for pure functions.
+  - Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
+  - Use declarative JSX.
+  
+  UI and Styling
+  - Use Shadcn UI, Radix, and Tailwind for components and styling.
+  - Use Shadcn UI components wherever possible and store them under `src/components/ui`
+  - Implement responsive design with Tailwind CSS; use a mobile-first approach.
+  
+  Performance Optimization
+  - Minimize 'use client', 'useEffect', and 'setState'; favor React Server Components (RSC).
+  - Wrap client components in Suspense with fallback.
+  - Use dynamic loading for non-critical components.
+  - Optimize images: use WebP format, include size data, implement lazy loading.
+  
+  Key Conventions
+  - Optimize Web Vitals (LCP, CLS, FID).
+  - Limit 'use client':
+    - Favor server components and Next.js SSR.
+    - Use only for Web API access in small components.
+    - Avoid for data fetching or state management.
+
+  tRPC Usage
+  - Use tRPC for end-to-end typesafe APIs without code generation or runtime bloat.
+  - Define procedures in routers that represent collections of related procedures with shared namespaces.
+  - Structure routers by domain (e.g., users, posts, messages) and merge them into a centralized appRouter.
+  - Use Zod for input validation in all procedures.
+  - Leverage tRPC's wrapper for @tanstack/react-query to utilize typed hooks with full inference.
+  - Export only router type definitions, never import server code on the client.
+  - Use publicProcedure for public endpoints and create custom procedures with middleware for protected routes.
+  - Implement proper error handling using TRPCError and the built-in error formatter for Zod validation errors.
+  - Use superjson as the data transformer to preserve data types (Date, Map, Set) across client-server boundaries.
+  
+  tRPC Best Practices
+  - Use meaningful procedure names that clearly indicate their purpose (e.g., getById, createPost, updateUser)
+  - Chain .query() for data fetching, .mutation() for data modification, and .subscription() for real-time updates
+  - Implement middleware for cross-cutting concerns (auth, logging, rate limiting)
+  - Use context for shared dependencies (database connections, session data, services)
+  - Prefer batched requests using httpBatchLink for better performance
+  - Implement optimistic updates for better UX where data correctness allows
+  - Use inferProcedureInput and inferProcedureOutput for type inference in tests
+  - Keep procedures focused and single-purpose; compose complex operations from multiple procedures
+  - Use .invalidate() to refresh queries after mutations
+  - Leverage .setData() for optimistic updates with proper rollback in onError
+
+  Drizzle ORM Best Practices
+  - Use type-safe queries with Drizzle's query builder API.
+  - Leverage Drizzle's relational queries for efficient data fetching with proper joins.
+  - Define schemas using pgTable, pgEnum, and appropriate column types from drizzle-orm/pg-core.
+  - Use generated columns (generatedAlwaysAsIdentity) for auto-incrementing primary keys.
+  - Implement proper relations using the relations API for type-safe joins.
+  - Use prepared statements for frequently executed queries to improve performance.
+  - Leverage Drizzle's migration system for schema changes; always generate migrations before applying.
+  - Use pnpm db:push for local db changes; use pnpm db:migrate:prod for pushing migrations to prod 
+  - Use transactions for operations that require atomicity.
+  - Prefer select() with explicit column selection over select() for better type inference.
+  - Use SQL helpers (sql template tag) sparingly and only when necessary for complex queries.
+  - Keep schema definitions in a centralized schema file with clear organization.
+  - Use timestamps helper functions for created_at and updated_at columns when applicable.
+
+  Ensure that pnpm is the default package manager for install dependencies
+  
+  Follow Next.js docs for Data Fetching, Rendering, and Routing.
+  
