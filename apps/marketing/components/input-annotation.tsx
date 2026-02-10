@@ -28,7 +28,7 @@ export function InputAnnotation({
 
   return (
     <div 
-      className={`absolute -left-4 -top-16 z-20 hidden lg:block ${className}`}
+      className={`absolute left-0 -top-12 z-20 sm:-left-4 sm:-top-16 ${className}`}
       style={{ 
         animation: prefersReducedMotion ? 'none' : 'float 3s ease-in-out infinite' 
       }}
