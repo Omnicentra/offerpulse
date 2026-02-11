@@ -2,6 +2,7 @@ import { MetadataRoute } from "next"
 import { getAllToolSlugs } from "@/lib/tools/registry"
 import { getAllResourceSlugs } from "@/lib/resources/registry"
 import { getAllTopicSlugs } from "@/lib/topics/registry"
+import { getAllBlogPostSlugs } from "@/lib/blog/registry"
 import { CANONICAL_BASE_URL } from "@/lib/seo/config"
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -37,6 +38,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/about`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.6,
     },
     {
       url: `${baseUrl}/free-tools`,
@@ -88,5 +95,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }))
 
-  return [...staticPages, ...toolPages, ...resourcePages, ...topicPages]
+  // Blog posts
+  const blogPages: MetadataRoute.Sitemap = getAllBlogPostSlugs().map((slug) => ({
+    url: `${baseUrl}/blog/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }))
+
+  return [...staticPages, ...toolPages, ...resourcePages, ...topicPages, ...blogPages]
 }

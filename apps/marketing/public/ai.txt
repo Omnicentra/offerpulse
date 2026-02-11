@@ -1,0 +1,9 @@
+# OfferPulse - Competitor Offer Monitoring for Shopify
+
+OfferPulse automatically tracks competitor discounts, bundles, free shipping thresholds, and cart incentives. Instant alerts when changes are detected, with strategic recommendations.
+
+For: Shopify store owners, ecommerce managers, marketing agencies
+
+Free tools at: https://www.offerpulse.io/free-tools
+
+Contact: support@offerpulse.io

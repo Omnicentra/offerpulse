@@ -1,0 +1,54 @@
+# OfferPulse
+
+## What is OfferPulse?
+
+OfferPulse is a competitive intelligence tool for Shopify store owners and ecommerce managers. It automatically monitors competitor offers (discounts, bundles, free shipping thresholds, cart incentives) and sends instant alerts when anything changes, with suggested strategic responses.
+
+## Who is it for?
+
+- Shopify store owners who need to stay competitive
+- Ecommerce managers tracking competitor promotions
+- Marketing agencies managing multiple client stores
+- Growth teams optimising conversion and AOV
+
+## Core Features
+
+- Automatic competitor offer monitoring
+- Instant change alerts with before/after proof
+- Suggested strategic responses (match, counter, or ignore)
+- Free shipping threshold tracking
+- Bundle and discount detection
+- Cart incentive analysis
+
+## Free Tools
+
+We offer free competitive analysis tools:
+
+1. Competitor Offer Snapshot - Extract all visible offers from any store
+2. Free Shipping Threshold Finder - Detect shipping requirements automatically  
+3. Discount & Code Detector - Find active promotions and codes
+4. Offer Clarity Checker - Score your store's promotional clarity
+5. Cart Incentive Analyser - Detect progress bars and unlock thresholds
+6. Bundle Ideas Generator - Get bundle offer suggestions
+7. Promo Calendar Generator - Seasonal promotional planning
+8. Monitoring Planner - Personalised competitor tracking plan
+
+## Key URLs
+
+- Homepage: https://www.offerpulse.io
+- Free Tools Hub: https://www.offerpulse.io/free-tools
+- Pricing: https://www.offerpulse.io/pricing
+- Blog: https://www.offerpulse.io/blog
+- FAQ: https://www.offerpulse.io/faq
+
+## Top Tool URLs
+
+- Offer Snapshot: https://www.offerpulse.io/free-tools/offer-snapshot
+- Shipping Threshold Finder: https://www.offerpulse.io/free-tools/free-shipping-threshold
+- Discount Detector: https://www.offerpulse.io/free-tools/discount-detector
+- Clarity Checker: https://www.offerpulse.io/free-tools/offer-clarity-check
+- Cart Incentives: https://www.offerpulse.io/free-tools/cart-incentives
+
+## Contact
+
+Email: support@offerpulse.io
