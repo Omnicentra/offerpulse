@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
+import { CANONICAL_BASE_URL, SITE_CONFIG, ORGANIZATION, SOCIAL_LINKS } from "@/lib/seo/config"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -11,11 +12,10 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "OfferPulse | Competitor Offer Monitoring for Shopify Sellers",
-    template: "%s | OfferPulse",
+    default: SITE_CONFIG.defaultTitle,
+    template: SITE_CONFIG.titleTemplate,
   },
-  description:
-    "OfferPulse alerts you when competitors change their offers — promos, bundles, free shipping thresholds, and cart incentives — so you can react fast and protect conversion.",
+  description: SITE_CONFIG.description,
   keywords: [
     "competitor monitoring",
     "Shopify",
@@ -24,19 +24,23 @@ export const metadata: Metadata = {
     "offer tracking",
     "price monitoring",
     "promotional alerts",
+    "competitor offers",
+    "ecommerce tools",
   ],
-  authors: [{ name: "OfferPulse" }],
-  creator: "OfferPulse",
-  publisher: "OfferPulse",
-  metadataBase: new URL("https://offerpulse.io"),
+  authors: [{ name: ORGANIZATION.name }],
+  creator: ORGANIZATION.name,
+  publisher: ORGANIZATION.name,
+  metadataBase: new URL(CANONICAL_BASE_URL),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     type: "website",
     locale: "en_GB",
-    url: "https://offerpulse.io",
-    siteName: "OfferPulse",
-    title: "OfferPulse | Competitor Offer Monitoring for Shopify Sellers",
-    description:
-      "Get alerted when competitors change their offers. Monitor promos, bundles, shipping thresholds, and cart incentives.",
+    url: CANONICAL_BASE_URL,
+    siteName: SITE_CONFIG.name,
+    title: SITE_CONFIG.defaultTitle,
+    description: SITE_CONFIG.description,
     images: [
       {
         url: "/og.png",
@@ -48,9 +52,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "OfferPulse | Competitor Offer Monitoring for Shopify Sellers",
-    description:
-      "Get alerted when competitors change their offers. Monitor promos, bundles, shipping thresholds, and cart incentives.",
+    title: SITE_CONFIG.defaultTitle,
+    description: SITE_CONFIG.description,
     images: ["/og.png"],
     creator: "@offerpulse",
   },
@@ -80,8 +83,44 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Organization and WebSite schemas
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: ORGANIZATION.name,
+    legalName: ORGANIZATION.legalName,
+    url: ORGANIZATION.url,
+    logo: ORGANIZATION.logo,
+    description: ORGANIZATION.description,
+    foundingDate: ORGANIZATION.foundingDate,
+    email: ORGANIZATION.email,
+    sameAs: Object.values(SOCIAL_LINKS).filter(Boolean),
+  };
+
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_CONFIG.name,
+    url: CANONICAL_BASE_URL,
+    description: SITE_CONFIG.description,
+    publisher: {
+      "@type": "Organization",
+      name: ORGANIZATION.name,
+    },
+  };
+
   return (
     <html lang="en-GB" className={inter.variable}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
+      </head>
       <body className="min-h-screen font-sans page-bg">
         {children}
         <Toaster />

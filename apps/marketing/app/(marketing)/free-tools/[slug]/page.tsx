@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getToolBySlug, getAllToolSlugs } from "@/lib/tools/registry";
 import { generateToolMetadata } from "@/lib/seo/metadata";
 import { generateToolSchema } from "@/lib/seo/schema";
-import { CheckCircle, Sparkles } from "lucide-react";
+import { CheckCircle, Sparkles, ArrowRight } from "lucide-react";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -62,6 +63,13 @@ export default async function ToolLandingPage({ params }: Props) {
       {/* Hero */}
       <section className="border-b border-slate-200 bg-gradient-to-b from-blue-50 to-white py-16 sm:py-24">
         <Container>
+          <Breadcrumbs
+            items={[
+              { label: "Home", href: "/" },
+              { label: "Free Tools", href: "/free-tools" },
+              { label: tool.name },
+            ]}
+          />
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 flex justify-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600">

@@ -2,9 +2,10 @@ import { MetadataRoute } from "next"
 import { getAllToolSlugs } from "@/lib/tools/registry"
 import { getAllResourceSlugs } from "@/lib/resources/registry"
 import { getAllTopicSlugs } from "@/lib/topics/registry"
+import { CANONICAL_BASE_URL } from "@/lib/seo/config"
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_MARKETING_APP_URL || "https://offerpulse.com"
+  const baseUrl = CANONICAL_BASE_URL
 
   const staticPages: MetadataRoute.Sitemap = [
     {

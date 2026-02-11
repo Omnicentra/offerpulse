@@ -1,4 +1,5 @@
 import { MetadataRoute } from "next"
+import { CANONICAL_BASE_URL } from "@/lib/seo/config"
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -6,9 +7,9 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/auth/"],
+        disallow: ["/api/", "/auth/", "/_next/", "/node_modules/"],
       },
     ],
-    sitemap: "https://offerpulse.io/sitemap.xml",
+    sitemap: `${CANONICAL_BASE_URL}/sitemap.xml`,
   }
 }

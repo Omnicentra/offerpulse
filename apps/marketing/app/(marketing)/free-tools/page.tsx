@@ -33,12 +33,51 @@ export default function FreeToolsPage() {
             Free Tools
           </Badge>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-            Free tools for tracking competitor offers
+            Free Competitor Offer Tracking Tools for Shopify
           </h1>
           <p className="mt-6 text-lg leading-relaxed text-slate-600 sm:text-xl">
-            Paste a competitor URL and get instant insights. Upgrade to monitor changes
-            automatically and never miss a competitive move.
+            Analyse competitor offers, shipping thresholds, discounts, and cart incentives instantly. Perfect for Shopify store owners and ecommerce agencies who need quick competitive intelligence.
           </p>
+        </div>
+
+        {/* Introduction Content for SEO */}
+        <div className="mx-auto mt-16 max-w-4xl">
+          <div className="prose prose-slate max-w-none">
+            <h2 className="text-2xl font-bold text-slate-900">
+              What Are These Free Tools?
+            </h2>
+            <p className="mt-4 text-slate-700 leading-relaxed">
+              Our free competitor analysis tools help Shopify merchants and ecommerce businesses understand what promotional strategies their competitors are using right now. Enter any competitor store URL and instantly see their current offers, including free shipping thresholds, discount codes, bundle deals, cart progress incentives, and gift-with-purchase offers.
+            </p>
+            <p className="mt-4 text-slate-700 leading-relaxed">
+              These tools are designed for store owners who need quick competitive research without manual checking. Whether you're planning your next promotion, benchmarking your offers, or responding to a competitor's new campaign, these free tools provide the data you need in seconds.
+            </p>
+
+            <h3 className="mt-8 text-xl font-bold text-slate-900">
+              Who Should Use These Tools?
+            </h3>
+            <ul className="mt-4 space-y-2 text-slate-700">
+              <li>
+                <strong>Shopify store owners</strong> who want to stay competitive without spending hours manually checking competitor websites
+              </li>
+              <li>
+                <strong>Ecommerce managers</strong> who need to benchmark offers and justify promotional decisions with data
+              </li>
+              <li>
+                <strong>Marketing agencies</strong> managing multiple client stores who need quick competitive insights
+              </li>
+              <li>
+                <strong>Store operators</strong> launching new promotions and wanting to ensure they're competitive
+              </li>
+            </ul>
+
+            <h3 className="mt-8 text-xl font-bold text-slate-900">
+              How to Use These Tools
+            </h3>
+            <p className="mt-4 text-slate-700 leading-relaxed">
+              Each tool follows a simple three-step process: paste your competitor's store URL, click analyse, and review the extracted offers. Results appear within 60 seconds showing detected promotional offers with evidence text and confidence ratings. For automatic monitoring and instant alerts when competitors change their offers, upgrade to OfferPulse Pro.
+            </p>
+          </div>
         </div>
 
         {/* Tools Grid */}
