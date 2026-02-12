@@ -6,12 +6,13 @@ const footerLinks = {
   product: [
     { href: "/how-it-works", label: "How it works" },
     { href: "/pricing", label: "Pricing" },
+    { href: "/free-tools", label: "Free tools" },
     { href: "/faq", label: "FAQ" },
-    { href: "/blog", label: "Blog" },
   ],
-  company: [
-    { href: "/about", label: "About" },
+  resources: [
     { href: "/blog", label: "Blog" },
+    { href: "/guides/pricing-intelligence-vs-offer-intelligence", label: "Pricing vs Offer Intelligence" },
+    { href: "/about", label: "About" },
   ],
   legal: [
     { href: "/privacy", label: "Privacy Policy" },
@@ -91,11 +92,11 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Company Links */}
+          {/* Resources Links */}
           <div>
-            <h3 className="text-sm font-bold text-ink">Company</h3>
+            <h3 className="text-sm font-bold text-ink">Resources</h3>
             <ul className="mt-5 space-y-3">
-              {footerLinks.company.map((link) => (
+              {footerLinks.resources.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
