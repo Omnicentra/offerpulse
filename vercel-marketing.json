@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "name": "offerpulse-marketing",
+  "builds": [
+    {
+      "src": "apps/marketing/package.json",
+      "use": "@vercel/next",
+      "config": {
+        "zeroConfig": true
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "apps/marketing/$1"
+    }
+  ],
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter marketing build",
+  "outputDirectory": "apps/marketing/.next"
+}

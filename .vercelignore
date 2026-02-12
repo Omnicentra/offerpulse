@@ -1,0 +1,12 @@
+node_modules
+.next
+.env*.local
+.DS_Store
+*.log
+.git
+.vercel
+apps/*/node_modules
+apps/*/.next
+packages/*/node_modules
+packages/*/dist
+pnpm-lock.yaml

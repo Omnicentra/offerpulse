@@ -3,6 +3,7 @@ import { getAllToolSlugs } from "@/lib/tools/registry"
 import { getAllResourceSlugs } from "@/lib/resources/registry"
 import { getAllTopicSlugs } from "@/lib/topics/registry"
 import { getAllBlogPostSlugs } from "@/lib/blog/registry"
+import { getAllSolutionSlugs } from "@/lib/seo/keyword-map"
 import { CANONICAL_BASE_URL } from "@/lib/seo/config"
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -103,5 +104,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }))
 
-  return [...staticPages, ...toolPages, ...resourcePages, ...topicPages, ...blogPages]
+  // Solution pages
+  const solutionPages: MetadataRoute.Sitemap = getAllSolutionSlugs().map((slug) => ({
+    url: `${baseUrl}/solutions/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly",
+    priority: 0.8,
+  }))
+
+  // Solutions hub
+  const solutionsHub: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/solutions`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+  ]
+
+  return [...staticPages, ...toolPages, ...resourcePages, ...topicPages, ...blogPages, ...solutionsHub, ...solutionPages]
 }
