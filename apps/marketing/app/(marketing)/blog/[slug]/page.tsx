@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Container } from "@/components/container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,7 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: "OfferPulse",
       images: [
         {
-          url: ogImageUrl,
+          url: post.featuredImage,
           width: 1200,
           height: 630,
           alt: post.title,
@@ -79,6 +80,7 @@ export default async function BlogPostPage({ params }: Props) {
     "@type": "BlogPosting",
     headline: post.title,
     description: post.description,
+    image: `${CANONICAL_BASE_URL}${post.featuredImage}`,
     author: {
       "@type": "Organization",
       name: post.author,
@@ -95,6 +97,8 @@ export default async function BlogPostPage({ params }: Props) {
     dateModified: post.updatedAt,
     url: `${CANONICAL_BASE_URL}/blog/${slug}`,
     mainEntityOfPage: `${CANONICAL_BASE_URL}/blog/${slug}`,
+    keywords: post.keywords.join(", "),
+    wordCount: Math.floor(post.content.split(/\s+/).length),
   };
 
   const faqSchema = post.faqs.length > 0 ? {
@@ -130,8 +134,8 @@ export default async function BlogPostPage({ params }: Props) {
       )}
 
       {/* Article Header */}
-      <section className="border-b border-slate-200 bg-gradient-to-b from-blue-50 to-white py-12">
-        <Container className="max-w-4xl">
+      <section className="border-b border-slate-200 bg-gradient-to-b from-blue-50 to-white py-12 sm:py-16">
+        <Container className="max-w-5xl">
           <Breadcrumbs
             items={[
               { label: "Home", href: "/" },
@@ -140,42 +144,55 @@ export default async function BlogPostPage({ params }: Props) {
             ]}
           />
 
-          <Badge className="mt-6">{post.category}</Badge>
-          
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-            {post.title}
-          </h1>
-          
-          <p className="mt-4 text-xl text-slate-600">{post.subtitle}</p>
+          <div className="mt-8">
+            <Badge className="mb-4">{post.category}</Badge>
+            
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl leading-tight">
+              {post.title}
+            </h1>
+            
+            <p className="mt-6 text-xl text-slate-600 leading-relaxed">{post.subtitle}</p>
 
-          <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-slate-600">
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              <span>{post.author}</span>
+            <div className="mt-8 flex flex-wrap items-center gap-4 text-sm text-slate-600">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                <span>{post.author}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <time dateTime={post.publishedAt}>
+                  {new Date(post.publishedAt).toLocaleDateString("en-GB", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </time>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                <span>{post.readingTime} min read</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              <time dateTime={post.publishedAt}>
-                {new Date(post.publishedAt).toLocaleDateString("en-GB", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </time>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              <span>{post.readingTime} min read</span>
+
+            {/* Featured Image */}
+            <div className="relative mt-10 aspect-[16/9] w-full overflow-hidden rounded-2xl">
+              <Image
+                src={post.featuredImage}
+                alt={post.title}
+                fill
+                className="object-cover"
+                priority
+              />
             </div>
           </div>
         </Container>
       </section>
 
       {/* Article Content */}
-      <Container className="py-12">
-        <div className="mx-auto grid max-w-4xl gap-12 lg:grid-cols-[1fr_300px]">
+      <Container className="py-16 sm:py-20">
+        <div className="mx-auto grid max-w-5xl gap-12 lg:grid-cols-[1fr_320px]">
           {/* Main Content */}
-          <article className="prose prose-slate max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline">
+          <article className="prose prose-slate prose-lg max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-p:text-slate-700 prose-li:text-slate-700 prose-a:text-blue-600 prose-a:font-medium prose-a:no-underline hover:prose-a:underline prose-strong:text-slate-900 prose-strong:font-semibold prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-6 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4">
             <div dangerouslySetInnerHTML={{ __html: convertMarkdownToHtml(post.content) }} />
 
             {/* FAQs */}

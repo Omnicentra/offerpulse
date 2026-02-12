@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 import Link from "next/link"
+import Image from "next/image"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -44,23 +45,32 @@ export default function BlogPage() {
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {blogPosts.map((post) => (
               <Link key={post.slug} href={`/blog/${post.slug}`} className="group">
-                <Card className="flex h-full flex-col transition-all hover:shadow-lg hover:-translate-y-1">
-                  <CardHeader>
-                    <Badge className="mb-2 w-fit">{post.category}</Badge>
+                <Card className="flex h-full flex-col overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
+                  {/* Featured Image */}
+                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <Image
+                      src={post.featuredImage}
+                      alt={post.title}
+                      fill
+                      className="object-cover transition-transform group-hover:scale-105"
+                    />
+                  </div>
+                  
+                  <CardHeader className="pb-4">
+                    <Badge className="mb-3 w-fit">{post.category}</Badge>
                     <CardTitle className="text-xl leading-tight group-hover:text-blue-600 transition-colors">
                       {post.title}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="flex flex-1 flex-col">
-                    <CardDescription className="flex-1 text-sm leading-relaxed">
+                  <CardContent className="flex flex-1 flex-col pt-0">
+                    <CardDescription className="flex-1 text-sm leading-relaxed line-clamp-3">
                       {post.description}
                     </CardDescription>
-                    <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+                    <div className="mt-6 flex items-center justify-between text-sm text-slate-600">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-3.5 w-3.5" />
                         <time dateTime={post.publishedAt}>
                           {new Date(post.publishedAt).toLocaleDateString("en-GB", {
-                            year: "numeric",
                             month: "short",
                             day: "numeric",
                           })}
@@ -68,10 +78,10 @@ export default function BlogPage() {
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Clock className="h-3.5 w-3.5" />
-                        <span>{post.readingTime} min read</span>
+                        <span>{post.readingTime} min</span>
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm" className="mt-4 gap-2 p-0 text-blue-600">
+                    <Button variant="ghost" size="sm" className="mt-4 gap-2 p-0 text-blue-600 self-start">
                       Read article
                       <ArrowRight className="h-4 w-4" />
                     </Button>

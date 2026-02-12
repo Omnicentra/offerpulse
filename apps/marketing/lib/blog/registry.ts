@@ -16,6 +16,7 @@ export interface BlogPost {
   metaTitle: string;
   metaDescription: string;
   keywords: string[];
+  featuredImage: string; // Path to image in /public
   relatedTools: string[];
   content: string; // Markdown content
   faqs: Array<{ question: string; answer: string }>;
@@ -42,6 +43,7 @@ export const blogPosts: BlogPost[] = [
       "promotional tracking",
       "ecommerce strategy",
     ],
+    featuredImage: "/blog/monitor-competitor-promos.png",
     relatedTools: ["offer-snapshot", "monitoring-planner", "change-feed"],
     content: `
 ## The Spreadsheet Problem
@@ -171,6 +173,7 @@ If you're checking 5+ competitors more than twice weekly, or if you need to reac
       "ecommerce shipping",
       "aov optimisation",
     ],
+    featuredImage: "/blog/shipping-thresholds.png",
     relatedTools: ["free-shipping-threshold", "offer-snapshot", "cart-incentives"],
     content: `
 ## Why Free Shipping Threshold Matters
@@ -288,6 +291,7 @@ Use the [monitoring planner](/free-tools/monitoring-planner) to create a schedul
       "margin protection",
       "ecommerce pricing",
     ],
+    featuredImage: "/blog/bundles-vs-discounts.png",
     relatedTools: ["bundle-ideas", "discount-detector", "offer-snapshot"],
     content: `
 ## The Discount Trap
