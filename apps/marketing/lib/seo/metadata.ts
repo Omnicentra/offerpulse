@@ -11,8 +11,12 @@ export function generateToolMetadata(config: {
   description: string;
   slug: string;
   keywords?: string[];
+  toolName?: string;
 }): Metadata {
   const url = `${baseUrl}/free-tools/${config.slug}`;
+  const ogImageUrl = config.toolName 
+    ? `/og?title=${encodeURIComponent(config.toolName)}&subtitle=${encodeURIComponent(config.description)}`
+    : "/og/og-default.png";
 
   return {
     title: config.title,
@@ -24,11 +28,22 @@ export function generateToolMetadata(config: {
       url,
       siteName: "OfferPulse",
       type: "website",
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: config.toolName || config.title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: config.title,
       description: config.description,
+      images: [ogImageUrl],
+      site: "@OfferPulseio",
+      creator: "@OfferPulseio",
     },
     alternates: {
       canonical: url,

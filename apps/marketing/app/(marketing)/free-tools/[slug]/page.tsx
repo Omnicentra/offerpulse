@@ -29,6 +29,7 @@ export async function generateMetadata({ params }: Props) {
     title: tool.metaTitle,
     description: tool.metaDescription,
     slug: tool.slug,
+    toolName: tool.name,
     keywords: [tool.name, "free tool", "competitor analysis", "shopify tools"],
   });
 }

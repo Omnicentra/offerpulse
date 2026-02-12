@@ -12,6 +12,25 @@ export const metadata = {
   alternates: {
     canonical: "/free-tools",
   },
+  openGraph: {
+    title: "Free Competitor Offer Tracking Tools",
+    description: "Analyse competitor offers, shipping thresholds, and discounts instantly. Free tools for Shopify merchants.",
+    url: "https://www.offerpulse.io/free-tools",
+    images: [
+      {
+        url: "/og/og-default.png",
+        width: 1200,
+        height: 630,
+        alt: "OfferPulse Free Tools",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Free Competitor Offer Tracking Tools",
+    description: "Analyse competitor offers instantly. Free tools for Shopify merchants.",
+    images: ["/og/og-default.png"],
+  },
 };
 
 export default function FreeToolsPage() {
