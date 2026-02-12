@@ -1,16 +1,29 @@
 {
   "name": "OfferPulse",
   "short_name": "OfferPulse",
-  "description": "Competitor offer monitoring for Shopify sellers",
+  "description": "Competitor offer monitoring and promo alerts for Shopify sellers",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",
-  "theme_color": "#2c4087",
+  "theme_color": "#3B82F6",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "/icon.svg",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
