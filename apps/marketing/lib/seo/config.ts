@@ -15,12 +15,12 @@ export const REDIRECT_HOSTS = [
   "www.offerpulse.com",
 ];
 
-// Social links (add real URLs when available)
+// Social links (official profiles)
 export const SOCIAL_LINKS = {
-  twitter: "https://twitter.com/offerpulse",
-  linkedin: "https://linkedin.com/company/offerpulse",
-  github: "https://github.com/olaxldn/offerpulse",
-  // Add more as needed
+  twitter: "https://x.com/OfferPulseio",
+  linkedin: "https://linkedin.com/company/offerpulseio",
+  instagram: "https://instagram.com/offerpulse.io",
+  github: "https://github.com/Omnicentra/offerpulse",
 };
 
 // Organization info for schema
