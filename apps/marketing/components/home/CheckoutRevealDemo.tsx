@@ -148,23 +148,24 @@ export function CheckoutRevealDemo() {
           )}
         </div>
 
-        {/* Fixed height card body - taller to accommodate all content */}
-        <div className="relative h-[460px] overflow-hidden p-6 sm:p-8">
-          {/* Monitoring badge - animated */}
-          <motion.div
-            className="absolute right-4 top-4 z-10"
-            key={frame.badge.text}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Badge
-              variant={frame.badge.type === "detected" ? "default" : "secondary"}
-              className={cn("text-xs", frame.badge.type === "detected" && "bg-green-600")}
+        {/* Fixed height card body with responsive sizing */}
+        <div className="relative h-[380px] overflow-hidden p-4 sm:h-[460px] sm:p-6 md:p-8">
+          {/* Header zone with badge - consistent spacing */}
+          <div className="mb-6 flex min-h-[32px] items-start justify-end sm:mb-8">
+            <motion.div
+              key={frame.badge.text}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
             >
-              {frame.badge.text}
-            </Badge>
-          </motion.div>
+              <Badge
+                variant={frame.badge.type === "detected" ? "default" : "secondary"}
+                className={cn("text-xs", frame.badge.type === "detected" && "bg-green-600")}
+              >
+                {frame.badge.text}
+              </Badge>
+            </motion.div>
+          </div>
 
           {/* Simulated cursor - hidden on mobile */}
           {!prefersReducedMotion && (
@@ -210,7 +211,7 @@ export function CheckoutRevealDemo() {
             >
               {/* Product page view */}
               {frame.elements.productTitle && (
-                <div className="flex gap-6">
+                <div className="flex gap-4 sm:gap-6">
                   {/* Product image */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -218,24 +219,24 @@ export function CheckoutRevealDemo() {
                     transition={{ duration: 0.4 }}
                     className="flex-shrink-0"
                   >
-                    <div className="relative h-20 w-20 overflow-hidden rounded-xl bg-slate-100 shadow-md sm:h-24 sm:w-24">
+                    <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-slate-100 shadow-md sm:h-20 sm:w-20 md:h-24 md:w-24 md:rounded-xl">
                       <Image
                         src="/demo/green-hoodie.png"
                         alt="Everyday Hoodie"
                         fill
                         className="object-cover"
-                        sizes="(max-width: 640px) 80px, 96px"
+                        sizes="(max-width: 640px) 64px, (max-width: 768px) 80px, 96px"
                       />
                     </div>
                   </motion.div>
 
                   {/* Product info */}
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-slate-900 sm:text-2xl">{frame.elements.productTitle}</h3>
-                    <p className="mt-2 text-3xl font-bold text-slate-900">{frame.elements.price}</p>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-slate-900 sm:text-xl md:text-2xl">{frame.elements.productTitle}</h3>
+                    <p className="mt-1 text-2xl font-bold text-slate-900 sm:mt-2 sm:text-3xl">{frame.elements.price}</p>
                     {frame.elements.button && (
                       <motion.button
-                        className="mt-4 rounded-lg bg-blue-600 px-6 py-2 text-sm font-semibold text-white sm:text-base"
+                        className="mt-3 rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white sm:mt-4 sm:px-6 sm:py-2 sm:text-base"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
@@ -248,7 +249,7 @@ export function CheckoutRevealDemo() {
 
               {/* Cart/Checkout view */}
               {frame.elements.lineItems && (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {frame.elements.lineItems.map((item, idx) => (
                     <motion.div
                       key={idx}
@@ -256,20 +257,20 @@ export function CheckoutRevealDemo() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.1 }}
                       className={cn(
-                        "relative flex justify-between rounded-lg p-3 transition-all",
+                        "relative flex justify-between rounded-lg p-2.5 text-sm transition-all sm:p-3 sm:text-base",
                         item.highlight && "bg-yellow-50 ring-2 ring-yellow-400 shadow-lg"
                       )}
                     >
-                      <span className="text-slate-700">{item.label}</span>
-                      <span className="font-semibold text-slate-900">{item.value}</span>
+                      <span className="text-slate-700 truncate pr-2">{item.label}</span>
+                      <span className="font-semibold text-slate-900 flex-shrink-0">{item.value}</span>
 
-                      {/* Animated tooltip */}
+                      {/* Animated tooltip - repositions on mobile */}
                       {item.tooltip && (
                         <motion.div
                           initial={{ opacity: 0, y: 5 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.3 }}
-                          className="absolute -top-12 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-3 py-2 text-xs text-white shadow-lg"
+                          className="absolute -top-10 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs text-white shadow-lg sm:-top-12 sm:px-3 sm:py-2"
                         >
                           {item.tooltip}
                           <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-slate-900" />
@@ -279,7 +280,7 @@ export function CheckoutRevealDemo() {
                   ))}
                   {frame.elements.button && (
                     <motion.button
-                      className="mt-4 w-full rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white"
+                      className="mt-3 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white sm:mt-4 sm:px-6 sm:py-3 sm:text-base"
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}
                     >
@@ -296,9 +297,9 @@ export function CheckoutRevealDemo() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.5 }}
-                  className="space-y-3"
+                  className="space-y-2 sm:space-y-3"
                 >
-                  <p className="text-sm font-semibold text-slate-700">Active offers:</p>
+                  <p className="text-xs font-semibold text-slate-700 sm:text-sm">Active offers:</p>
                   {frame.elements.offers.map((offer, idx) => (
                     <motion.div
                       key={idx}
@@ -306,19 +307,19 @@ export function CheckoutRevealDemo() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.15 }}
                       className={cn(
-                        "relative flex items-center gap-2 rounded-lg border p-3",
+                        "relative flex items-center gap-2 rounded-lg border p-2 sm:p-3",
                         offer.highlight ? "border-green-300 bg-green-50 shadow-sm" : "border-slate-200 bg-slate-50"
                       )}
                     >
                       <motion.div
-                        className="h-2 w-2 rounded-full bg-green-600"
+                        className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-green-600 sm:h-2 sm:w-2"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ delay: idx * 0.15 + 0.1, type: "spring" }}
                       />
-                      <span className="text-sm text-slate-700">{offer.text}</span>
+                      <span className="text-xs text-slate-700 sm:text-sm">{offer.text}</span>
                       {offer.tooltip && (
-                        <span className="ml-auto text-xs font-medium text-green-700">{offer.tooltip}</span>
+                        <span className="ml-auto flex-shrink-0 text-xs font-medium text-green-700">{offer.tooltip}</span>
                       )}
                     </motion.div>
                   ))}
@@ -332,20 +333,20 @@ export function CheckoutRevealDemo() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.96, y: 20 }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
-                  className="rounded-xl border-2 border-blue-200 bg-blue-50 p-5 shadow-lg"
+                  className="rounded-xl border-2 border-blue-200 bg-blue-50 p-4 shadow-lg sm:p-5"
                 >
-                  <p className="mb-4 text-base font-semibold text-blue-900">Offer change summary:</p>
-                  <div className="space-y-2.5">
+                  <p className="mb-3 text-sm font-semibold text-blue-900 sm:mb-4 sm:text-base">Offer change summary:</p>
+                  <div className="space-y-2 sm:space-y-2.5">
                     {offerChangeSummary.map((item, idx) => (
                       <motion.div
                         key={idx}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.2 + idx * 0.1 }}
-                        className="flex justify-between text-sm"
+                        className="flex justify-between gap-2 text-xs sm:text-sm"
                       >
-                        <span className="text-blue-800">{item.change}</span>
-                        <span className="font-semibold text-blue-900">{item.detail}</span>
+                        <span className="text-blue-800 truncate">{item.change}</span>
+                        <span className="font-semibold text-blue-900 flex-shrink-0">{item.detail}</span>
                       </motion.div>
                     ))}
                   </div>
@@ -353,7 +354,7 @@ export function CheckoutRevealDemo() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.6 }}
-                    className="mt-4 rounded-lg bg-blue-600 px-3 py-2.5"
+                    className="mt-3 rounded-lg bg-blue-600 px-2.5 py-2 sm:mt-4 sm:px-3 sm:py-2.5"
                   >
                     <p className="text-xs font-semibold text-white">
                       💡 Suggested: {suggestedResponse}

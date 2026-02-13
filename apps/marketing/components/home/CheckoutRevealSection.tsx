@@ -9,9 +9,9 @@ export function CheckoutRevealSection() {
   return (
     <Section className="border-b border-border">
       <Container>
-        <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
+        <div className="grid gap-8 sm:gap-12 lg:grid-cols-2 lg:gap-16 items-center">
           {/* Left: Copy + CTA */}
-          <div className="order-2 lg:order-1">
+          <div className="order-2 lg:order-1 max-w-xl lg:max-w-none">
             <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
               Price trackers miss what happens at checkout
             </h2>
