@@ -27,6 +27,7 @@ import { ReportPreview } from "@/components/report-preview"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { LogoMarquee } from "@/components/LogoMarquee"
 import { InputAnnotation } from "@/components/input-annotation"
+import { CheckoutRevealSection } from "@/components/home/CheckoutRevealSection"
 import Image from "next/image"
 import {
   CheckCircle,
@@ -238,6 +239,9 @@ export default function HomePage() {
           )}
         </Container>
       </section>
+
+      {/* Checkout Reveal - Price vs Offer Intelligence */}
+      <CheckoutRevealSection />
 
       {/* Trust: Testimonials */}
       <Section className="border-b border-border">
