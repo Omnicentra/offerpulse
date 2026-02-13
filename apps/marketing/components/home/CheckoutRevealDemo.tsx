@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { demoFrames, offerChangeSummary, suggestedResponse } from "./demoFrames";
@@ -181,18 +182,39 @@ export function CheckoutRevealDemo() {
             >
               {/* Product page view */}
               {frame.elements.productTitle && (
-                <div>
-                  <h3 className="text-2xl font-bold text-slate-900">{frame.elements.productTitle}</h3>
-                  <p className="mt-2 text-3xl font-bold text-slate-900">{frame.elements.price}</p>
-                  {frame.elements.button && (
-                    <motion.button
-                      className="mt-4 rounded-lg bg-blue-600 px-6 py-2 text-white"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      {frame.elements.button}
-                    </motion.button>
-                  )}
+                <div className="flex gap-6">
+                  {/* Product image */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4 }}
+                    className="flex-shrink-0"
+                  >
+                    <div className="relative h-20 w-20 overflow-hidden rounded-xl bg-slate-100 shadow-md sm:h-24 sm:w-24">
+                      <Image
+                        src="/demo/green-hoodie.png"
+                        alt="Everyday Hoodie"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 80px, 96px"
+                      />
+                    </div>
+                  </motion.div>
+
+                  {/* Product info */}
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-slate-900 sm:text-2xl">{frame.elements.productTitle}</h3>
+                    <p className="mt-2 text-3xl font-bold text-slate-900">{frame.elements.price}</p>
+                    {frame.elements.button && (
+                      <motion.button
+                        className="mt-4 rounded-lg bg-blue-600 px-6 py-2 text-sm font-semibold text-white sm:text-base"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        {frame.elements.button}
+                      </motion.button>
+                    )}
+                  </div>
                 </div>
               )}
 
