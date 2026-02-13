@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Topbar } from "@/components/layout/topbar";
+import { CollapsibleSidebar } from "@/components/layout/CollapsibleSidebar";
 import { authApi } from "@/src/mock/api";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -32,19 +31,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
       {/* Desktop sidebar */}
-      <Sidebar />
+      <CollapsibleSidebar />
 
       {/* Mobile sidebar */}
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} isMobile />
+      <CollapsibleSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} isMobile />
 
-      {/* Main content */}
+      {/* Main content - no topbar */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar
-          onMenuClick={() => setSidebarOpen(true)}
-          onAddCompetitor={() => router.push("/competitors/new")}
-        />
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             {children}
           </div>
         </main>
