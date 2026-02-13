@@ -124,28 +124,6 @@ export function CollapsibleSidebar({ isOpen = true, onClose, isMobile = false }:
         </div>
       )}
 
-      {/* Add Competitor button */}
-      <div className={cn("border-b border-slate-200 p-4", isCollapsed && "px-2")}>
-        {isCollapsed ? (
-          <button
-            onClick={() => router.push("/competitors/new")}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700"
-            aria-label="Add Competitor"
-            title="Add Competitor"
-          >
-            <Plus className="h-5 w-5" />
-          </button>
-        ) : (
-          <button
-            onClick={() => router.push("/competitors/new")}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            <Plus className="h-5 w-5" />
-            <span>Add Competitor</span>
-          </button>
-        )}
-      </div>
-
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {navigation.map((item) => {
