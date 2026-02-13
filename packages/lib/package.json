@@ -10,7 +10,8 @@
     "./validators": "./validators.ts",
     "./monitoring": "./monitoring/index.ts",
     "./constants": "./constants.ts",
-    "./routing": "./routing.ts"
+    "./routing": "./routing.ts",
+    "./pricing": "./pricing.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",

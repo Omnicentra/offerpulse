@@ -5,21 +5,82 @@ import { PricingViewTracker } from "@/components/pricing-view-tracker"
 import { CtaSection } from "@/components/cta-section"
 import { CheckCircle } from "lucide-react"
 import { BillingFaq } from "@/components/billing-faq"
+import { PRICING_PLANS } from "@offerpulse/lib/pricing"
+import { CANONICAL_BASE_URL } from "@/lib/seo/config"
 
 export const metadata: Metadata = {
-  title: "Pricing | OfferPulse",
+  title: "Pricing - Competitor Offer Monitoring for Shopify Stores | OfferPulse",
   description:
-    "Simple, transparent pricing for competitor offer monitoring. Start with a 14-day free trial. No credit card required.",
+    "Track competitor offers automatically from £19/mo. Monitor discounts, bundles, free shipping thresholds, and cart incentives. 14-day free trial, no credit card required.",
+  keywords: [
+    "competitor monitoring pricing",
+    "shopify competitor tracking cost",
+    "offer monitoring pricing",
+    "promotional tracking software pricing",
+  ],
+  alternates: {
+    canonical: "/pricing",
+  },
   openGraph: {
-    title: "Pricing | OfferPulse",
+    title: "Pricing - Competitor Offer Monitoring | OfferPulse",
     description:
-      "Simple, transparent pricing for competitor offer monitoring. Start with a 14-day free trial.",
+      "Track competitor offers from £19/mo. All plans include instant alerts and change tracking.",
+    url: `${CANONICAL_BASE_URL}/pricing`,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "OfferPulse Pricing",
+    description: "Track competitor offers from £19/mo. 14-day free trial.",
   },
 }
 
 export default function PricingPage() {
+  // Generate SoftwareApplication schema with pricing offers
+  const pricingSchemas = PRICING_PLANS.map((plan) => ({
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: `OfferPulse ${plan.name}`,
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    offers: [
+      {
+        "@type": "Offer",
+        name: `${plan.name} Monthly`,
+        price: plan.monthlyPrice,
+        priceCurrency: "GBP",
+        priceSpecification: {
+          "@type": "UnitPriceSpecification",
+          price: plan.monthlyPrice,
+          priceCurrency: "GBP",
+          unitText: "MONTH",
+        },
+      },
+      {
+        "@type": "Offer",
+        name: `${plan.name} Yearly`,
+        price: plan.yearlyPrice,
+        priceCurrency: "GBP",
+        priceSpecification: {
+          "@type": "UnitPriceSpecification",
+          price: plan.yearlyPrice,
+          priceCurrency: "GBP",
+          unitText: "YEAR",
+        },
+      },
+    ],
+  }));
+
   return (
     <>
+      {/* Pricing Schema */}
+      {pricingSchemas.map((schema, idx) => (
+        <script
+          key={idx}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
+      
       <PricingViewTracker />
       {/* Header */}
       <section className="bg-gradient-to-b from-muted/50 to-background py-16 sm:py-24">
