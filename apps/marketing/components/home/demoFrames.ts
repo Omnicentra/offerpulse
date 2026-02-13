@@ -39,13 +39,13 @@ export const demoFrames: DemoFrame[] = [
   },
   {
     id: 2,
-    title: "Cart View",
+    title: "Checkout",
     duration: 2.5,
     elements: {
       price: "£49",
       lineItems: [
-        { label: "Everyday Hoodie", value: "£49" },
         { label: "Subtotal", value: "£49" },
+        { label: "Total", value: "£49" },
       ],
       button: "Checkout",
     },
@@ -57,7 +57,7 @@ export const demoFrames: DemoFrame[] = [
   {
     id: 3,
     title: "Checkout Reveal",
-    duration: 3,
+    duration: 2.5,
     elements: {
       price: "£49",
       lineItems: [
@@ -79,20 +79,28 @@ export const demoFrames: DemoFrame[] = [
   },
   {
     id: 4,
-    title: "Offer Stack",
-    duration: 4,
+    title: "Active Offers",
+    duration: 3,
     elements: {
       price: "£49",
-      lineItems: [
-        { label: "Subtotal", value: "£49" },
-        { label: "Free shipping over £35", value: "£0.00", highlight: true },
-        { label: "Total", value: "£49" },
-      ],
       offers: [
         { text: "Bundle: Buy 2 save 15%", highlight: true, tooltip: "Bundle added" },
         { text: "Gift: Travel pouch included", highlight: true, tooltip: "GWP added" },
         { text: "Spend £80 get £10 off", highlight: false },
       ],
+      showSummary: false,
+    },
+    badge: {
+      text: "OfferPulse detected",
+      type: "detected",
+    },
+  },
+  {
+    id: 5,
+    title: "Offer Summary",
+    duration: 3,
+    elements: {
+      price: "£49",
       showSummary: true,
     },
     badge: {
