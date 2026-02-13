@@ -100,8 +100,8 @@ export function CheckoutRevealDemo() {
     >
       {/* Browser-like card with FIXED height */}
       <div className="relative overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-xl">
-        {/* Browser header */}
-        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+        {/* Browser header with embedded progress */}
+        <div className="relative flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
           <div className="flex items-center gap-4">
             <div className="flex gap-1.5">
               <div className="h-3 w-3 rounded-full bg-red-400" />
@@ -115,9 +115,37 @@ export function CheckoutRevealDemo() {
               <span className="text-xs text-slate-600">example-store.com</span>
             </div>
           </div>
-          <Badge variant="outline" className="text-xs">
-            Example checkout
-          </Badge>
+          
+          {/* Embedded progress indicator - inside browser chrome */}
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex gap-1">
+              {demoFrames.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full transition-all duration-300",
+                    idx === currentFrame ? "bg-blue-600 w-4" : "bg-slate-300"
+                  )}
+                />
+              ))}
+            </div>
+            <Badge variant="outline" className="text-xs">
+              Demo
+            </Badge>
+          </div>
+
+          {/* Thin progress bar at very top of browser chrome */}
+          {!prefersReducedMotion && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-200">
+              <motion.div
+                className="h-full bg-blue-600"
+                style={{
+                  width: `${((currentFrame + progress / 100) / demoFrames.length) * 100}%`,
+                }}
+                transition={{ duration: 0.1 }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Fixed height card body - taller to accommodate all content */}
@@ -338,45 +366,6 @@ export function CheckoutRevealDemo() {
         </div>
       </div>
 
-      {/* Progress bar with step indicators */}
-      {!prefersReducedMotion && (
-        <div className="mt-6">
-          {/* Step pills */}
-          <div className="mb-3 flex justify-center gap-2">
-            {demoFrames.map((f, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleStepClick(idx)}
-                className={cn(
-                  "rounded-full px-3 py-1 text-xs font-medium transition-all",
-                  idx === currentFrame
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-200 text-slate-700 hover:bg-slate-300"
-                )}
-                aria-label={`Go to step ${idx + 1}`}
-              >
-                {idx + 1}
-              </button>
-            ))}
-          </div>
-
-          {/* Progress bar */}
-          <div className="h-1 w-full overflow-hidden rounded-full bg-slate-200">
-            <motion.div
-              className="h-full bg-blue-600"
-              style={{
-                width: `${((currentFrame + progress / 100) / demoFrames.length) * 100}%`,
-              }}
-              transition={{ duration: 0.1 }}
-            />
-          </div>
-
-          {/* Pause hint */}
-          <p className="mt-2 text-center text-xs text-slate-500">
-            {isPaused ? "Paused - move mouse away to continue" : "Hover to pause"}
-          </p>
-        </div>
-      )}
     </div>
   );
 }
