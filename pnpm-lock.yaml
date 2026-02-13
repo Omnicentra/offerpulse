@@ -181,7 +181,7 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       framer-motion:
-        specifier: ^12.31.0
+        specifier: ^12.32.0
         version: 12.32.0(react-dom@18.3.1)(react@18.3.1)
       lucide-react:
         specifier: ^0.563.0
