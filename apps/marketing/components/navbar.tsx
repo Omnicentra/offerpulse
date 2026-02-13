@@ -13,8 +13,8 @@ import { track } from "@/lib/analytics"
 const navLinks = [
   { href: "/how-it-works", label: "How it works" },
   { href: "/free-tools", label: "Free tools" },
+  { href: "/guides/pricing-intelligence-vs-offer-intelligence", label: "Guides" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/faq", label: "FAQ" },
   { href: "/blog", label: "Blog" },
 ]
 
