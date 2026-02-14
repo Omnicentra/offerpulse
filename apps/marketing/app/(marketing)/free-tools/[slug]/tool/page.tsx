@@ -16,6 +16,10 @@ import { calculateOfferScore, getScoreInterpretation, getMechanicCount } from "@
 import { ScoreSummary } from "@/components/snapshot-report/ScoreSummary";
 import { ScanProgress } from "@/components/snapshot-report/ScanProgress";
 import { ReportHeader } from "@/components/snapshot-report/ReportHeader";
+import { MetricsRow } from "@/components/snapshot-report/MetricsRow";
+import { OfferStackCard } from "@/components/snapshot-report/OfferStackCard";
+import { RecommendationsCard } from "@/components/snapshot-report/RecommendationsCard";
+import { Percent, Truck, Package, Gift, ShoppingCart, Clock } from "lucide-react";
 import { ArrowLeft, AlertCircle, ExternalLink, Loader2, Sparkles, ArrowRight, Lock, TrendingUp } from "lucide-react";
 import type { ExtractedOffer } from "@/lib/tools/extractor";
 
@@ -89,57 +93,194 @@ export default function ToolPage() {
 
   // Show SEOptimer-style report if this is offer-snapshot tool with results
   if (slug === "offer-snapshot" && result && offerScore) {
+    const offers = result.offers;
+    const domain = new URL(result.url).hostname;
+    
+    // Build metrics
+    const metrics = {
+      discounts: offers.discounts.length,
+      shippingIncentives: offers.shippingThreshold ? 1 : 0,
+      bundles: offers.bundles.length,
+      gifts: offers.gifts.length,
+      cartIncentives: offers.cartIncentives.length,
+      urgencyWidgets: offers.announcements.length,
+    };
+
+    // Build offer items by category
+    const discountItems = offers.discounts.map((d) => ({
+      text: `${d.value}% off${d.code ? ` • Code: ${d.code}` : ""}`,
+      location: d.locationHint,
+      evidenceText: d.evidenceText,
+    }));
+
+    const shippingItems = offers.shippingThreshold ? [{
+      text: `Free shipping over ${offers.shippingThreshold.currency}${offers.shippingThreshold.amount}`,
+      location: offers.shippingThreshold.locationHint,
+      evidenceText: offers.shippingThreshold.evidenceText,
+    }] : [];
+
+    const bundleItems = offers.bundles.map((b) => ({
+      text: b.evidenceText,
+      location: b.locationHint,
+    }));
+
+    const giftItems = offers.gifts.map((g) => ({
+      text: g.evidenceText,
+      location: g.locationHint,
+    }));
+
+    const cartItems = offers.cartIncentives.map((c) => ({
+      text: c.evidenceText,
+      location: c.locationHint,
+    }));
+
+    // Generate recommendations
+    const recommendations = generateRecommendations(offers);
+
     return (
       <div className="min-h-screen bg-white">
         {/* Report Header */}
         <ReportHeader
-          domain={new URL(result.url).hostname}
+          domain={domain}
           timestamp={new Date(result.timestamp).toLocaleString()}
           url={result.url}
           onRescan={() => {
             setResult(null);
             setError(null);
+            setUrl(result.url);
           }}
         />
 
         {/* Main Report Content */}
-        <Container className="py-12">
-          {/* Score Summary - SEOptimer style */}
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+          {/* Score Summary Section */}
           <div className="mb-16">
-            <h2 className="mb-8 text-3xl font-bold text-slate-900">Your Competitor Offer Report</h2>
+            <h2 className="mb-2 text-3xl font-bold text-slate-900">Your Competitor Offer Report</h2>
+            <p className="mb-8 text-slate-600">Comprehensive analysis of promotional mechanics</p>
             <ScoreSummary score={offerScore} interpretation={scoreInterpretation} />
+          </div>
+
+          {/* Metrics Overview */}
+          <div className="mb-16">
+            <h3 className="mb-6 text-xl font-semibold text-slate-900">Quick Metrics</h3>
+            <MetricsRow metrics={metrics} />
           </div>
 
           {/* Offer Stack Detected */}
           <div className="mb-16">
-            <h2 className="mb-6 text-2xl font-bold text-slate-900">Offer Stack Detected</h2>
-            <OfferResults offers={result.offers} />
+            <h3 className="mb-6 text-2xl font-bold text-slate-900">Offer Stack Detected</h3>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <OfferStackCard
+                category="Discounts & Codes"
+                items={discountItems}
+                icon={Percent}
+              />
+              <OfferStackCard
+                category="Free Shipping"
+                items={shippingItems}
+                icon={Truck}
+              />
+              <OfferStackCard
+                category="Bundle Offers"
+                items={bundleItems}
+                icon={Package}
+              />
+              <OfferStackCard
+                category="Gifts & Perks"
+                items={giftItems}
+                icon={Gift}
+              />
+              <OfferStackCard
+                category="Cart Incentives"
+                items={cartItems}
+                icon={ShoppingCart}
+              />
+              <OfferStackCard
+                category="Urgency Signals"
+                items={offers.announcements.map((a) => ({ text: a, location: "Announcement bar" }))}
+                icon={Clock}
+              />
+            </div>
           </div>
 
-          {/* Start Monitoring CTA */}
+          {/* Recommendations */}
+          <div className="mb-16">
+            <RecommendationsCard
+              visibleRecommendations={recommendations.visible}
+              lockedCount={recommendations.locked}
+              signupUrl={buildAppSignupUrl({ competitorUrl: result.url, source: "snapshot_tool" })}
+            />
+          </div>
+
+          {/* Final CTA */}
           <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
             <CardContent className="p-8 text-center">
               <Sparkles className="mx-auto h-12 w-12 text-blue-600" />
               <h2 className="mt-4 text-2xl font-bold text-slate-900">
-                Want alerts when this changes?
+                Start Tracking {domain}
               </h2>
               <p className="mt-3 text-slate-700">
-                Get instant notifications when this competitor changes their offers, shipping, or incentives
+                Get instant alerts when they change offers, shipping thresholds, bundles, or cart incentives
               </p>
               <Button asChild size="lg" className="mt-6">
-                <Link href={buildAppSignupUrl({ competitorUrl: result.url, source: "snapshot_tool" })}>
+                <Link href={buildAppSignupUrl({ competitorUrl: result.url, source: "snapshot_report_final_cta" })}>
                   Start monitoring this competitor
                 </Link>
               </Button>
               <p className="mt-4 text-sm text-slate-600">
-                Track changes, get alerts, and see suggested responses
+                From £19/mo • 14-day free trial • No credit card required
               </p>
             </CardContent>
           </Card>
-        </Container>
+        </div>
       </div>
     );
   }
+
+// Helper function to generate recommendations
+function generateRecommendations(offers: ExtractedOffer) {
+  const visible = [];
+  const locked = 3;
+
+  if (offers.shippingThreshold) {
+    visible.push({
+      title: `Match or test a ${offers.shippingThreshold.currency}${offers.shippingThreshold.amount} free shipping threshold`,
+      description: `They offer free shipping at ${offers.shippingThreshold.currency}${offers.shippingThreshold.amount}. Consider matching this threshold or testing a higher threshold with a gift-with-purchase to protect margin.`,
+      effort: "Low" as const,
+      impact: "High" as const,
+    });
+  }
+
+  if (offers.bundles.length > 0) {
+    visible.push({
+      title: "Add a bundle offer to protect margin vs straight discounts",
+      description: "Bundle offers preserve margin better than percentage discounts while creating perceived value.",
+      effort: "Medium" as const,
+      impact: "High" as const,
+    });
+  }
+
+  if (offers.discounts.length > 0) {
+    visible.push({
+      title: "Counter with a different offer type instead of matching discount",
+      description: "Instead of matching their discount percentage, consider a bundle, gift, or shipping offer that protects margin.",
+      effort: "Low" as const,
+      impact: "Medium" as const,
+    });
+  }
+
+  // Ensure at least 3 recommendations
+  while (visible.length < 3) {
+    visible.push({
+      title: "Add a cart progress incentive to increase AOV",
+      description: "Show customers how close they are to free shipping or a gift to encourage higher order values.",
+      effort: "Medium" as const,
+      impact: "High" as const,
+    });
+  }
+
+  return { visible: visible.slice(0, 3), locked };
+}
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
