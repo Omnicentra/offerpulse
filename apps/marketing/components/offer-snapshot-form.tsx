@@ -43,20 +43,17 @@ export function OfferSnapshotForm({
       // Store competitor URL in session storage as fallback
       storeCompetitorUrl(data.url)
 
-      // Route to app signup with competitor URL
-      const signupUrl = buildAppSignupUrl({
-        competitorUrl: data.url,
-        source: "marketing_hero",
-      })
+      // Route to public snapshot tool with URL pre-filled
+      const toolUrl = `/free-tools/offer-snapshot/tool?url=${encodeURIComponent(data.url)}&utm_source=homepage&utm_medium=cta&utm_campaign=free_snapshot`
 
       track("marketing_cta_clicked", { 
         url: data.url, 
         source: "hero",
-        destination: signupUrl 
+        destination: toolUrl 
       })
 
-      // Navigate to app signup
-      window.location.href = signupUrl
+      // Navigate to public snapshot tool
+      window.location.href = toolUrl
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Something went wrong"

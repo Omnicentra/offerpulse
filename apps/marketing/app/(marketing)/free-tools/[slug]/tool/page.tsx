@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Container } from "@/components/container";
 import { Button } from "@/components/ui/button";
@@ -11,18 +11,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getToolBySlug } from "@/lib/tools/registry";
-import { ArrowLeft, AlertCircle, ExternalLink, Loader2, Sparkles, ArrowRight } from "lucide-react";
+import { buildAppSignupUrl } from "@offerpulse/lib/routing";
+import { ArrowLeft, AlertCircle, ExternalLink, Loader2, Sparkles, ArrowRight, Lock, TrendingUp } from "lucide-react";
 import type { ExtractedOffer } from "@/lib/tools/extractor";
 
 export default function ToolPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = params.slug as string;
   const tool = getToolBySlug(slug);
 
-  const [url, setUrl] = useState("");
+  const urlParam = searchParams.get("url");
+  const hasAutoRun = useRef(false);
+
+  const [url, setUrl] = useState(urlParam || "");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Auto-run if URL is in query params (only once)
+  useEffect(() => {
+    if (urlParam && slug === "offer-snapshot" && !hasAutoRun.current && !result && !loading) {
+      hasAutoRun.current = true;
+      handleSubmit(new Event("submit") as any);
+    }
+  }, [urlParam, slug]);
 
   if (!tool) {
     return (
