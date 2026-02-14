@@ -1,4 +1,4 @@
-import { notFound } from "next/testing";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Container } from "@/components/container";
 import { Button } from "@/components/ui/button";

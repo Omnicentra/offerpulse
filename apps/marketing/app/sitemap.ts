@@ -4,6 +4,7 @@ import { getAllResourceSlugs } from "@/lib/resources/registry"
 import { getAllTopicSlugs } from "@/lib/topics/registry"
 import { getAllBlogPostSlugs } from "@/lib/blog/registry"
 import { getAllSolutionSlugs } from "@/lib/seo/keyword-map"
+import { getAllCompetitorSlugs } from "@/lib/compare/competitors"
 import { CANONICAL_BASE_URL } from "@/lib/seo/config"
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -128,5 +129,50 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ]
 
-  return [...staticPages, ...toolPages, ...resourcePages, ...topicPages, ...blogPages, ...solutionsHub, ...solutionPages]
+  // Comparison hub
+  const compareHub: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/compare`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+  ]
+
+  // Comparison pages (vs, alternatives, review)
+  const competitorSlugs = getAllCompetitorSlugs()
+  const vsPages: MetadataRoute.Sitemap = competitorSlugs.map((slug) => ({
+    url: `${baseUrl}/compare/offerpulse-vs-${slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }))
+
+  const alternativesPages: MetadataRoute.Sitemap = competitorSlugs.map((slug) => ({
+    url: `${baseUrl}/compare/${slug}-alternatives`,
+    lastModified: new Date(),
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }))
+
+  const reviewPages: MetadataRoute.Sitemap = competitorSlugs.map((slug) => ({
+    url: `${baseUrl}/compare/${slug}-review`,
+    lastModified: new Date(),
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }))
+
+  return [
+    ...staticPages,
+    ...toolPages,
+    ...resourcePages,
+    ...topicPages,
+    ...blogPages,
+    ...solutionsHub,
+    ...solutionPages,
+    ...compareHub,
+    ...vsPages,
+    ...alternativesPages,
+    ...reviewPages,
+  ]
 }

@@ -43,12 +43,15 @@ export default async function AlternativesPage({ params }: Props) {
   const faqs = generateAlternativesPageFAQs(competitor);
 
   // Group alternatives by category
+  const offerPulseOption = { name: "OfferPulse", slug: "/", description: "Shopify-focused promotional offer monitoring", recommended: true };
+  
   const promoIntelligence = [
-    { name: "OfferPulse", slug: "/", description: "Shopify-focused promotional offer monitoring", recommended: true },
+    offerPulseOption,
     ...COMPETITORS.filter((c) => c.category === "promo-intelligence" && c.slug !== slug).map((c) => ({
       name: c.name,
       slug: `/compare/offerpulse-vs-${c.slug}`,
       description: c.positioning,
+      recommended: false as const,
     })),
   ];
 
