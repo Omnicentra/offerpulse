@@ -107,7 +107,7 @@ export default function ToolPage() {
     };
 
     // Build offer items by category
-    const discountItems = offers.discounts.map((d) => ({
+    const discountItems = offers.discounts.map((d: any) => ({
       text: `${d.value}% off${d.code ? ` • Code: ${d.code}` : ""}`,
       location: d.locationHint,
       evidenceText: d.evidenceText,
@@ -119,17 +119,17 @@ export default function ToolPage() {
       evidenceText: offers.shippingThreshold.evidenceText,
     }] : [];
 
-    const bundleItems = offers.bundles.map((b) => ({
+    const bundleItems = offers.bundles.map((b: any) => ({
       text: b.evidenceText,
       location: b.locationHint,
     }));
 
-    const giftItems = offers.gifts.map((g) => ({
+    const giftItems = offers.gifts.map((g: any) => ({
       text: g.evidenceText,
       location: g.locationHint,
     }));
 
-    const cartItems = offers.cartIncentives.map((c) => ({
+    const cartItems = offers.cartIncentives.map((c: any) => ({
       text: c.evidenceText,
       location: c.locationHint,
     }));
