@@ -197,7 +197,7 @@ export default function ToolPage() {
               />
               <OfferStackCard
                 category="Urgency Signals"
-                items={offers.announcements.map((a) => ({ text: a, location: "Announcement bar" }))}
+                items={offers.announcements.map((a: string) => ({ text: a, location: "Announcement bar" }))}
                 icon={Clock}
               />
             </div>
