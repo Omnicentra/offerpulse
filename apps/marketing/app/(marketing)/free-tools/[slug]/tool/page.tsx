@@ -12,6 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getToolBySlug } from "@/lib/tools/registry";
 import { buildAppSignupUrl } from "@offerpulse/lib/routing";
+import { calculateOfferScore, getScoreInterpretation, getMechanicCount } from "@/lib/tools/scoring";
+import { ScoreSummary } from "@/components/snapshot-report/ScoreSummary";
+import { ScanProgress } from "@/components/snapshot-report/ScanProgress";
+import { ReportHeader } from "@/components/snapshot-report/ReportHeader";
 import { ArrowLeft, AlertCircle, ExternalLink, Loader2, Sparkles, ArrowRight, Lock, TrendingUp } from "lucide-react";
 import type { ExtractedOffer } from "@/lib/tools/extractor";
 
@@ -78,6 +82,64 @@ export default function ToolPage() {
       setLoading(false);
     }
   };
+
+  // Calculate score if we have results
+  const offerScore = result?.offers ? calculateOfferScore(result.offers) : null;
+  const scoreInterpretation = offerScore ? getScoreInterpretation(offerScore.total) : "";
+
+  // Show SEOptimer-style report if this is offer-snapshot tool with results
+  if (slug === "offer-snapshot" && result && offerScore) {
+    return (
+      <div className="min-h-screen bg-white">
+        {/* Report Header */}
+        <ReportHeader
+          domain={new URL(result.url).hostname}
+          timestamp={new Date(result.timestamp).toLocaleString()}
+          url={result.url}
+          onRescan={() => {
+            setResult(null);
+            setError(null);
+          }}
+        />
+
+        {/* Main Report Content */}
+        <Container className="py-12">
+          {/* Score Summary - SEOptimer style */}
+          <div className="mb-16">
+            <h2 className="mb-8 text-3xl font-bold text-slate-900">Your Competitor Offer Report</h2>
+            <ScoreSummary score={offerScore} interpretation={scoreInterpretation} />
+          </div>
+
+          {/* Offer Stack Detected */}
+          <div className="mb-16">
+            <h2 className="mb-6 text-2xl font-bold text-slate-900">Offer Stack Detected</h2>
+            <OfferResults offers={result.offers} />
+          </div>
+
+          {/* Start Monitoring CTA */}
+          <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+            <CardContent className="p-8 text-center">
+              <Sparkles className="mx-auto h-12 w-12 text-blue-600" />
+              <h2 className="mt-4 text-2xl font-bold text-slate-900">
+                Want alerts when this changes?
+              </h2>
+              <p className="mt-3 text-slate-700">
+                Get instant notifications when this competitor changes their offers, shipping, or incentives
+              </p>
+              <Button asChild size="lg" className="mt-6">
+                <Link href={buildAppSignupUrl({ competitorUrl: result.url, source: "snapshot_tool" })}>
+                  Start monitoring this competitor
+                </Link>
+              </Button>
+              <p className="mt-4 text-sm text-slate-600">
+                Track changes, get alerts, and see suggested responses
+              </p>
+            </CardContent>
+          </Card>
+        </Container>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -187,7 +249,11 @@ export default function ToolPage() {
 
           {/* Right: Results */}
           <div>
-            {loading && (
+            {loading && slug === "offer-snapshot" && (
+              <ScanProgress />
+            )}
+
+            {loading && slug !== "offer-snapshot" && (
               <Card>
                 <CardHeader>
                   <Skeleton className="h-6 w-32" />
