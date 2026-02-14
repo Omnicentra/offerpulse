@@ -16,6 +16,8 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+export const dynamicParams = false; // Only allow pre-generated paths
+
 export async function generateStaticParams() {
   return getAllCompetitorSlugs().map((slug) => ({ slug }));
 }
