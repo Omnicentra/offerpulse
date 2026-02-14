@@ -18,7 +18,7 @@ export async function fetchStoreHtml(url: string): Promise<FetchResult> {
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+  const timeout = setTimeout(() => controller.abort(), 20000); // 20s timeout (some stores are slow)
 
   try {
     const response = await fetch(url, {
