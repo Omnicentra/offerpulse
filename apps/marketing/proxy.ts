@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { CANONICAL_HOST, REDIRECT_HOSTS } from "./lib/seo/config";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const host = request.headers.get("host") || "";
 

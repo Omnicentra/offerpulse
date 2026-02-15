@@ -25,7 +25,7 @@ export default function SuccessPage() {
           </div>
           <h1 className="mt-6 text-4xl font-bold text-slate-900">Slot Reserved ✅</h1>
           <p className="mt-4 text-xl text-slate-700">
-            You've reserved early access to OfferPulse. We'll email you when your slot is ready.
+            You&apos;ve reserved early access to OfferPulse. We&apos;ll email you when your slot is ready.
           </p>
         </Container>
       </section>

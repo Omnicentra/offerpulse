@@ -2,31 +2,32 @@
 
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { Container } from "@/components/container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { RefundPolicyDialog } from "@/components/RefundPolicyDialog";
-import { CheckCircle, AlertCircle, Sparkles, Lock } from "lucide-react";
+import { CheckCircle, AlertCircle, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 function SnapshotPageContent() {
   const searchParams = useSearchParams();
   const cancelled = searchParams.get("cancelled");
-  const abVariant = searchParams.get("ab") || "A";
-  
+
   const [url, setUrl] = useState("");
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showRefundPolicy, setShowRefundPolicy] = useState(false);
 
   const { toast } = useToast();
-
-  const depositAmount = abVariant === "B" ? 39 : 19;
 
   const handleFreeQueue = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +55,7 @@ function SnapshotPageContent() {
 
       setEmail("");
     } catch (error) {
+      console.error(error);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
@@ -72,16 +74,24 @@ function SnapshotPageContent() {
         body: JSON.stringify({
           email,
           competitorUrl: url,
-          abVariant,
           utmSource: searchParams.get("utm_source"),
           utmMedium: searchParams.get("utm_medium"),
           utmCampaign: searchParams.get("utm_campaign"),
         }),
       });
 
-      const { url: checkoutUrl } = await response.json();
-      window.location.href = checkoutUrl;
+      const data = (await response.json()) as { url?: string; error?: string };
+      if (!response.ok || !data.url) {
+        toast({
+          title: "Error",
+          description: data.error ?? "Failed to start checkout. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      window.location.href = data.url;
     } catch (error) {
+      console.error(error);
       toast({
         title: "Error",
         description: "Failed to start checkout. Please try again.",
@@ -99,9 +109,12 @@ function SnapshotPageContent() {
             <div className="flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-yellow-600" />
               <div>
-                <p className="font-medium text-yellow-900">Checkout cancelled</p>
+                <p className="font-medium text-yellow-900">
+                  Checkout cancelled
+                </p>
                 <p className="text-sm text-yellow-800">
-                  No worries. You can still join the free queue, or reserve a slot when you're ready.
+                  No worries. You can still join the free queue, or reserve a
+                  slot when you&apos;re ready.
                 </p>
               </div>
             </div>
@@ -121,7 +134,8 @@ function SnapshotPageContent() {
               </span>
             </h2>
             <p className="mt-4 text-lg text-slate-600">
-              We're opening limited slots while we validate demand. Reserve a slot to skip the queue.
+              We&apos;re opening limited slots while we validate demand. Reserve a
+              slot to skip the queue.
             </p>
             <p className="mt-2 text-sm text-slate-500">
               No lock-in. Refundable deposit.{" "}
@@ -146,7 +160,11 @@ function SnapshotPageContent() {
               <CardHeader>
                 <Badge className="mb-2 w-fit bg-blue-600">Recommended</Badge>
                 <CardTitle>
-                  Get my <span className="underline decoration-blue-600 decoration-2 underline-offset-4">refundable</span> first report for £{depositAmount}
+                  Get my{" "}
+                  <span className="underline decoration-blue-600 decoration-2 underline-offset-4">
+                    refundable
+                  </span>{" "}
+                  first report for £19
                 </CardTitle>
                 <p className="text-sm font-medium text-slate-700">
                   Delivered in 2 working days while automation is closed.
@@ -155,34 +173,53 @@ function SnapshotPageContent() {
               <CardContent className="space-y-6">
                 {/* What You Get */}
                 <div>
-                  <p className="mb-3 text-sm font-semibold text-slate-900">Your first report includes:</p>
+                  <p className="mb-3 text-sm font-semibold text-slate-900">
+                    Your first report includes:
+                  </p>
                   <ul className="space-y-2.5">
                     <li className="flex gap-3">
                       <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                      <span className="text-sm text-slate-700">Full promo stack (discounts, shipping, bundles, gifts, cart incentives)</span>
+                      <span className="text-sm text-slate-700">
+                        Full promo stack (discounts, shipping, bundles, gifts,
+                        cart incentives)
+                      </span>
                     </li>
                     <li className="flex gap-3">
                       <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                      <span className="text-sm text-slate-700">Evidence screenshots + where it appears (PDP/cart/checkout)</span>
+                      <span className="text-sm text-slate-700">
+                        Evidence screenshots + where it appears
+                        (PDP/cart/checkout)
+                      </span>
                     </li>
                     <li className="flex gap-3">
                       <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                      <span className="text-sm text-slate-700">Codes and thresholds detected</span>
+                      <span className="text-sm text-slate-700">
+                        Codes and thresholds detected
+                      </span>
                     </li>
                     <li className="flex gap-3">
                       <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                      <span className="text-sm text-slate-700">3 suggested counter-moves to protect CVR and AOV</span>
+                      <span className="text-sm text-slate-700">
+                        3 suggested counter-moves to protect CVR and AOV
+                      </span>
                     </li>
                     <li className="flex gap-3">
                       <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                      <span className="text-sm text-slate-700">Priority access when automated monitoring opens</span>
+                      <span className="text-sm text-slate-700">
+                        Priority access when automated monitoring opens
+                      </span>
                     </li>
                   </ul>
                 </div>
 
-                <Button onClick={handleDepositCheckout} size="lg" className="w-full" data-evt="early_access_paid_click">
+                <Button
+                  onClick={handleDepositCheckout}
+                  size="lg"
+                  className="w-full"
+                  data-evt="early_access_paid_click"
+                >
                   <Sparkles className="mr-2 h-5 w-5" />
-                  Get my first report for £{depositAmount}
+                  Get my first report for £19
                 </Button>
 
                 {/* Trust Elements */}
@@ -204,17 +241,23 @@ function SnapshotPageContent() {
             </Card>
 
             {/* Free Queue - Second on Mobile */}
-            <Card className="order-2 lg:order-1">
-              <CardHeader>
-                <CardTitle>Join the Waitlist (no report included)</CardTitle>
-                <p className="text-sm text-slate-600">
+            <Card className="order-2 lg:order-1 flex flex-col justify-center">
+              <CardContent className="flex flex-col justify-center py-8 px-6">
+                <h2 className="text-center text-xl font-bold text-slate-900">
+                  Join the Waitlist (no report included)
+                </h2>
+                <p className="mt-1 text-center text-md text-slate-600">
                   Get notified when we open more report slots.
                 </p>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleFreeQueue} className="space-y-4" data-evt="early_access_waitlist_submit">
-                  <div>
-                    <Label htmlFor="free-email">Email</Label>
+                <form
+                  onSubmit={handleFreeQueue}
+                  className="mt-6 flex flex-col items-center space-y-4"
+                  data-evt="early_access_waitlist_submit"
+                >
+                  <div className="w-full">
+                    <Label htmlFor="free-email" className="sr-only">
+                      Email
+                    </Label>
                     <Input
                       id="free-email"
                       type="email"
@@ -222,12 +265,18 @@ function SnapshotPageContent() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      className="h-10"
                     />
                   </div>
-                  <Button type="submit" variant="outline" className="w-full" disabled={isSubmitting}>
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
                     {isSubmitting ? "Joining..." : "Join waitlist"}
                   </Button>
-                  <p className="text-xs text-slate-500 text-center">
+                  <p className="text-center text-xs text-slate-500">
                     No spam. One email when slots open.
                   </p>
                 </form>
@@ -238,9 +287,13 @@ function SnapshotPageContent() {
           {/* Why Deposit */}
           <Card className="mt-12 border-blue-200 bg-blue-50">
             <CardContent className="p-8">
-              <h3 className="mb-3 font-semibold text-slate-900">Why a deposit?</h3>
+              <h3 className="mb-3 font-semibold text-slate-900">
+                Why a deposit?
+              </h3>
               <p className="text-sm text-slate-700 leading-relaxed">
-                This keeps early access fair. The deposit reserves your slot, gets you prioritised, and is refundable anytime before launch. If we don't ship what you need, we refund. Simple.
+                This keeps early access fair. The deposit reserves your slot,
+                gets you prioritised, and is refundable anytime before launch.
+                If we don&apos;t ship what you need, we refund. Simple.
               </p>
             </CardContent>
           </Card>
@@ -255,10 +308,12 @@ function SnapshotPageContent() {
             What is Competitor Offer Snapshot?
           </h2>
           <p className="mt-4 text-lg text-slate-700 leading-relaxed">
-            See the offer mechanics competitors use to win at checkout: discount codes, free shipping thresholds, bundles, gifts, and cart incentives.
+            See the offer mechanics competitors use to win at checkout: discount
+            codes, free shipping thresholds, bundles, gifts, and cart
+            incentives.
           </p>
           <p className="mt-3 text-sm text-slate-600">
-            This is a preview of the report format you'll get in early access.
+            This is a preview of the report format you&apos;ll get in early access.
           </p>
         </Container>
       </section>
@@ -289,9 +344,12 @@ function SnapshotPageContent() {
       <section className="border-b border-slate-200 bg-slate-50 py-16">
         <Container className="max-w-5xl">
           <div className="mb-12">
-            <h2 className="text-3xl font-bold text-slate-900">Preview Report</h2>
+            <h2 className="text-3xl font-bold text-slate-900">
+              Preview Report
+            </h2>
             <p className="mt-2 text-slate-600">
-              Here's what your competitor offer report looks like once early access is enabled.
+              Here&apos;s what your competitor offer report looks like once early
+              access is enabled.
             </p>
           </div>
 
@@ -302,7 +360,14 @@ function SnapshotPageContent() {
               <div className="flex justify-center">
                 <div className="relative">
                   <svg className="h-64 w-64 -rotate-90" viewBox="0 0 200 200">
-                    <circle cx="100" cy="100" r="85" fill="none" stroke="#e2e8f0" strokeWidth="12" />
+                    <circle
+                      cx="100"
+                      cy="100"
+                      r="85"
+                      fill="none"
+                      stroke="#e2e8f0"
+                      strokeWidth="12"
+                    />
                     <circle
                       cx="100"
                       cy="100"
@@ -315,15 +380,21 @@ function SnapshotPageContent() {
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <div className="text-6xl font-bold text-slate-400">C</div>
-                    <div className="text-2xl font-semibold text-slate-600">35/100</div>
-                    <div className="mt-2 text-xs font-medium text-slate-500">Promo Intensity</div>
+                    <div className="text-2xl font-semibold text-slate-600">
+                      35/100
+                    </div>
+                    <div className="mt-2 text-xs font-medium text-slate-500">
+                      Promo Intensity
+                    </div>
                   </div>
                 </div>
               </div>
 
               <div className="flex flex-col justify-center space-y-6">
                 <div>
-                  <Badge className="bg-slate-100 text-slate-800">Low confidence</Badge>
+                  <Badge className="bg-slate-100 text-slate-800">
+                    Low confidence
+                  </Badge>
                   <p className="mt-4 text-lg text-slate-600">
                     Minimal promotional activity detected on public pages
                   </p>
@@ -337,7 +408,9 @@ function SnapshotPageContent() {
 
           {/* Quick Metrics (Preview) */}
           <div className="mb-12">
-            <h3 className="mb-6 text-xl font-semibold text-slate-900">Quick Metrics</h3>
+            <h3 className="mb-6 text-xl font-semibold text-slate-900">
+              Quick Metrics
+            </h3>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
               {[
                 { label: "Discounts & codes", value: "2" },
@@ -349,7 +422,9 @@ function SnapshotPageContent() {
               ].map((metric) => (
                 <Card key={metric.label} className="border-slate-200">
                   <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-slate-900">{metric.value}</div>
+                    <div className="text-2xl font-bold text-slate-900">
+                      {metric.value}
+                    </div>
                     <div className="text-xs text-slate-600">{metric.label}</div>
                   </CardContent>
                 </Card>
@@ -359,31 +434,63 @@ function SnapshotPageContent() {
 
           {/* Offer Stack Preview */}
           <div>
-            <h3 className="mb-6 text-2xl font-bold text-slate-900">Offer Stack Detected</h3>
+            <h3 className="mb-6 text-2xl font-bold text-slate-900">
+              Offer Stack Detected
+            </h3>
             <p className="mb-6 text-slate-600">
               What we look for across the offer stack (not just price).
             </p>
             <div className="grid gap-6 sm:grid-cols-2">
               {[
-                { title: "Discounts & codes", example: "10% off · Code: NEW10", source: "Announcement bar" },
-                { title: "Free shipping", example: "Free shipping over £35", source: "Cart / banner" },
-                { title: "Bundle offers", example: null, empty: "No bundle offers detected" },
-                { title: "Gifts & perks", example: null, empty: "No gifts & perks detected" },
-                { title: "Cart incentives", example: "Spend £50 to unlock a free gift", source: "Cart drawer" },
-                { title: "Urgency signals", example: "Ends Sunday · Limited stock", source: "Banner" },
+                {
+                  title: "Discounts & codes",
+                  example: "10% off · Code: NEW10",
+                  source: "Announcement bar",
+                },
+                {
+                  title: "Free shipping",
+                  example: "Free shipping over £35",
+                  source: "Cart / banner",
+                },
+                {
+                  title: "Bundle offers",
+                  example: null,
+                  empty: "No bundle offers detected",
+                },
+                {
+                  title: "Gifts & perks",
+                  example: null,
+                  empty: "No gifts & perks detected",
+                },
+                {
+                  title: "Cart incentives",
+                  example: "Spend £50 to unlock a free gift",
+                  source: "Cart drawer",
+                },
+                {
+                  title: "Urgency signals",
+                  example: "Ends Sunday · Limited stock",
+                  source: "Banner",
+                },
               ].map((category) => (
                 <Card key={category.title}>
                   <CardHeader>
-                    <CardTitle className="text-base">{category.title}</CardTitle>
+                    <CardTitle className="text-base">
+                      {category.title}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {category.example ? (
                       <div className="space-y-2">
                         <div className="flex items-start gap-2">
                           <CheckCircle className="h-4 w-4 flex-shrink-0 text-green-600" />
-                          <span className="text-sm text-slate-700">{category.example}</span>
+                          <span className="text-sm text-slate-700">
+                            {category.example}
+                          </span>
                         </div>
-                        <Badge variant="outline" className="text-xs">{category.source}</Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {category.source}
+                        </Badge>
                       </div>
                     ) : (
                       <p className="text-sm text-slate-500">{category.empty}</p>
@@ -393,12 +500,13 @@ function SnapshotPageContent() {
               ))}
             </div>
             <p className="mt-6 text-sm text-slate-600">
-              OfferPulse monitors publicly visible messaging and on-site incentives. Some stores hide incentives until checkout or after email capture. That's exactly why ongoing monitoring matters.
+              OfferPulse monitors publicly visible messaging and on-site
+              incentives. Some stores hide incentives until checkout or after
+              email capture. That&apos;s exactly why ongoing monitoring matters.
             </p>
           </div>
         </Container>
       </section>
-
 
       {/* Social Proof */}
       <section className="border-t border-slate-200 bg-slate-50 py-16">
@@ -413,19 +521,25 @@ function SnapshotPageContent() {
             <Card>
               <CardContent className="p-6">
                 <CheckCircle className="h-8 w-8 text-green-600" />
-                <p className="mt-4 text-slate-700">Track the levers competitors pull at checkout</p>
+                <p className="mt-4 text-slate-700">
+                  Track the levers competitors pull at checkout
+                </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-6">
                 <CheckCircle className="h-8 w-8 text-green-600" />
-                <p className="mt-4 text-slate-700">Respond with smarter offers, not just bigger discounts</p>
+                <p className="mt-4 text-slate-700">
+                  Respond with smarter offers, not just bigger discounts
+                </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-6">
                 <CheckCircle className="h-8 w-8 text-green-600" />
-                <p className="mt-4 text-slate-700">Keep margin while protecting conversion rate</p>
+                <p className="mt-4 text-slate-700">
+                  Keep margin while protecting conversion rate
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -435,12 +549,18 @@ function SnapshotPageContent() {
       {/* FAQ */}
       <section className="py-16">
         <Container className="max-w-3xl">
-          <h2 className="mb-8 text-2xl font-bold text-slate-900">Frequently Asked Questions</h2>
+          <h2 className="mb-8 text-2xl font-bold text-slate-900">
+            Frequently Asked Questions
+          </h2>
           <Accordion type="single" collapsible>
             {faqs.map((faq, idx) => (
               <AccordionItem key={idx} value={`faq-${idx}`}>
-                <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
-                <AccordionContent className="text-slate-700">{faq.answer}</AccordionContent>
+                <AccordionTrigger className="text-left">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-slate-700">
+                  {faq.answer}
+                </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
@@ -453,41 +573,50 @@ function SnapshotPageContent() {
 const faqs = [
   {
     question: "Is the £19 deposit refundable?",
-    answer: "Yes. It's fully refundable any time before launch. Just reply to your confirmation email.",
+    answer:
+      "Yes. It's fully refundable any time before launch. Just reply to your confirmation email.",
   },
   {
     question: "Is the £19 credited later?",
-    answer: "Yes. When early access goes live, your £19 is credited to your first paid month.",
+    answer:
+      "Yes. When early access goes live, your £19 is credited to your first paid month.",
   },
   {
     question: "What will OfferPulse detect?",
-    answer: "Discount codes, free shipping thresholds, bundles, gifts & perks, cart incentives, and urgency signals. The goal is to show the offer mechanics that influence conversion and AOV.",
+    answer:
+      "Discount codes, free shipping thresholds, bundles, gifts & perks, cart incentives, and urgency signals. The goal is to show the offer mechanics that influence conversion and AOV.",
   },
   {
     question: "Does this work for Shopify only?",
-    answer: "OfferPulse is built for Shopify first. If you're on another platform, join the queue and tell us in the notes.",
+    answer:
+      "OfferPulse is built for Shopify first. If you're on another platform, join the queue and tell us in the notes.",
   },
   {
     question: "Can you always see checkout-only incentives?",
-    answer: "Some incentives are only visible at checkout or after an email step. That's why ongoing monitoring and evidence capture matter. This page is a preview of the reporting format.",
+    answer:
+      "Some incentives are only visible at checkout or after an email step. That's why ongoing monitoring and evidence capture matter. This page is a preview of the reporting format.",
   },
   {
     question: "When do I get access?",
-    answer: "As soon as we open your slot. Deposits get priority. We'll email you when your slot is ready.",
+    answer:
+      "As soon as we open your slot. Deposits get priority. We'll email you when your slot is ready.",
   },
   {
     question: "Will you store competitor data?",
-    answer: "We store monitoring results (offer signals and evidence) to show history and changes. We don't sell competitor data.",
+    answer:
+      "We store monitoring results (offer signals and evidence) to show history and changes. We don't sell competitor data.",
   },
 ];
 
 export default function SnapshotPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
+        </div>
+      }
+    >
       <SnapshotPageContent />
     </Suspense>
   );

@@ -1,59 +1,83 @@
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
+import { env } from "@/env";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, competitorUrl, abVariant, utmSource, utmMedium, utmCampaign } = body;
-
-    const depositAmount = abVariant === "B" ? 39 : 19;
-
-    // TODO: Implement Stripe Checkout
-    // For now, return a placeholder
-    
-    console.log("Deposit checkout requested:", {
+    const {
       email,
       competitorUrl,
-      depositAmount,
-      abVariant,
       utmSource,
       utmMedium,
       utmCampaign,
+    } = body as {
+      email?: string;
+      competitorUrl?: string;
+      utmSource?: string;
+      utmMedium?: string;
+      utmCampaign?: string;
+    };
+
+    const stripe = new Stripe(env.STRIPE_SECRET_KEY);
+
+    const priceList = await stripe.prices.list({
+      lookup_keys: [env.STRIPE_PRICE_LOOKUP_KEY],
+      limit: 1,
     });
 
-    // In production:
-    // const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-    // const session = await stripe.checkout.sessions.create({
-    //   payment_method_types: ['card'],
-    //   line_items: [{
-    //     price_data: {
-    //       currency: 'gbp',
-    //       product_data: {
-    //         name: 'OfferPulse Early Access Deposit',
-    //       },
-    //       unit_amount: depositAmount * 100,
-    //     },
-    //     quantity: 1,
-    //   }],
-    //   mode: 'payment',
-    //   success_url: `${process.env.NEXT_PUBLIC_MARKETING_APP_URL}/snapshot/success?session_id={CHECKOUT_SESSION_ID}`,
-    //   cancel_url: `${process.env.NEXT_PUBLIC_MARKETING_APP_URL}/snapshot?cancelled=true`,
-    //   customer_email: email,
-    //   metadata: {
-    //     competitorUrl,
-    //     abVariant,
-    //     utmSource: utmSource || '',
-    //     utmMedium: utmMedium || '',
-    //     utmCampaign: utmCampaign || '',
-    //   },
-    // });
-    // return NextResponse.json({ url: session.url });
+    const price = priceList.data[0];
+    if (!price) {
+      console.error(
+        `No price found for lookup key: ${env.STRIPE_PRICE_LOOKUP_KEY}`
+      );
+      return NextResponse.json(
+        { error: "Price not configured. Please try again later." },
+        { status: 500 }
+      );
+    }
 
-    // Placeholder response
-    return NextResponse.json({
-      url: `/snapshot/success?email=${encodeURIComponent(email)}`,
+    const baseUrl = env.NEXT_PUBLIC_MARKETING_APP_URL.replace(/\/$/, "");
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["klarna", "card"],
+      line_items: [
+        {
+          price: price.id,
+          quantity: 1,
+        },
+      ],
+      name_collection: {
+        individual: {
+          enabled: true,
+        },
+      },
+      success_url: `${baseUrl}/snapshot/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/snapshot?cancelled=true`,
+      ...(email && { customer_email: email }),
+      metadata: {
+        competitorUrl: competitorUrl ?? "",
+        utmSource: utmSource ?? "",
+        utmMedium: utmMedium ?? "",
+        utmCampaign: utmCampaign ?? "",
+      },
+      allow_promotion_codes: true,
     });
+
+    if (!session.url) {
+      return NextResponse.json(
+        { error: "Failed to create checkout session" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error("Checkout error:", error);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to start checkout. Please try again." },
+      { status: 500 }
+    );
   }
 }
