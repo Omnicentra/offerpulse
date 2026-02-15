@@ -218,7 +218,7 @@ export default function HomePage() {
                       </div>
                       <div className="flex flex-wrap justify-center gap-3">
                         <Button asChild size="lg" className="rounded-xl shadow-lg hover:shadow-xl">
-                          <Link href={`/auth/sign-up?competitorUrl=${encodeURIComponent(submittedUrl || snapshotData.domain)}`}>
+                          <Link href="/snapshot">
                             Start free trial →
                           </Link>
                         </Button>

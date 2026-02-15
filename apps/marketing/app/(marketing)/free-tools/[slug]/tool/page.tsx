@@ -11,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getToolBySlug } from "@/lib/tools/registry";
-import { buildAppSignupUrl } from "@offerpulse/lib/routing";
 import { calculateOfferScore, getScoreInterpretation, getMechanicCount } from "@/lib/tools/scoring";
 import { normalizeUrl, validateUrl } from "@/lib/url-helpers";
 import { ScoreSummary } from "@/components/snapshot-report/ScoreSummary";
@@ -219,7 +218,7 @@ export default function ToolPage() {
             <RecommendationsCard
               visibleRecommendations={recommendations.visible}
               lockedCount={recommendations.locked}
-              signupUrl={buildAppSignupUrl({ competitorUrl: result.url, source: "snapshot_tool" })}
+              signupUrl="/snapshot"
             />
           </div>
 
@@ -234,7 +233,7 @@ export default function ToolPage() {
                 Get instant alerts when they change offers, shipping thresholds, bundles, or cart incentives
               </p>
               <Button asChild size="lg" className="mt-6">
-                <Link href={buildAppSignupUrl({ competitorUrl: result.url, source: "snapshot_report_final_cta" })}>
+                <Link href="/snapshot">
                   Start monitoring this competitor
                 </Link>
               </Button>

@@ -14,7 +14,6 @@ import { Check } from "lucide-react"
 import { cn } from "@offerpulse/lib/utils"
 import { PRICING_PLANS, PRICING_NOTES, formatMonthlyPrice, formatYearlyPrice } from "@offerpulse/lib/pricing"
 import { track } from "@/lib/analytics"
-import { buildAppSignupUrl, getStoredCompetitorUrl } from "@offerpulse/lib/routing"
 
 interface PricingCardsProps {
   showFullDescription?: boolean
@@ -28,13 +27,7 @@ export function PricingCards({
   const handlePricingClick = (planName: string) => {
     track("cta_signup_clicked", { source: "pricing", plan: planName })
     
-    const competitorUrl = getStoredCompetitorUrl()
-    const signupUrl = buildAppSignupUrl({
-      competitorUrl: competitorUrl || undefined,
-      source: "pricing",
-    })
-    
-    window.location.href = signupUrl
+    window.location.href = "/snapshot"
   }
 
   const isAnnual = billingPeriod === "annual"

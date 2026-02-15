@@ -117,7 +117,7 @@ export default async function SolutionPage({ params }: Props) {
 
           <div className="mt-8 flex gap-4">
             <Button asChild size="lg">
-              <Link href="/">Start free trial</Link>
+              <Link href="/snapshot">Start free trial</Link>
             </Button>
             <Button asChild variant="outline" size="lg">
               <Link href={`/free-tools/${relatedTools[0]?.slug || "offer-snapshot"}`}>
@@ -200,7 +200,7 @@ export default async function SolutionPage({ params }: Props) {
                 Get instant alerts when competitors change their promotions, with suggested actions
               </p>
               <Button asChild size="lg" className="mt-6">
-                <Link href="/">Start free trial</Link>
+                <Link href="/snapshot">Start free trial</Link>
               </Button>
             </CardContent>
           </Card>
