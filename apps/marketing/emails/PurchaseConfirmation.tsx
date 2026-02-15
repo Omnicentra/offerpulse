@@ -79,15 +79,15 @@ export const PurchaseConfirmationEmail = ({
             Questions? Just reply to this email and we&apos;ll help you out.
           </Text>
           <Text style={footerText}>
-            <Link href="https://offerpulse.com" style={link}>
+            <Link href="https://offerpulse.io" style={link}>
               OfferPulse
             </Link>
             {" · "}
-            <Link href="https://offerpulse.com/how-it-works" style={link}>
+            <Link href="https://offerpulse.io/how-it-works" style={link}>
               How it works
             </Link>
             {" · "}
-            <Link href="https://offerpulse.com/pricing" style={link}>
+            <Link href="https://offerpulse.io/pricing" style={link}>
               Pricing
             </Link>
           </Text>

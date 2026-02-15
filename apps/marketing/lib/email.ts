@@ -15,7 +15,7 @@ export async function sendPurchaseConfirmation({
 }: SendPurchaseConfirmationParams) {
   try {
     const { data, error } = await resend.emails.send({
-      from: "OfferPulse <support@omnicentra.com>",
+      from: "OfferPulse <chisom@omnicentra.com>",
       to: [to],
       subject: "Your OfferPulse Snapshot Report - Slot Reserved ✅",
       react: PurchaseConfirmationEmail({
