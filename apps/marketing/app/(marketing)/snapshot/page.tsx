@@ -113,7 +113,13 @@ function SnapshotPageContent() {
       <section className="py-16">
         <Container className="max-w-5xl">
           <div className="mb-8 text-center">
-            <h2 className="text-3xl font-bold text-slate-900">Get your Full Competitor Promo Report</h2>
+            <h2 className="text-3xl font-bold text-slate-900">
+              Get Your Full{" "}
+              <span className="relative inline-block">
+                <span className="relative z-10">Competitor Promo Report</span>
+                <span className="absolute bottom-0 left-0 right-0 h-2 bg-blue-600/30 animate-pulse" />
+              </span>
+            </h2>
             <p className="mt-4 text-lg text-slate-600">
               We're opening limited slots while we validate demand. Reserve a slot to skip the queue.
             </p>
@@ -139,7 +145,9 @@ function SnapshotPageContent() {
             <Card className="order-1 ring-2 ring-blue-600 lg:order-2">
               <CardHeader>
                 <Badge className="mb-2 w-fit bg-blue-600">Recommended</Badge>
-                <CardTitle>Get my refundable first report for £{depositAmount}</CardTitle>
+                <CardTitle>
+                  Get my <span className="underline decoration-blue-600 decoration-2 underline-offset-4">refundable</span> first report for £{depositAmount}
+                </CardTitle>
                 <p className="text-sm font-medium text-slate-700">
                   Delivered in 2 working days while automation is closed.
                 </p>
