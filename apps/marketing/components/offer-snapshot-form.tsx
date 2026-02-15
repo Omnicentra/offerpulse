@@ -17,6 +17,7 @@ import { offerSnapshotSchema, type OfferSnapshotInput } from "@offerpulse/lib/va
 import { track } from "@/lib/analytics"
 import { extractDomain } from "@offerpulse/lib/utils"
 import { buildAppSignupUrl, storeCompetitorUrl } from "@offerpulse/lib/routing"
+import { normalizeUrl, validateUrl } from "@/lib/url-helpers"
 
 interface OfferSnapshotFormProps {
   /** Optional: called when URL input changes for hero preview domain */
@@ -37,27 +38,38 @@ export function OfferSnapshotForm({
 
   const onSubmit = async (data: OfferSnapshotInput) => {
     setIsSubmitting(true)
-    track("marketing_competitor_submitted", { url: data.url })
+
+    // Normalize and validate URL
+    const normalizedUrl = normalizeUrl(data.url)
+    const validation = validateUrl(data.url)
+
+    if (!validation.ok || !normalizedUrl) {
+      form.setError("url", { message: validation.reason || "Invalid URL" })
+      setIsSubmitting(false)
+      return
+    }
+
+    track("marketing_competitor_submitted", { url: normalizedUrl })
 
     try {
-      // Store competitor URL in session storage as fallback
-      storeCompetitorUrl(data.url)
+      // Store normalized URL
+      storeCompetitorUrl(normalizedUrl)
 
-      // Route to snapshot early access page
-      const toolUrl = `/snapshot?url=${encodeURIComponent(data.url)}&utm_source=homepage&utm_medium=cta&utm_campaign=free_snapshot`
+      // Route to snapshot with normalized URL
+      const toolUrl = `/snapshot?url=${encodeURIComponent(normalizedUrl)}&utm_source=homepage&utm_medium=cta&utm_campaign=free_snapshot`
 
       track("marketing_cta_clicked", { 
-        url: data.url, 
+        url: normalizedUrl, 
         source: "hero",
         destination: toolUrl 
       })
 
-      // Navigate to public snapshot tool
+      // Navigate to snapshot
       window.location.href = toolUrl
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Something went wrong"
-      track("marketing_routing_error", { url: data.url, error: message })
+      track("marketing_routing_error", { url: normalizedUrl || data.url, error: message })
       form.setError("url", { message })
       setIsSubmitting(false)
     }
@@ -76,7 +88,7 @@ export function OfferSnapshotForm({
                   <div className="relative">
                     <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                      placeholder="https://competitor-store.com"
+                      placeholder="competitor-store.com"
                       className="h-14 pl-12 pr-4 text-base sm:h-12"
                       {...field}
                       disabled={isSubmitting}
