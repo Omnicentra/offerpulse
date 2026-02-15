@@ -123,8 +123,102 @@ function SnapshotPageContent() {
         </Container>
       </section>
 
+      {/* Early Access Options - MOVED TO TOP */}
+      <section className="py-16">
+        <Container className="max-w-5xl">
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-bold text-slate-900">Get Your Real Report (Early Access)</h2>
+            <p className="mt-4 text-lg text-slate-600">
+              We're validating demand before we scale monitoring infrastructure. Early access slots are limited.
+            </p>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-2">
+            {/* Free Queue */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Join the Free Queue</CardTitle>
+                <p className="text-sm text-slate-600">Get notified when we open more slots.</p>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleFreeQueue} className="space-y-4">
+                  <div>
+                    <Label htmlFor="free-email">Email</Label>
+                    <Input
+                      id="free-email"
+                      type="email"
+                      placeholder="you@brand.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? "Joining..." : "Join free queue"}
+                  </Button>
+                  <p className="text-xs text-slate-500 text-center">
+                    No spam. One email when we open access.
+                  </p>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* Deposit Option */}
+            <Card className="ring-2 ring-blue-600">
+              <CardHeader>
+                <Badge className="mb-2 w-fit bg-blue-600">Recommended</Badge>
+                <CardTitle>Reserve Early Access (£{depositAmount} refundable deposit)</CardTitle>
+                <p className="text-sm text-slate-600">Skip the queue and lock in your slot.</p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <ul className="space-y-3">
+                  <li className="flex gap-3">
+                    <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
+                    <span className="text-sm text-slate-700">Reserve a guaranteed early access slot</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
+                    <span className="text-sm text-slate-700">Fully refundable before launch</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
+                    <span className="text-sm text-slate-700">£{depositAmount} credited to your first paid month</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
+                    <span className="text-sm text-slate-700">Founding access priority (limited)</span>
+                  </li>
+                </ul>
+
+                <Button onClick={handleDepositCheckout} size="lg" className="w-full">
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Reserve my slot for £{depositAmount}
+                </Button>
+
+                <p className="text-xs text-center text-slate-500">
+                  Secure checkout via Stripe. No lock-in.
+                </p>
+                <p className="text-sm text-center text-slate-700">
+                  If OfferPulse doesn't ship what you need, we refund. Simple.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Why Deposit */}
+          <Card className="mt-12 border-blue-200 bg-blue-50">
+            <CardContent className="p-8">
+              <h3 className="mb-3 font-semibold text-slate-900">Why a deposit?</h3>
+              <p className="text-sm text-slate-700 leading-relaxed">
+                We're deliberately not scaling the backend until we know there's real demand. Deposits help us prioritise serious users and build the right monitoring first.
+              </p>
+            </CardContent>
+          </Card>
+        </Container>
+      </section>
+
       {/* URL Input (Optional) */}
-      <section className="border-b border-slate-200 py-12">
+      <section className="border-b border-slate-200 bg-slate-50 py-12">
         <Container className="max-w-2xl">
           <Card>
             <CardHeader>
@@ -259,99 +353,6 @@ function SnapshotPageContent() {
         </Container>
       </section>
 
-      {/* Early Access Options */}
-      <section className="py-16">
-        <Container className="max-w-5xl">
-          <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold text-slate-900">Get Your Real Report (Early Access)</h2>
-            <p className="mt-4 text-lg text-slate-600">
-              We're validating demand before we scale monitoring infrastructure. Early access slots are limited.
-            </p>
-          </div>
-
-          <div className="grid gap-8 lg:grid-cols-2">
-            {/* Free Queue */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Join the Free Queue</CardTitle>
-                <p className="text-sm text-slate-600">Get notified when we open more slots.</p>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleFreeQueue} className="space-y-4">
-                  <div>
-                    <Label htmlFor="free-email">Email</Label>
-                    <Input
-                      id="free-email"
-                      type="email"
-                      placeholder="you@brand.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? "Joining..." : "Join free queue"}
-                  </Button>
-                  <p className="text-xs text-slate-500 text-center">
-                    No spam. One email when we open access.
-                  </p>
-                </form>
-              </CardContent>
-            </Card>
-
-            {/* Deposit Option */}
-            <Card className="ring-2 ring-blue-600">
-              <CardHeader>
-                <Badge className="mb-2 w-fit bg-blue-600">Recommended</Badge>
-                <CardTitle>Reserve Early Access (£{depositAmount} refundable deposit)</CardTitle>
-                <p className="text-sm text-slate-600">Skip the queue and lock in your slot.</p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <ul className="space-y-3">
-                  <li className="flex gap-3">
-                    <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span className="text-sm text-slate-700">Reserve a guaranteed early access slot</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span className="text-sm text-slate-700">Fully refundable before launch</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span className="text-sm text-slate-700">£{depositAmount} credited to your first paid month</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span className="text-sm text-slate-700">Founding access priority (limited)</span>
-                  </li>
-                </ul>
-
-                <Button onClick={handleDepositCheckout} size="lg" className="w-full">
-                  <Sparkles className="mr-2 h-5 w-5" />
-                  Reserve my slot for £{depositAmount}
-                </Button>
-
-                <p className="text-xs text-center text-slate-500">
-                  Secure checkout via Stripe. No lock-in.
-                </p>
-                <p className="text-sm text-center text-slate-700">
-                  If OfferPulse doesn't ship what you need, we refund. Simple.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Why Deposit */}
-          <Card className="mt-12 border-blue-200 bg-blue-50">
-            <CardContent className="p-8">
-              <h3 className="mb-3 font-semibold text-slate-900">Why a deposit?</h3>
-              <p className="text-sm text-slate-700 leading-relaxed">
-                We're deliberately not scaling the backend until we know there's real demand. Deposits help us prioritise serious users and build the right monitoring first.
-              </p>
-            </CardContent>
-          </Card>
-        </Container>
-      </section>
 
       {/* Social Proof */}
       <section className="border-t border-slate-200 bg-slate-50 py-16">
