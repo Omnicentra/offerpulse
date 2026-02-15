@@ -125,7 +125,7 @@ function SnapshotPageContent() {
             <Card className="order-1 ring-2 ring-blue-600 lg:order-2">
               <CardHeader>
                 <Badge className="mb-2 w-fit bg-blue-600">Recommended</Badge>
-                <CardTitle>Get my first report for £{depositAmount} (credited to month 1)</CardTitle>
+                <CardTitle>Get my refundable first report for £{depositAmount}</CardTitle>
                 <p className="text-sm font-medium text-slate-700">
                   Delivered in 2 working days while automation is closed.
                 </p>
