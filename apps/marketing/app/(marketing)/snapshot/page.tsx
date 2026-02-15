@@ -107,23 +107,7 @@ function SnapshotPageContent() {
         </div>
       )}
 
-      {/* Header */}
-      <section className="border-b border-slate-200 bg-gradient-to-b from-blue-50 to-white py-16 sm:py-24">
-        <Container className="max-w-4xl">
-          <Badge className="mb-6">Early Access Preview</Badge>
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-            Competitor Offer Snapshot
-          </h1>
-          <p className="mt-6 text-xl text-slate-700 leading-relaxed">
-            See the offer mechanics competitors use to win at checkout: discount codes, free shipping thresholds, bundles, gifts, and cart incentives.
-          </p>
-          <p className="mt-4 text-sm text-slate-600">
-            This is a preview of the report you'll get in early access. We're opening a limited number of slots.
-          </p>
-        </Container>
-      </section>
-
-      {/* Early Access Options - MOVED TO TOP */}
+      {/* Early Access Options - AT VERY TOP */}
       <section className="py-16">
         <Container className="max-w-5xl">
           <div className="mb-8 text-center">
@@ -221,6 +205,22 @@ function SnapshotPageContent() {
               </p>
             </CardContent>
           </Card>
+        </Container>
+      </section>
+
+      {/* Header/Description - MOVED BELOW SIGNUP */}
+      <section className="border-b border-slate-200 bg-gradient-to-b from-blue-50 to-white py-12 sm:py-16">
+        <Container className="max-w-4xl">
+          <Badge className="mb-4">Early Access Preview</Badge>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            What is Competitor Offer Snapshot?
+          </h2>
+          <p className="mt-4 text-lg text-slate-700 leading-relaxed">
+            See the offer mechanics competitors use to win at checkout: discount codes, free shipping thresholds, bundles, gifts, and cart incentives.
+          </p>
+          <p className="mt-3 text-sm text-slate-600">
+            This is a preview of the report format you'll get in early access.
+          </p>
         </Container>
       </section>
 
