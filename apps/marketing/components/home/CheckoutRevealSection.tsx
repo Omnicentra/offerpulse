@@ -35,7 +35,7 @@ export function CheckoutRevealSection() {
 
             <div className="mt-8">
               <Button asChild size="lg">
-                <Link href="/free-tools/offer-snapshot/tool">Generate free snapshot</Link>
+                <Link href="/snapshot">Generate free snapshot</Link>
               </Button>
             </div>
           </div>

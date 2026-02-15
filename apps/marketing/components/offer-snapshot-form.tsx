@@ -43,8 +43,8 @@ export function OfferSnapshotForm({
       // Store competitor URL in session storage as fallback
       storeCompetitorUrl(data.url)
 
-      // Route to public snapshot tool with URL pre-filled
-      const toolUrl = `/free-tools/offer-snapshot/tool?url=${encodeURIComponent(data.url)}&utm_source=homepage&utm_medium=cta&utm_campaign=free_snapshot`
+      // Route to snapshot early access page
+      const toolUrl = `/snapshot?url=${encodeURIComponent(data.url)}&utm_source=homepage&utm_medium=cta&utm_campaign=free_snapshot`
 
       track("marketing_cta_clicked", { 
         url: data.url, 
