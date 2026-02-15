@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getToolBySlug } from "@/lib/tools/registry";
 import { buildAppSignupUrl } from "@offerpulse/lib/routing";
 import { calculateOfferScore, getScoreInterpretation, getMechanicCount } from "@/lib/tools/scoring";
+import { normalizeUrl, validateUrl } from "@/lib/url-helpers";
 import { ScoreSummary } from "@/components/snapshot-report/ScoreSummary";
 import { ScanProgress } from "@/components/snapshot-report/ScanProgress";
 import { ReportHeader } from "@/components/snapshot-report/ReportHeader";
@@ -66,11 +67,21 @@ export default function ToolPage() {
     setError(null);
     setResult(null);
 
+    // Normalize and validate URL
+    const normalizedUrl = normalizeUrl(url);
+    const validation = validateUrl(url);
+
+    if (!validation.ok || !normalizedUrl) {
+      setError(validation.reason || "Enter a valid store URL (e.g. brand.com)");
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch("/api/tools/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url: normalizedUrl }),
       });
 
       const data = await response.json();
@@ -326,8 +337,8 @@ function generateRecommendations(offers: ExtractedOffer) {
                     <Label htmlFor="url">Store URL</Label>
                     <Input
                       id="url"
-                      type="url"
-                      placeholder="https://competitor-store.com"
+                      type="text"
+                      placeholder="competitor-store.com"
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
                       required
