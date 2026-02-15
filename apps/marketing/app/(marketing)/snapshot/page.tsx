@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Container } from "@/components/container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,10 +18,12 @@ import {
 import { RefundPolicyDialog } from "@/components/RefundPolicyDialog";
 import { CheckCircle, AlertCircle, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { trackMetaEvent } from "@/components/MetaPixel";
 
 function SnapshotPageContent() {
   const searchParams = useSearchParams();
   const cancelled = searchParams.get("cancelled");
+  const sessionId = searchParams.get("session_id");
 
   const [url, setUrl] = useState("");
   const [email, setEmail] = useState("");
@@ -28,6 +31,75 @@ function SnapshotPageContent() {
   const [showRefundPolicy, setShowRefundPolicy] = useState(false);
 
   const { toast } = useToast();
+
+  // Track purchase event and clean URL when session_id is present
+  useEffect(() => {
+    if (sessionId) {
+      trackMetaEvent("Purchase", {
+        value: 19.0,
+        currency: "GBP",
+      });
+      
+      // Replace URL to remove session_id, preventing back navigation to checkout
+      window.history.replaceState({}, "", "/snapshot");
+    }
+  }, [sessionId]);
+
+  // Show success view if session_id is present
+  if (sessionId) {
+    return (
+      <div className="min-h-screen">
+        <section className="border-b border-slate-200 bg-gradient-to-b from-green-50 to-white py-24">
+          <Container className="max-w-2xl text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            <h1 className="mt-6 text-4xl font-bold text-slate-900">Slot Reserved ✅</h1>
+            <p className="mt-4 text-xl text-slate-700">
+              You&apos;ve reserved early access to OfferPulse. We&apos;ll email you when your slot is ready.
+            </p>
+          </Container>
+        </section>
+
+        <section className="py-16">
+          <Container className="max-w-3xl">
+            <Card>
+              <CardContent className="p-8">
+                <h2 className="mb-6 text-xl font-semibold text-slate-900">What happens next</h2>
+                <ul className="space-y-4">
+                  <li className="flex gap-3">
+                    <CheckCircle className="h-6 w-6 flex-shrink-0 text-green-600" />
+                    <span className="text-slate-700">You&apos;ll receive an email confirmation now</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <CheckCircle className="h-6 w-6 flex-shrink-0 text-green-600" />
+                    <span className="text-slate-700">Early access slots are opened in batches</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <CheckCircle className="h-6 w-6 flex-shrink-0 text-green-600" />
+                    <span className="text-slate-700">Your £19 will be credited to your first paid month at launch</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <CheckCircle className="h-6 w-6 flex-shrink-0 text-green-600" />
+                    <span className="text-slate-700">Want a refund before launch? Reply to the email and we&apos;ll sort it</span>
+                  </li>
+                </ul>
+
+                <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+                  <Button asChild size="lg" className="flex-1">
+                    <Link href="/">Back to homepage</Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg" className="flex-1">
+                    <Link href="/how-it-works">View what OfferPulse tracks</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </Container>
+        </section>
+      </div>
+    );
+  }
 
   const handleFreeQueue = async (e: React.FormEvent) => {
     e.preventDefault();

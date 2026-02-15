@@ -53,7 +53,7 @@ export async function POST(request: Request) {
           enabled: true,
         },
       },
-      success_url: `${baseUrl}/snapshot/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${baseUrl}/snapshot?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/snapshot?cancelled=true`,
       ...(email && { customer_email: email }),
       metadata: {

@@ -5,6 +5,9 @@ import Script from "next/script";
 const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "2167386017403313";
 
 export function MetaPixel() {
+  if (process.env.NODE_ENV === "development") {
+    return null;
+  }
   return (
     <>
       <Script id="meta-pixel" strategy="afterInteractive">
@@ -36,6 +39,9 @@ export function MetaPixel() {
 
 // Helper function to track custom events
 export function trackMetaEvent(eventName: string, params?: Record<string, any>) {
+  if (process.env.NODE_ENV === "development") {
+    return;
+  }
   if (typeof window !== "undefined" && (window as any).fbq) {
     (window as any).fbq("track", eventName, params);
   }
