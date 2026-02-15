@@ -16,13 +16,13 @@ export function TestimonialCard({ quote, role, image, className }: TestimonialCa
   return (
     <Card
       className={cn(
-        "relative overflow-hidden border-border bg-surface transition-all hover:shadow-soft-lg hover:-translate-y-1",
+        "relative overflow-hidden border-border bg-white transition-all hover:shadow-soft-lg hover:-translate-y-1",
         className
       )}
     >
-      <CardContent className="p-6">
+      <CardContent className={cn("p-6", image && "pb-32 sm:pb-24")}>
         <Quote className="mb-4 h-7 w-7 text-primary/30" aria-hidden />
-        <p className="text-base leading-relaxed text-ink pr-24">
+        <p className="text-base leading-relaxed text-ink">
           "{quote}"
         </p>
         <p className="mt-5 text-sm font-medium text-body">
@@ -30,16 +30,18 @@ export function TestimonialCard({ quote, role, image, className }: TestimonialCa
         </p>
       </CardContent>
       
-      {/* Testimonial Image - Bottom Right, Half Card Height */}
+      {/* Testimonial Image - Bottom Right with white background blend */}
       {image && (
-        <div className="absolute bottom-0 right-0 h-1/2 w-32 overflow-hidden rounded-tl-2xl">
-          <Image
-            src={image}
-            alt={role}
-            fill
-            className="object-cover object-top"
-            sizes="128px"
-          />
+        <div className="absolute bottom-0 right-0 h-40 w-32 overflow-hidden rounded-tl-3xl bg-white">
+          <div className="relative h-full w-full">
+            <Image
+              src={image}
+              alt={role}
+              fill
+              className="object-cover object-top"
+              sizes="128px"
+            />
+          </div>
         </div>
       )}
     </Card>
