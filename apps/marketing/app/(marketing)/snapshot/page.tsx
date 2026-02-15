@@ -218,7 +218,7 @@ function SnapshotPageContent() {
             <CardContent className="p-8">
               <h3 className="mb-3 font-semibold text-slate-900">Why a deposit?</h3>
               <p className="text-sm text-slate-700 leading-relaxed">
-                We're deliberately not scaling the backend until we know there's real demand. Deposits help us prioritise serious users and build the right monitoring first.
+                This keeps early access fair. The deposit reserves your slot, gets you prioritised, and is refundable anytime before launch. If we don't ship what you need, we refund. Simple.
               </p>
             </CardContent>
           </Card>
