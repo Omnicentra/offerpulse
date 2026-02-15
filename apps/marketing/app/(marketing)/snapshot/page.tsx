@@ -21,6 +21,7 @@ function SnapshotPageContent() {
   const [url, setUrl] = useState("");
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showRefundPolicy, setShowRefundPolicy] = useState(false);
 
   const { toast } = useToast();
 
@@ -116,8 +117,20 @@ function SnapshotPageContent() {
               We're opening limited slots while we validate demand. Reserve a slot to skip the queue.
             </p>
             <p className="mt-2 text-sm text-slate-500">
-              No lock-in. Refundable deposit. <Link href="/refund-policy" className="text-blue-600 hover:underline">Refund policy</Link>
+              No lock-in. Refundable deposit.{" "}
+              <button
+                onClick={() => setShowRefundPolicy(true)}
+                className="text-blue-600 hover:underline"
+              >
+                Refund policy
+              </button>
             </p>
+
+            {/* Refund Policy Dialog */}
+            <RefundPolicyDialog
+              open={showRefundPolicy}
+              onOpenChange={setShowRefundPolicy}
+            />
           </div>
 
           <div className="grid gap-8 lg:grid-cols-2">
