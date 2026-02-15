@@ -2,23 +2,14 @@ import { z } from "zod";
 
 /**
  * Offer Snapshot request validation
+ * Note: URL validation is now handled by normalizeUrl/validateUrl helpers
+ * This schema just ensures the field is not empty
  */
 export const offerSnapshotSchema = z.object({
   url: z
     .string()
     .min(1, "Please enter a URL")
-    .url("Please enter a valid URL")
-    .refine(
-      (url) => {
-        try {
-          const parsed = new URL(url);
-          return parsed.protocol === "http:" || parsed.protocol === "https:";
-        } catch {
-          return false;
-        }
-      },
-      { message: "URL must start with http:// or https://" }
-    ),
+    .trim(),
 });
 
 export type OfferSnapshotInput = z.infer<typeof offerSnapshotSchema>;
