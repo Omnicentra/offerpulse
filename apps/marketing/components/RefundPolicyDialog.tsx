@@ -17,7 +17,7 @@ interface RefundPolicyDialogProps {
 export function RefundPolicyDialog({ open, onOpenChange }: RefundPolicyDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-2xl">Refund Policy</DialogTitle>
           <DialogDescription>
@@ -25,7 +25,7 @@ export function RefundPolicyDialog({ open, onOpenChange }: RefundPolicyDialogPro
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 pb-4">
           {/* Main Promise */}
           <div className="rounded-lg bg-green-50 p-6">
             <div className="flex gap-3">
