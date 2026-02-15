@@ -37,9 +37,6 @@ export function CheckoutRevealSection() {
               <Button asChild size="lg">
                 <Link href="/free-tools/offer-snapshot/tool">Generate free snapshot</Link>
               </Button>
-              <p className="mt-3 text-xs text-body/70">
-                Charged in GBP (£) at checkout. Your bank converts automatically.
-              </p>
             </div>
           </div>
 
