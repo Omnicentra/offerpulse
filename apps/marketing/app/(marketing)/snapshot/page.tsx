@@ -126,10 +126,13 @@ function SnapshotPageContent() {
       {/* Early Access Options - MOVED TO TOP */}
       <section className="py-16">
         <Container className="max-w-5xl">
-          <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold text-slate-900">Get Your Real Report (Early Access)</h2>
+          <div className="mb-8 text-center">
+            <h2 className="text-3xl font-bold text-slate-900">Get the Full Competitor Promo Report</h2>
             <p className="mt-4 text-lg text-slate-600">
-              We're validating demand before we scale monitoring infrastructure. Early access slots are limited.
+              We're opening limited slots while we validate demand. Reserve a slot to skip the queue.
+            </p>
+            <p className="mt-2 text-sm text-slate-500">
+              No lock-in. Refundable deposit. <Link href="/refund-policy" className="text-blue-600 hover:underline">Refund policy</Link>
             </p>
           </div>
 
@@ -138,7 +141,9 @@ function SnapshotPageContent() {
             <Card>
               <CardHeader>
                 <CardTitle>Join the Free Queue</CardTitle>
-                <p className="text-sm text-slate-600">Get notified when we open more slots.</p>
+                <p className="text-sm text-slate-600">
+                  Get notified when we open 50 new slots. No report included.
+                </p>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleFreeQueue} className="space-y-4">
@@ -168,25 +173,27 @@ function SnapshotPageContent() {
               <CardHeader>
                 <Badge className="mb-2 w-fit bg-blue-600">Recommended</Badge>
                 <CardTitle>Reserve Early Access (£{depositAmount} refundable deposit)</CardTitle>
-                <p className="text-sm text-slate-600">Skip the queue and lock in your slot.</p>
+                <p className="text-sm font-medium text-slate-700">
+                  Get your first report within 24 hours (manual run while we scale automation)
+                </p>
               </CardHeader>
               <CardContent className="space-y-6">
                 <ul className="space-y-3">
                   <li className="flex gap-3">
                     <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span className="text-sm text-slate-700">Reserve a guaranteed early access slot</span>
+                    <span className="text-sm text-slate-700">Get your first report within 24 hours (manual)</span>
                   </li>
                   <li className="flex gap-3">
                     <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span className="text-sm text-slate-700">Fully refundable before launch</span>
+                    <span className="text-sm text-slate-700">Refund anytime before launch</span>
                   </li>
                   <li className="flex gap-3">
                     <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span className="text-sm text-slate-700">£{depositAmount} credited to your first paid month</span>
+                    <span className="text-sm text-slate-700">£{depositAmount} credited to your first month</span>
                   </li>
                   <li className="flex gap-3">
                     <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span className="text-sm text-slate-700">Founding access priority (limited)</span>
+                    <span className="text-sm text-slate-700">Priority access when automated monitoring opens</span>
                   </li>
                 </ul>
 
@@ -195,10 +202,10 @@ function SnapshotPageContent() {
                   Reserve my slot for £{depositAmount}
                 </Button>
 
-                <p className="text-xs text-center text-slate-500">
-                  Secure checkout via Stripe. No lock-in.
+                <p className="text-xs text-center text-slate-600">
+                  Secure checkout via Stripe. Instant confirmation email.
                 </p>
-                <p className="text-sm text-center text-slate-700">
+                <p className="text-sm text-center font-medium text-slate-700">
                   If OfferPulse doesn't ship what you need, we refund. Simple.
                 </p>
               </CardContent>
@@ -357,8 +364,11 @@ function SnapshotPageContent() {
       {/* Social Proof */}
       <section className="border-t border-slate-200 bg-slate-50 py-16">
         <Container className="max-w-4xl">
+          <p className="mb-4 text-center text-sm text-slate-600">
+            Built for Shopify brands and agencies
+          </p>
           <h2 className="mb-8 text-2xl font-bold text-slate-900 text-center">
-            Built for Shopify operators who hate discount wars
+            Track the levers competitors pull — not just price
           </h2>
           <div className="grid gap-8 sm:grid-cols-3">
             <Card>
