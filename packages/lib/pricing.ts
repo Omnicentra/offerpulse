@@ -31,33 +31,6 @@ export interface PricingPlan {
 
 export const PRICING_PLANS: PricingPlan[] = [
   {
-    id: "lite",
-    name: "Lite",
-    tagline: "Try OfferPulse on a small set of competitors",
-    monthlyPrice: 19,
-    yearlyPrice: 190, // 10 months (2 months free)
-    stripePriceIdMonthly: process.env.NEXT_PUBLIC_STRIPE_LITE_MONTHLY,
-    stripePriceIdYearly: process.env.NEXT_PUBLIC_STRIPE_LITE_YEARLY,
-    features: [
-      { text: "Track 2 competitors", included: true },
-      { text: "Daily checks", included: true },
-      { text: "Weekly digest email", included: true },
-      { text: "1 offer category", included: true },
-      { text: "Basic alerts", included: true },
-      { text: "Change history", included: false },
-      { text: "Exports", included: false },
-      { text: "1 seat", included: true },
-    ],
-    limits: {
-      competitors: 2,
-      checkFrequency: "daily",
-      offerCategories: 1,
-      historyDays: 0,
-      seats: 1,
-      alerts: ["email-basic"],
-    },
-  },
-  {
     id: "starter",
     name: "Starter",
     tagline: "For serious Shopify operators",
