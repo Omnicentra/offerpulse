@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { env } from "@/env";
 import { logger } from "@/lib/logger";
+import { captureEvent, identifyUser, shutdownPostHog } from "@/lib/posthog-server";
 
 export async function POST(req: Request) {
   const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
@@ -148,11 +149,46 @@ export async function POST(req: Request) {
                 "Checkout session completed — confirmation email sent",
                 { email: customerEmail }
               );
+
+              // Track checkout completion in PostHog (server-side)
+              captureEvent({
+                distinctId: customerEmail,
+                event: "checkout_completed",
+                properties: {
+                  session_id: session.id,
+                  amount_total: session.amount_total ? session.amount_total / 100 : undefined,
+                  currency: session.currency,
+                  payment_status: session.payment_status,
+                  competitor_url: competitorUrl,
+                  utm_source: utmSource,
+                  utm_medium: utmMedium,
+                  utm_campaign: utmCampaign,
+                },
+              });
+              identifyUser({
+                distinctId: customerEmail,
+                properties: {
+                  email: customerEmail,
+                  name: session.customer_details?.name,
+                  has_purchased: true,
+                },
+              });
+              await shutdownPostHog();
             } catch (error) {
               logger.error(
                 "Checkout session completed — failed to process purchase",
                 error
               );
+              // Track error in PostHog
+              captureEvent({
+                distinctId: customerEmail || session.id,
+                event: "checkout_processing_error",
+                properties: {
+                  session_id: session.id,
+                  error: error instanceof Error ? error.message : "Unknown error",
+                },
+              });
+              await shutdownPostHog();
             }
           }
           break;
@@ -162,6 +198,18 @@ export async function POST(req: Request) {
           console.log(
             `[Stripe Webhook] Checkout session expired: ${session.id}`
           );
+
+          // Track checkout expiration in PostHog (server-side)
+          const customerEmail = session.customer_email || session.customer_details?.email;
+          captureEvent({
+            distinctId: customerEmail || session.id,
+            event: "checkout_expired",
+            properties: {
+              session_id: session.id,
+              customer_email: customerEmail,
+            },
+          });
+          await shutdownPostHog();
           break;
         }
         case "payment_intent.succeeded": {
@@ -176,6 +224,20 @@ export async function POST(req: Request) {
           console.log(
             `[Stripe Webhook] Payment failed: ${paymentIntent.id}, ${paymentIntent.last_payment_error?.message ?? "unknown"}`
           );
+
+          // Track payment failure in PostHog (server-side)
+          captureEvent({
+            distinctId: paymentIntent.receipt_email || paymentIntent.id,
+            event: "payment_failed",
+            properties: {
+              payment_intent_id: paymentIntent.id,
+              error_message: paymentIntent.last_payment_error?.message,
+              error_code: paymentIntent.last_payment_error?.code,
+              amount: paymentIntent.amount ? paymentIntent.amount / 100 : undefined,
+              currency: paymentIntent.currency,
+            },
+          });
+          await shutdownPostHog();
           break;
         }
         default:
