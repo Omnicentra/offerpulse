@@ -9,7 +9,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email required" }, { status: 400 });
     }
 
-    // For now, log to console (replace with Supabase/DB in production)
+    // Log to console
     console.log("Free queue signup:", {
       email,
       competitorUrl,
@@ -20,8 +20,24 @@ export async function POST(request: Request) {
       timestamp: new Date().toISOString(),
     });
 
-    // TODO: Store in database
-    // await supabase.from('early_access_leads').insert({...})
+    try {
+      // Save to Airtable
+      const { createWaitlistRecord } = await import("@/lib/airtable");
+      await createWaitlistRecord({
+        email,
+        signupDate: new Date().toISOString().split("T")[0],
+        status: "Waiting",
+        competitorUrl,
+        utmSource,
+        utmMedium,
+        utmCampaign,
+      });
+
+      console.log(`Saved waitlist signup to Airtable for ${email}`);
+    } catch (error) {
+      console.error("Failed to save to Airtable:", error);
+      // Don't fail the request if Airtable save fails
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

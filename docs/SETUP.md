@@ -153,6 +153,6 @@ pnpm db:generate
 
 ## 🆘 Need Help?
 
-- Check `QUICK_START.md` for detailed instructions
-- See `IMPLEMENTATION_STATUS.md` for what's built
-- Review `MIGRATION_GUIDE.md` for marketing app details
+- Check [QUICK_START.md](./QUICK_START.md) for detailed instructions
+- See [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) for what's built
+- Review [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for marketing app details

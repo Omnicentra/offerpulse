@@ -16,7 +16,7 @@ Monorepo containing the OfferPulse marketing website and dashboard application.
 # Install dependencies
 pnpm install
 
-# Set up database (see SETUP.md for details)
+# Set up database (see docs/SETUP.md for details)
 cd apps/app
 pnpm db:push
 pnpm db:seed
@@ -61,10 +61,10 @@ offerpulse/
 
 ## 📚 Documentation
 
-- **[SETUP.md](./SETUP.md)** - Detailed setup instructions
-- **[QUICK_START.md](./QUICK_START.md)** - Getting started guide
-- **[IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md)** - What's built and what's remaining
-- **[MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)** - Marketing app migration details
+- **[docs/SETUP.md](./docs/SETUP.md)** - Detailed setup instructions
+- **[docs/QUICK_START.md](./docs/QUICK_START.md)** - Getting started guide
+- **[docs/IMPLEMENTATION_STATUS.md](./docs/IMPLEMENTATION_STATUS.md)** - What's built and what's remaining
+- **[docs/MIGRATION_GUIDE.md](./docs/MIGRATION_GUIDE.md)** - Marketing app migration details
 
 ## 🛠️ Tech Stack
 
@@ -125,7 +125,7 @@ Optional:
 
 ## 🐛 Troubleshooting
 
-See [SETUP.md](./SETUP.md) for troubleshooting guide.
+See [docs/SETUP.md](./docs/SETUP.md) for troubleshooting guide.
 
 ## 📝 License
 

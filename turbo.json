@@ -1,6 +1,17 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local"],
+  "globalEnv": [
+    "DOPPLER_CONFIG",
+    "DOPPLER_ENVIRONMENT",
+    "DOPPLER_PROJECT",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "STRIPE_PRICE_LOOKUP_KEY",
+    "RESEND_API_KEY",
+    "AIRTABLE_API_KEY",
+    "AIRTABLE_BASE_ID"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
