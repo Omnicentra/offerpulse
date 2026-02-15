@@ -10,7 +10,7 @@ export interface PlanFeature {
 }
 
 export interface PricingPlan {
-  id: "lite" | "starter" | "growth" | "agency";
+  id: "starter" | "growth" | "agency";
   name: string;
   tagline: string;
   monthlyPrice: number;
