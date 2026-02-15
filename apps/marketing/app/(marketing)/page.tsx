@@ -47,16 +47,19 @@ const testimonials = [
     quote:
       "We were reacting to competitor promos days late. Now we see changes the same morning and can adjust our own offers before lunch.",
     role: "DTC Operator, skincare brand",
+    image: "/testimonials/testimonial-1.png",
   },
   {
     quote:
       "Our clients expect us to know what's happening in their category. OfferPulse gives us the proof and the timeline — no more guesswork.",
     role: "Agency Owner, 12 Shopify stores",
+    image: "/testimonials/testimonial-2.png",
   },
   {
     quote:
       "The free shipping threshold alerts alone have paid for the tool. We matched a competitor's drop to £35 and saw AOV hold steady.",
     role: "Head of E‑commerce, fashion",
+    image: "/testimonials/testimonial-3.png",
   },
 ]
 
@@ -261,7 +264,7 @@ export default function HomePage() {
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {testimonials.map((t, i) => (
                 <ScrollReveal key={i} delay={i * 0.1}>
-                  <TestimonialCard quote={t.quote} role={t.role} />
+                  <TestimonialCard quote={t.quote} role={t.role} image={t.image} />
                 </ScrollReveal>
               ))}
             </div>

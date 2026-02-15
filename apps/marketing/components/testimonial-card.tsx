@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { Quote } from "lucide-react"
 import { cn } from "@offerpulse/lib/utils"
@@ -7,26 +8,40 @@ import { cn } from "@offerpulse/lib/utils"
 interface TestimonialCardProps {
   quote: string
   role: string
+  image?: string
   className?: string
 }
 
-export function TestimonialCard({ quote, role, className }: TestimonialCardProps) {
+export function TestimonialCard({ quote, role, image, className }: TestimonialCardProps) {
   return (
     <Card
       className={cn(
-        "border-border bg-surface transition-all hover:shadow-soft-lg hover:-translate-y-1",
+        "relative overflow-hidden border-border bg-surface transition-all hover:shadow-soft-lg hover:-translate-y-1",
         className
       )}
     >
       <CardContent className="p-6">
         <Quote className="mb-4 h-7 w-7 text-primary/30" aria-hidden />
-        <p className="text-base leading-relaxed text-ink">
+        <p className="text-base leading-relaxed text-ink pr-24">
           "{quote}"
         </p>
         <p className="mt-5 text-sm font-medium text-body">
           {role}
         </p>
       </CardContent>
+      
+      {/* Testimonial Image - Bottom Right, Half Card Height */}
+      {image && (
+        <div className="absolute bottom-0 right-0 h-1/2 w-32 overflow-hidden rounded-tl-2xl">
+          <Image
+            src={image}
+            alt={role}
+            fill
+            className="object-cover object-top"
+            sizes="128px"
+          />
+        </div>
+      )}
     </Card>
   )
 }
