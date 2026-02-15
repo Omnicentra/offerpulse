@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Container } from "@/components/container";
@@ -13,7 +13,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { CheckCircle, AlertCircle, Sparkles, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-export default function SnapshotPage() {
+function SnapshotPageContent() {
   const searchParams = useSearchParams();
   const cancelled = searchParams.get("cancelled");
   const abVariant = searchParams.get("ab") || "A";
