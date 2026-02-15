@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { env } from "@/env";
+import { logger } from "@/lib/logger";
 
 export async function POST(req: Request) {
   const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
+  
   if (!webhookSecret) {
     console.error("STRIPE_WEBHOOK_SECRET is not configured");
     return NextResponse.json(
@@ -15,21 +17,31 @@ export async function POST(req: Request) {
   let event: Stripe.Event;
 
   try {
-    const stripeSignature = req.headers.get("stripe-signature");
-    if (!stripeSignature) {
-      return NextResponse.json(
-        { message: "Missing Stripe-Signature header" },
-        { status: 400 }
-      );
-    }
-
     const body = await req.text();
     const stripe = new Stripe(env.STRIPE_SECRET_KEY);
-    event = stripe.webhooks.constructEvent(
-      body,
-      stripeSignature,
-      webhookSecret
-    );
+
+    if (process.env.NODE_ENV === "development") {
+      const testHeader = stripe.webhooks.generateTestHeaderString({
+        payload: body,
+        secret: webhookSecret,
+      });
+      event = stripe.webhooks.constructEvent(body, testHeader, webhookSecret);
+    } else {
+      const stripeSignature = req.headers.get("stripe-signature");
+      if (!stripeSignature) {
+        return NextResponse.json(
+          { message: "Missing Stripe-Signature header" },
+          { status: 400 }
+        );
+      }
+
+      
+      event = stripe.webhooks.constructEvent(
+        body,
+        stripeSignature,
+        webhookSecret
+      );
+    }
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
     if (err instanceof Error) {
@@ -53,10 +65,96 @@ export async function POST(req: Request) {
       switch (event.type) {
         case "checkout.session.completed": {
           const session = event.data.object as Stripe.Checkout.Session;
-          console.log(
-            `[Stripe Webhook] Checkout completed: session ${session.id}, payment_status=${session.payment_status}`
+
+          logger.info(
+            "Checkout session completed",
+            { sessionId: session.id, payment_status: session.payment_status }
           );
-          // TODO: Provision access, send confirmation email, update database
+
+          // Debug: log raw metadata to trace competitorUrl
+          logger.debug(
+            "Checkout session completed — raw metadata",
+            session.metadata ?? "(no metadata)"
+          );
+
+          const meta = session.metadata ?? {};
+          const competitorUrl =
+            (meta.competitorUrl as string | undefined) ??
+            (meta.competitor_url as string | undefined) ??
+            undefined;
+          const utmSource = (meta.utmSource as string | undefined) ?? undefined;
+          const utmMedium = (meta.utmMedium as string | undefined) ?? undefined;
+          const utmCampaign = (meta.utmCampaign as string | undefined) ?? undefined;
+
+          logger.debug(
+            "Checkout session completed — extracted metadata",
+            {
+              competitorUrl,
+              competitorUrlLength: competitorUrl?.length ?? 0,
+              utmSource,
+              utmMedium,
+              utmCampaign,
+            }
+          );
+
+          // Only process if payment was successful
+          if (session.payment_status === "paid") {
+            const customerEmail =
+              session.customer_email || session.customer_details?.email;
+
+            if (!customerEmail) {
+              logger.error("Checkout session completed — no customer email in session", {
+                sessionId: session.id,
+              });
+              break;
+            }
+
+            try {
+              const purchasePayload = {
+                contactEmail: customerEmail,
+                contactName: session.customer_details?.name || undefined,
+                competitorUrl: competitorUrl && competitorUrl.length > 0 ? competitorUrl : undefined,
+                purchaseDate: new Date().toISOString().split("T")[0],
+                sourceForm: "Snapshot Page - Stripe Checkout",
+                promoReportType: "£19 Competitor Promo Report",
+                stripeSessionId: session.id,
+                utmSource,
+                utmMedium,
+                utmCampaign,
+              };
+
+              logger.debug(
+                "Checkout session completed — Airtable payload",
+                purchasePayload
+              );
+
+              // Save to Airtable
+              const { createPurchaseRecord } = await import("@/lib/airtable");
+              await createPurchaseRecord(purchasePayload);
+
+              logger.info(
+                "Checkout session completed — saved to Airtable",
+                { email: customerEmail, competitorUrl: purchasePayload.competitorUrl }
+              );
+
+              // Send confirmation email
+              const { sendPurchaseConfirmation } = await import("@/lib/email");
+              await sendPurchaseConfirmation({
+                to: customerEmail,
+                sessionId: session.id,
+              });
+
+              logger.info(
+                "Checkout session completed — confirmation email sent",
+                { email: customerEmail }
+              );
+            } catch (error) {
+              logger.error(
+                "Checkout session completed — failed to process purchase",
+                error
+              );
+            }
+          }
           break;
         }
         case "checkout.session.expired": {

@@ -19,6 +19,7 @@ import { RefundPolicyDialog } from "@/components/RefundPolicyDialog";
 import { CheckCircle, AlertCircle, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { trackMetaEvent } from "@/components/MetaPixel";
+import { getStoredCompetitorUrl } from "@offerpulse/lib/routing";
 
 function SnapshotPageContent() {
   const searchParams = useSearchParams();
@@ -26,6 +27,21 @@ function SnapshotPageContent() {
   const sessionId = searchParams.get("session_id");
 
   const [url, setUrl] = useState("");
+
+  // Initialize URL from query param (from homepage form) or session storage fallback
+  useEffect(() => {
+    const urlParam = searchParams.get("url");
+    if (urlParam) {
+      try {
+        setUrl(decodeURIComponent(urlParam));
+      } catch {
+        setUrl(urlParam);
+      }
+    } else {
+      const stored = getStoredCompetitorUrl();
+      if (stored) setUrl(stored);
+    }
+  }, [searchParams]);
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showRefundPolicy, setShowRefundPolicy] = useState(false);
@@ -41,7 +57,7 @@ function SnapshotPageContent() {
       });
       
       // Replace URL to remove session_id, preventing back navigation to checkout
-      window.history.replaceState({}, "", "/snapshot");
+      window.history.replaceState({}, "", "/snapshot?session_id=" + sessionId);
     }
   }, [sessionId]);
 

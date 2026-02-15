@@ -1,23 +1,36 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { env } from "@/env";
+import { z } from "zod";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    
+    const schema = z.object({
+      email: z.string().optional().nullable(),
+      competitorUrl: z.string().min(1, "competitorUrl is required"),
+      utmSource: z.string().optional(),
+      utmMedium: z.string().optional(),
+      utmCampaign: z.string().optional(),
+    });
+
+    const parseResult = schema.safeParse(body);
+
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: parseResult.error.message || "Invalid input" },
+        { status: 400 }
+      );
+    }
+
     const {
       email,
       competitorUrl,
       utmSource,
       utmMedium,
       utmCampaign,
-    } = body as {
-      email?: string;
-      competitorUrl?: string;
-      utmSource?: string;
-      utmMedium?: string;
-      utmCampaign?: string;
-    };
+    } = parseResult.data;
 
     const stripe = new Stripe(env.STRIPE_SECRET_KEY);
 
@@ -57,7 +70,7 @@ export async function POST(request: Request) {
       cancel_url: `${baseUrl}/snapshot?cancelled=true`,
       ...(email && { customer_email: email }),
       metadata: {
-        competitorUrl: competitorUrl ?? "",
+        competitorUrl,
         utmSource: utmSource ?? "",
         utmMedium: utmMedium ?? "",
         utmCampaign: utmCampaign ?? "",

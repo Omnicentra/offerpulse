@@ -15,6 +15,21 @@ export const env = createEnv({
       .startsWith("whsec_", "STRIPE_WEBHOOK_SECRET must start with whsec_")
       .optional(),
     STRIPE_PRICE_LOOKUP_KEY: z.string().default("snapshot-report"),
+    RESEND_API_KEY: z
+      .string()
+      .min(1, "RESEND_API_KEY is required")
+      .refine(
+        (val) => val.startsWith("re_"),
+        "RESEND_API_KEY must start with re_"
+      ),
+    AIRTABLE_API_KEY: z
+      .string()
+      .min(1, "AIRTABLE_API_KEY is required")
+      .refine(
+        (val) => val.startsWith("pat"),
+        "AIRTABLE_API_KEY must start with pat"
+      ),
+    AIRTABLE_BASE_ID: z.string().default("app2FMikxa9F6erFY"),
   },
   clientPrefix: "NEXT_PUBLIC_",
   client: {
