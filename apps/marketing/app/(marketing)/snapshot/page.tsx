@@ -121,16 +121,76 @@ function SnapshotPageContent() {
           </div>
 
           <div className="grid gap-8 lg:grid-cols-2">
-            {/* Free Queue */}
-            <Card>
+            {/* Paid Option - First on Mobile */}
+            <Card className="order-1 ring-2 ring-blue-600 lg:order-2">
               <CardHeader>
-                <CardTitle>Join the Free Queue</CardTitle>
+                <Badge className="mb-2 w-fit bg-blue-600">Recommended</Badge>
+                <CardTitle>Get my first report for £{depositAmount} (credited to month 1)</CardTitle>
+                <p className="text-sm font-medium text-slate-700">
+                  Delivered in 2 working days while automation is closed.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* What You Get */}
+                <div>
+                  <p className="mb-3 text-sm font-semibold text-slate-900">Your first report includes:</p>
+                  <ul className="space-y-2.5">
+                    <li className="flex gap-3">
+                      <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
+                      <span className="text-sm text-slate-700">Full promo stack (discounts, shipping, bundles, gifts, cart incentives)</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
+                      <span className="text-sm text-slate-700">Evidence screenshots + where it appears (PDP/cart/checkout)</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
+                      <span className="text-sm text-slate-700">Codes and thresholds detected</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
+                      <span className="text-sm text-slate-700">3 suggested counter-moves to protect CVR and AOV</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
+                      <span className="text-sm text-slate-700">Priority access when automated monitoring opens</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <Button onClick={handleDepositCheckout} size="lg" className="w-full" data-evt="early_access_paid_click">
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Get my first report for £{depositAmount}
+                </Button>
+
+                {/* Trust Elements */}
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-slate-600">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                    <span>Secure checkout via Stripe</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                    <span>Refund anytime before launch</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                    <span>We never share your competitor list</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Free Queue - Second on Mobile */}
+            <Card className="order-2 lg:order-1">
+              <CardHeader>
+                <CardTitle>Join the Waitlist (no report included)</CardTitle>
                 <p className="text-sm text-slate-600">
-                  Get notified when we open 50 new slots. No report included.
+                  Get notified when we open more report slots.
                 </p>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleFreeQueue} className="space-y-4">
+                <form onSubmit={handleFreeQueue} className="space-y-4" data-evt="early_access_waitlist_submit">
                   <div>
                     <Label htmlFor="free-email">Email</Label>
                     <Input
@@ -142,56 +202,13 @@ function SnapshotPageContent() {
                       required
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? "Joining..." : "Join free queue"}
+                  <Button type="submit" variant="outline" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? "Joining..." : "Join waitlist"}
                   </Button>
                   <p className="text-xs text-slate-500 text-center">
-                    No spam. One email when we open access.
+                    No spam. One email when slots open.
                   </p>
                 </form>
-              </CardContent>
-            </Card>
-
-            {/* Deposit Option */}
-            <Card className="ring-2 ring-blue-600">
-              <CardHeader>
-                <Badge className="mb-2 w-fit bg-blue-600">Recommended</Badge>
-                <CardTitle>Reserve Early Access (£{depositAmount} refundable deposit)</CardTitle>
-                <p className="text-sm font-medium text-slate-700">
-                  Get your first report within 24 hours (manual run while we scale automation)
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <ul className="space-y-3">
-                  <li className="flex gap-3">
-                    <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span className="text-sm text-slate-700">Get your first report within 24 hours (manual)</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span className="text-sm text-slate-700">Refund anytime before launch</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span className="text-sm text-slate-700">£{depositAmount} credited to your first month</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span className="text-sm text-slate-700">Priority access when automated monitoring opens</span>
-                  </li>
-                </ul>
-
-                <Button onClick={handleDepositCheckout} size="lg" className="w-full">
-                  <Sparkles className="mr-2 h-5 w-5" />
-                  Reserve my slot for £{depositAmount}
-                </Button>
-
-                <p className="text-xs text-center text-slate-600">
-                  Secure checkout via Stripe. Instant confirmation email.
-                </p>
-                <p className="text-sm text-center font-medium text-slate-700">
-                  If OfferPulse doesn't ship what you need, we refund. Simple.
-                </p>
               </CardContent>
             </Card>
           </div>
