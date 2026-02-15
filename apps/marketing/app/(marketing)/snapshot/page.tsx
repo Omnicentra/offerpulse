@@ -400,20 +400,6 @@ function SnapshotPageContent() {
   );
 }
 
-}
-
-export default function SnapshotPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
-      </div>
-    }>
-      <SnapshotPageContent />
-    </Suspense>
-  );
-}
-
 const faqs = [
   {
     question: "Is the £19 deposit refundable?",
@@ -444,3 +430,15 @@ const faqs = [
     answer: "We store monitoring results (offer signals and evidence) to show history and changes. We don't sell competitor data.",
   },
 ];
+
+export default function SnapshotPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
+      </div>
+    }>
+      <SnapshotPageContent />
+    </Suspense>
+  );
+}
