@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     
     const schema = z.object({
       email: z.string().optional().nullable(),
-      competitorUrl: z.string().min(1, "competitorUrl is required"),
+      competitorUrl: z.string().optional().default(""),
       utmSource: z.string().optional(),
       utmMedium: z.string().optional(),
       utmCampaign: z.string().optional(),
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       cancel_url: `${baseUrl}/snapshot?cancelled=true`,
       ...(email && { customer_email: email }),
       metadata: {
-        competitorUrl,
+        competitorUrl: (competitorUrl ?? "").trim(),
         utmSource: utmSource ?? "",
         utmMedium: utmMedium ?? "",
         utmCampaign: utmCampaign ?? "",

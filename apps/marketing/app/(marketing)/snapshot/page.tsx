@@ -25,6 +25,8 @@ function SnapshotPageContent() {
   const searchParams = useSearchParams();
   const cancelled = searchParams.get("cancelled");
   const sessionId = searchParams.get("session_id");
+  // Track purchase event once and add refreshed param so we don't re-fire on refresh
+  const refreshed = searchParams.get("refreshed");
 
   const [url, setUrl] = useState("");
 
@@ -47,19 +49,19 @@ function SnapshotPageContent() {
   const [showRefundPolicy, setShowRefundPolicy] = useState(false);
 
   const { toast } = useToast();
-
-  // Track purchase event and clean URL when session_id is present
+  
   useEffect(() => {
-    if (sessionId) {
-      trackMetaEvent("Purchase", {
-        value: 19.0,
-        currency: "GBP",
-      });
-      
-      // Replace URL to remove session_id, preventing back navigation to checkout
-      window.history.replaceState({}, "", "/snapshot?session_id=" + sessionId);
-    }
-  }, [sessionId]);
+    if (!sessionId || refreshed === "true") return;
+    trackMetaEvent("Purchase", {
+      value: 19.0,
+      currency: "GBP",
+    });
+    window.history.replaceState(
+      {},
+      "",
+      `/snapshot?session_id=${sessionId}&refreshed=true`
+    );
+  }, [sessionId, refreshed]);
 
   // Show success view if session_id is present
   if (sessionId) {
