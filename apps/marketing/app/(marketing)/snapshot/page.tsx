@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { RefundPolicyDialog } from "@/components/RefundPolicyDialog";
 import { CheckCircle, AlertCircle, Sparkles, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
