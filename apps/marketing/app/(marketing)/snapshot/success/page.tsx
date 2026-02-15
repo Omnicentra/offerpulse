@@ -1,10 +1,21 @@
+"use client";
+
+import { useEffect } from "react";
 import Link from "next/link";
 import { Container } from "@/components/container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
+import { trackMetaEvent } from "@/components/MetaPixel";
 
 export default function SuccessPage() {
+  // Fire Purchase event on page load
+  useEffect(() => {
+    trackMetaEvent("Purchase", {
+      value: 19.0,
+      currency: "GBP",
+    });
+  }, []);
   return (
     <div className="min-h-screen">
       <section className="border-b border-slate-200 bg-gradient-to-b from-green-50 to-white py-24">

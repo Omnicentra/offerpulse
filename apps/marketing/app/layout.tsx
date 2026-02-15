@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
+import { MetaPixel } from "@/components/MetaPixel"
 import { CANONICAL_BASE_URL, SITE_CONFIG, ORGANIZATION, SOCIAL_LINKS } from "@/lib/seo/config"
 
 const inter = Inter({
@@ -127,6 +128,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen font-sans page-bg">
+        <MetaPixel />
         {children}
         <Toaster />
       </body>
