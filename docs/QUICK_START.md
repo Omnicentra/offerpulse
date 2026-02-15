@@ -157,6 +157,6 @@ Optional:
 
 ## 📖 Documentation
 
-- See `IMPLEMENTATION_STATUS.md` for detailed status
-- See `MIGRATION_GUIDE.md` for marketing app migration steps
-- See `README.md` for monorepo overview
+- See [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) for detailed status
+- See [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for marketing app migration steps
+- See [README.md](../README.md) for monorepo overview

@@ -89,4 +89,4 @@ pnpm dev
 ## 📚 More Help
 
 - See [SETUP.md](./SETUP.md) for detailed instructions
-- See [README.md](./README.md) for project overview
+- See [README.md](../README.md) for project overview

@@ -43,7 +43,7 @@ This will start:
 ### Dashboard App Database Errors
 - This is expected if you haven't set up the database yet
 - The app will still start, but features won't work
-- See SETUP.md for database setup instructions
+- See [SETUP.md](./SETUP.md) for database setup instructions
 
 ### Port Already in Use
 ```bash

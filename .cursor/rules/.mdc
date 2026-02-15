@@ -85,4 +85,18 @@ alwaysApply: false
   Ensure that pnpm is the default package manager for install dependencies
   
   Follow Next.js docs for Data Fetching, Rendering, and Routing.
+
+  Environment Variables (apps/marketing/env.ts)
+  - Use @t3-oss/env-core for type-safe, validated env vars. Define schema in apps/marketing/env.ts.
+  - Split into server (API keys, secrets) and client (NEXT_PUBLIC_*). Never expose server vars to client.
+  - Use createEnv with runtimeEnv: process.env and emptyStringAsUndefined: true.
+  - Validate server vars with Zod (e.g. STRIPE_SECRET_KEY starts with sk_, RESEND_API_KEY with re_).
+  - Import env from @/env (or apps/marketing/env.ts) only in server code (API routes, server components, server actions).
+  - Keep .env.local.example in sync with the env schema; never commit .env or .env.local.
+  - All env vars used by apps/marketing must be declared in turbo.json globalEnv so Turborepo passes them through and Vercel builds succeed.
+
+  Vercel + Turborepo Deployment
+  - Declare all server-side env vars from env.ts in turbo.json globalEnv (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_LOOKUP_KEY, RESEND_API_KEY, AIRTABLE_API_KEY, AIRTABLE_BASE_ID, etc.).
+  - This ensures Turborepo includes them in the build environment and cache key, preventing missing-env build failures on Vercel.
+  - Configure the same vars in Vercel project settings for each app (marketing, app).
   
