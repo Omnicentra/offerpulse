@@ -1,5 +1,5 @@
 import { createTRPCReact } from "@trpc/react-query";
-import type { AppRouter } from "@/src/server/trpc/routers/_app";
+import type { AppRouter } from "@/src/server/trpc/routers/root";
 
 /**
  * Create a client-side tRPC instance

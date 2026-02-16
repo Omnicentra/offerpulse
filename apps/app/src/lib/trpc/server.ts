@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createTRPCContext } from "@/src/server/trpc/trpc";
-import { appRouter, type AppRouter } from "@/src/server/trpc/routers/_app";
+import { appRouter, type AppRouter } from "@/src/server/trpc/routers/root";
 import { createCallerFactory } from "@trpc/server";
 import { headers } from "next/headers";
 

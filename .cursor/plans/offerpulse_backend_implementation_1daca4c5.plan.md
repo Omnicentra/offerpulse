@@ -25,25 +25,25 @@ todos:
     status: completed
   - id: setup-inngest
     content: Install Inngest, create client, setup API route, create job functions
-    status: in_progress
+    status: completed
   - id: implement-scraping
     content: Build web scraping service with Playwright, extractor, and screenshot capture
-    status: pending
+    status: completed
   - id: implement-change-detection
     content: Create change detection algorithm and integration
-    status: pending
+    status: completed
   - id: integrate-ai
     content: Setup OpenAI/Anthropic, implement recommendation generation
-    status: pending
+    status: completed
   - id: setup-alerts
     content: Implement email (Resend) and Slack notification services
-    status: pending
+    status: completed
   - id: implement-scheduler
     content: Create monitoring scheduler and capture pipeline
-    status: pending
+    status: completed
   - id: polish-production
     content: Add error handling, logging, environment variables, database seed
-    status: pending
+    status: completed
 isProject: false
 ---
 
