@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -30,6 +30,15 @@ function SignUpForm() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+
+  // Track signup page view on mount
+  useEffect(() => {
+    track("signup_page_viewed", {
+      has_competitor_url: !!competitorUrl,
+      competitor_url: competitorUrl || undefined,
+      referrer: typeof window !== "undefined" ? document.referrer : undefined,
+    })
+  }, [])
 
   const form = useForm<SignUpInput>({
     resolver: zodResolver(signUpSchema),

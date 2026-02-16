@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -41,6 +41,7 @@ import {
 } from "lucide-react"
 import { extractDomain } from "@offerpulse/lib/utils"
 import type { OfferSnapshotResponse } from "@/app/api/offer-snapshot/route"
+import { track } from "@/lib/analytics"
 
 const testimonials = [
   {
@@ -82,6 +83,14 @@ export default function HomePage() {
   const [submittedUrl, setSubmittedUrl] = useState<string>("")
   const [previewDomain, setPreviewDomain] = useState("competitor-store.com")
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly")
+
+  // Track landing page view on mount
+  useEffect(() => {
+    track("landing_page_viewed", {
+      page: "home",
+      referrer: typeof window !== "undefined" ? document.referrer : undefined,
+    })
+  }, [])
 
   const handleUrlChange = useCallback((rawUrl: string) => {
     setPreviewDomain(getPreviewDomain(rawUrl))
@@ -217,12 +226,35 @@ export default function HomePage() {
                         </p>
                       </div>
                       <div className="flex flex-wrap justify-center gap-3">
-                        <Button asChild size="lg" className="rounded-xl shadow-lg hover:shadow-xl">
+                        <Button 
+                          asChild 
+                          size="lg" 
+                          className="rounded-xl shadow-lg hover:shadow-xl"
+                          onClick={() => {
+                            track("landing_cta_clicked", {
+                              source: "snapshot_result",
+                              competitor_url: submittedUrl || snapshotData.domain,
+                              action: "start_trial"
+                            })
+                          }}
+                        >
                           <Link href={`/auth/sign-up?competitorUrl=${encodeURIComponent(submittedUrl || snapshotData.domain)}`}>
                             Start free trial →
                           </Link>
                         </Button>
-                        <Button asChild variant="outline" size="lg" className="rounded-xl">
+                        <Button 
+                          asChild 
+                          variant="outline" 
+                          size="lg" 
+                          className="rounded-xl"
+                          onClick={() => {
+                            track("landing_cta_clicked", {
+                              source: "snapshot_result",
+                              competitor_url: submittedUrl || snapshotData.domain,
+                              action: "view_pricing"
+                            })
+                          }}
+                        >
                           <Link href="/pricing">View pricing</Link>
                         </Button>
                       </div>
@@ -642,7 +674,15 @@ export default function HomePage() {
               },
             ].map((item, idx) => (
               <ScrollReveal key={idx} delay={idx * 0.05}>
-                <Link href={item.link}>
+                <Link 
+                  href={item.link}
+                  onClick={() => {
+                    track("landing_free_tool_clicked", {
+                      tool_link: item.link,
+                      hook_text: item.hook
+                    })
+                  }}
+                >
                   <Card className="h-full transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer">
                     <CardContent className="p-6">
                       <p className="text-sm font-medium leading-relaxed text-slate-700">
