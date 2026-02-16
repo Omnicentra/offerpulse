@@ -4,7 +4,7 @@ overview: Migrate from Prisma+mock data to a production-ready backend using Driz
 todos:
   - id: remove-prisma-setup-drizzle
     content: Remove Prisma, install Drizzle + dependencies, create database structure
-    status: pending
+    status: in_progress
   - id: create-db-schema
     content: Design and implement comprehensive Drizzle schema with all 15 tables
     status: pending
