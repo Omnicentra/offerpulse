@@ -13,7 +13,8 @@
     "db:migrate:prod": "NODE_ENV=production tsx src/server/db/migrate.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx src/server/db/seed.ts"
+    "db:seed": "pnpm with-env tsx src/server/db/seed.ts",
+    "with-env": "dotenv -e .env.local --"
   },
   "packageManager": "pnpm@9.0.0",
   "dependencies": {
@@ -34,9 +35,8 @@
     "@t3-oss/env-nextjs": "^0.13.10",
     "@tanstack/react-query": "^5.56.2",
     "@trpc/client": "^11.10.0",
-    "@trpc/next": "^11.10.0",
-    "@trpc/react-query": "^11.10.0",
     "@trpc/server": "^11.10.0",
+    "@trpc/tanstack-react-query": "^11.10.0",
     "better-auth": "^1.4.18",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -65,7 +65,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "bcryptjs": "^2.4.3",
-    "dotenv": "^16.4.7",
+    "dotenv": "^16.6.1",
     "drizzle-kit": "^0.31.9",
     "eslint": "^8",
     "eslint-config-next": "14.2.33",

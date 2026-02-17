@@ -15,8 +15,9 @@ import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { trpc } from "@/src/lib/trpc/client";
+import { useTRPC } from "@/src/lib/trpc/client";
 import { useWorkspace } from "@/src/providers/workspace-provider";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Pause, Play, Plus, Search, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -25,46 +26,55 @@ export default function CompetitorsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { workspaceId } = useWorkspace();
-  const utils = trpc.useUtils();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused">("all");
   const [competitorToDelete, setCompetitorToDelete] = useState<string | null>(null);
 
-  const { data: competitors, isLoading } = trpc.competitors.list.useQuery(
-    { workspaceId: workspaceId! },
-    { enabled: !!workspaceId }
+  const { data: competitors, isLoading } = useQuery(
+    trpc.competitors.list.queryOptions(
+      { workspaceId: workspaceId! },
+      { enabled: !!workspaceId }
+    )
   );
 
-  const { data: allChanges } = trpc.changeEvents.list.useQuery(
-    { workspaceId: workspaceId! },
-    { enabled: !!workspaceId }
+  const { data: allChanges } = useQuery(
+    trpc.changeEvents.list.queryOptions(
+      { workspaceId: workspaceId! },
+      { enabled: !!workspaceId }
+    )
   );
 
-  const deleteMutation = trpc.competitors.delete.useMutation({
-    onSuccess: () => {
-      utils.competitors.list.invalidate();
-      toast({
-        title: "Competitor deleted",
-        description: "The competitor has been removed.",
-      });
-      setCompetitorToDelete(null);
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete competitor.",
-        variant: "destructive",
-      });
-    },
-  });
+  const deleteMutation = useMutation(
+    trpc.competitors.delete.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.competitors.list.queryFilter());
+        toast({
+          title: "Competitor deleted",
+          description: "The competitor has been removed.",
+        });
+        setCompetitorToDelete(null);
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to delete competitor.",
+          variant: "destructive",
+        });
+      },
+    })
+  );
 
-  const toggleActiveMutation = trpc.competitors.toggleStatus.useMutation({
-    onSuccess: () => {
-      utils.competitors.list.invalidate();
-    },
-  });
+  const toggleActiveMutation = useMutation(
+    trpc.competitors.toggleStatus.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.competitors.list.queryFilter());
+      },
+    })
+  );
 
   // Get all unique tags
   const allTags = Array.from(

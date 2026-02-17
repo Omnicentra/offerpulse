@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { trpc } from "@/src/lib/trpc/client";
+import { useTRPC } from "@/src/lib/trpc/client";
 import { useWorkspace } from "@/src/providers/workspace-provider";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 type ChangeEventType =
   | "PROMO"
@@ -21,11 +22,14 @@ type ChangeEventType =
 export default function AlertsPage() {
   const { toast } = useToast();
   const { workspaceId } = useWorkspace();
-  const utils = trpc.useUtils();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  const { data: settings, isLoading } = trpc.alerts.get.useQuery(
-    { workspaceId: workspaceId! },
-    { enabled: !!workspaceId }
+  const { data: settings, isLoading } = useQuery(
+    trpc.alerts.get.queryOptions(
+      { workspaceId: workspaceId! },
+      { enabled: !!workspaceId }
+    )
   );
 
   const [localSettings, setLocalSettings] = useState(settings);
@@ -37,38 +41,42 @@ export default function AlertsPage() {
     }
   }, [settings]);
 
-  const updateMutation = trpc.alerts.update.useMutation({
-    onSuccess: () => {
-      utils.alerts.get.invalidate();
-      toast({
-        title: "Settings saved",
-        description: "Your alert settings have been updated.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update settings",
-        variant: "destructive",
-      });
-    },
-  });
+  const updateMutation = useMutation(
+    trpc.alerts.update.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.alerts.get.queryFilter());
+        toast({
+          title: "Settings saved",
+          description: "Your alert settings have been updated.",
+        });
+      },
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to update settings",
+          variant: "destructive",
+        });
+      },
+    })
+  );
 
-  const testMutation = trpc.alerts.test.useMutation({
-    onSuccess: (result) => {
-      toast({
-        title: result.message,
-        description: "Check your inbox or Slack channel",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Test failed",
-        description: error.message || "Failed to send test notification",
-        variant: "destructive",
-      });
-    },
-  });
+  const testMutation = useMutation(
+    trpc.alerts.test.mutationOptions({
+      onSuccess: (result) => {
+        toast({
+          title: result.message,
+          description: "Check your inbox or Slack channel",
+        });
+      },
+      onError: (error) => {
+        toast({
+          title: "Test failed",
+          description: error.message || "Failed to send test notification",
+          variant: "destructive",
+        });
+      },
+    })
+  );
 
   const handleSave = () => {
     if (!localSettings || !workspaceId) return;
@@ -136,7 +144,7 @@ export default function AlertsPage() {
         {localSettings.emailEnabled && (
           <div className="mt-4 rounded-lg bg-blue-50 p-4">
             <p className="text-sm text-blue-900">
-              ✉️ Alerts will be sent to your registered email
+              Alerts will be sent to your registered email
             </p>
           </div>
         )}

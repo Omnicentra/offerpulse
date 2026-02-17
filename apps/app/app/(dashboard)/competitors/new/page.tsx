@@ -10,9 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { trpc } from "@/src/lib/trpc/client";
+import { useTRPC } from "@/src/lib/trpc/client";
 import { useWorkspace } from "@/src/providers/workspace-provider";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, Plus } from "lucide-react";
 
 const competitorSchema = z.object({
@@ -33,7 +34,8 @@ export default function NewCompetitorPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { workspaceId } = useWorkspace();
-  const utils = trpc.useUtils();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
@@ -86,23 +88,25 @@ export default function NewCompetitorPage() {
     setTags(tags.filter((t) => t !== tagToRemove));
   };
 
-  const createMutation = trpc.competitors.create.useMutation({
-    onSuccess: (competitor) => {
-      utils.competitors.list.invalidate();
-      toast({
-        title: "Competitor added",
-        description: `${competitor.name} is now being monitored.`,
-      });
-      router.push(`/competitors/${competitor.id}`);
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to add competitor",
-        variant: "destructive",
-      });
-    },
-  });
+  const createMutation = useMutation(
+    trpc.competitors.create.mutationOptions({
+      onSuccess: (competitor) => {
+        queryClient.invalidateQueries(trpc.competitors.list.queryFilter());
+        toast({
+          title: "Competitor added",
+          description: `${competitor.name} is now being monitored.`,
+        });
+        router.push(`/competitors/${competitor.id}`);
+      },
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to add competitor",
+          variant: "destructive",
+        });
+      },
+    })
+  );
 
   const onSubmit = (data: CompetitorForm) => {
     if (!workspaceId) return;
@@ -240,7 +244,7 @@ export default function NewCompetitorPage() {
               </div>
               {frequency === "1h" && (
                 <p className="text-xs text-slate-600">
-                  💡 Hourly monitoring provides the most real-time insights for fast-moving competitors
+                  Hourly monitoring provides the most real-time insights for fast-moving competitors
                 </p>
               )}
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -8,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChangeTypeBadge } from "@/components/ui/change-type-badge";
 import { ConfidenceBadge } from "@/components/ui/confidence-badge";
 import { Button } from "@/components/ui/button";
-import { trpc } from "@/src/lib/trpc/client";
+import { useTRPC } from "@/src/lib/trpc/client";
 import { useWorkspace } from "@/src/providers/workspace-provider";
 import { 
   TrendingUp, 
@@ -32,25 +33,34 @@ const formatDistanceToNow = (date: Date) => {
 export default function OverviewPage() {
   const router = useRouter();
   const { workspaceId } = useWorkspace();
+  const trpc = useTRPC();
 
-  const { data: competitors, isLoading: isLoadingCompetitors } = trpc.competitors.list.useQuery(
-    { workspaceId: workspaceId! },
-    { enabled: !!workspaceId }
+  const { data: competitors, isLoading: isLoadingCompetitors } = useQuery(
+    trpc.competitors.list.queryOptions(
+      { workspaceId: workspaceId! },
+      { enabled: !!workspaceId }
+    )
   );
 
-  const { data: changeEvents, isLoading: isLoadingChanges } = trpc.changeEvents.list.useQuery(
-    { workspaceId: workspaceId! },
-    { enabled: !!workspaceId }
+  const { data: changeEvents, isLoading: isLoadingChanges } = useQuery(
+    trpc.changeEvents.list.queryOptions(
+      { workspaceId: workspaceId! },
+      { enabled: !!workspaceId }
+    )
   );
 
-  const { data: recommendations, isLoading: isLoadingRecs } = trpc.recommendations.list.useQuery(
-    { workspaceId: workspaceId! },
-    { enabled: !!workspaceId }
+  const { data: recommendations, isLoading: isLoadingRecs } = useQuery(
+    trpc.recommendations.list.queryOptions(
+      { workspaceId: workspaceId! },
+      { enabled: !!workspaceId }
+    )
   );
 
-  const { data: weeklyPulses } = trpc.weeklyPulse.list.useQuery(
-    { workspaceId: workspaceId! },
-    { enabled: !!workspaceId }
+  const { data: weeklyPulses } = useQuery(
+    trpc.weeklyPulse.list.queryOptions(
+      { workspaceId: workspaceId! },
+      { enabled: !!workspaceId }
+    )
   );
 
   // Calculate stats

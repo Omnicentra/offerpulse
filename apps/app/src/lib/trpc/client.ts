@@ -1,8 +1,12 @@
-import { createTRPCReact } from "@trpc/react-query";
+import { createTRPCContext } from "@trpc/tanstack-react-query";
 import type { AppRouter } from "@/src/server/trpc/routers/root";
 
 /**
- * Create a client-side tRPC instance
- * Use this in client components via hooks
+ * tRPC + TanStack React Query integration (v11 recommended pattern)
+ *
+ * - TRPCProvider: wrap your app to provide tRPC context
+ * - useTRPC: access typed query/mutation option factories inside components
+ * - useTRPCClient: access the raw tRPC client for imperative calls
  */
-export const trpc = createTRPCReact<AppRouter>();
+export const { TRPCProvider, useTRPC, useTRPCClient } =
+  createTRPCContext<AppRouter>();

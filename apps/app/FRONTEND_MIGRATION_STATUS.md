@@ -2,7 +2,7 @@
 
 ## ✅ Migration Pattern Established & Core Pages Migrated
 
-### Completed Migrations (5 pages)
+### Completed Migrations (6 pages)
 - ✅ WorkspaceProvider created
 - ✅ Dashboard layout updated with WorkspaceProvider
 - ✅ **alerts/page.tsx** - Reference implementation
@@ -58,8 +58,9 @@ All remaining pages follow the exact same pattern demonstrated in the completed 
 - [ ] **app/(dashboard)/competitors/[id]/page.tsx** - Detail view (5 min)
   - `competitorsApi.get(id)` → `trpc.competitors.get.useQuery({ id })`
   
-- [ ] **app/(dashboard)/changes/page.tsx** - Changes list (5 min)
-  - `changeEventsApi.list()` → `trpc.changeEvents.list.useQuery({ workspaceId })`
+- [x] **app/(dashboard)/changes/page.tsx** - Changes list ✅
+  - Migrated to tRPC (`trpc.changeEvents.list`, `trpc.competitors.list`)
+  - Fixed `useSearchParams()` Suspense boundary for static generation
   
 - [ ] **app/(dashboard)/snapshots/page.tsx** - Snapshots list (5 min)
   - `snapshotsApi.list()` → `trpc.snapshots.list.useQuery({ workspaceId })`

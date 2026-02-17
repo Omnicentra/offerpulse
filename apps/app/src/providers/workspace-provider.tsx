@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { trpc } from "@/src/lib/trpc/client";
 import { useSession } from "../server/auth/client";
 
 interface WorkspaceContextType {

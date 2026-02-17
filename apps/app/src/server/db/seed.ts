@@ -27,7 +27,7 @@ import * as bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 
 // Fixed IDs so phases can be re-run or run in isolation when dependencies exist
-const DEMO_USER_ID = "user_demo";
+const DEMO_USER_ID = "CQzZVW2af4cRJo5fGyDFbRgRfq7zv8ts";
 const DEMO_WORKSPACE_ID = "workspace_demo";
 const DEMO_COMPETITOR_IDS = {
   glossier: "comp_glossier",
