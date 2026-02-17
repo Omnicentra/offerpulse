@@ -34,6 +34,11 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   ALERT_EMAIL: z.string().email().optional(),
 
+  // PostHog (optional - for analytics)
+  NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
+  NEXT_PUBLIC_POSTHOG_HOST: z.url().optional(),
+  NEXT_PUBLIC_ENVIRONMENT: z.enum(["dev", "stg", "prd"]).default("dev"),
+
   // App URLs
   NEXT_PUBLIC_MARKETING_APP_URL: z.string().url().optional(),
   NEXT_PUBLIC_DASHBOARD_APP_URL: z.string().url().optional(),

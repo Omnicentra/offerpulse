@@ -6,10 +6,15 @@ import { auth } from "../auth";
 import { workspaceMembers, workspaces } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 
+/** Context options: full opts from fetch handler, or minimal opts for server-side caller (no info) */
+export type CreateContextOptions = Omit<FetchCreateContextFnOptions, "info"> & {
+  info?: FetchCreateContextFnOptions["info"];
+};
+
 /**
  * Create context for tRPC requests
  */
-export async function createTRPCContext(opts: FetchCreateContextFnOptions) {
+export async function createTRPCContext(opts: CreateContextOptions) {
   // Get session from Better-auth
   const session = await auth.api.getSession({
     headers: opts.req.headers,
@@ -115,3 +120,4 @@ export const workspaceProcedure = protectedProcedure.use(
 export const router = t.router;
 export const middleware = t.middleware;
 export const mergeRouters = t.mergeRouters;
+export const createCallerFactory = t.createCallerFactory;

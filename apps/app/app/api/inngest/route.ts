@@ -1,5 +1,5 @@
 import { serve } from "inngest/next";
-import { inngest } from "@/server/jobs/client";
+import { inngest } from "@/src/server/jobs/client";
 import {
   captureSnapshotJob,
   scheduleCapturesJob,
@@ -7,7 +7,7 @@ import {
   generateRecommendationsJob,
   sendAlertsJob,
   generateWeeklyPulseJob,
-} from "@/server/jobs/functions";
+} from "@/src/server/jobs/functions";
 
 // Create and configure the Inngest serve handler
 export const { GET, POST, PUT } = serve({
@@ -22,5 +22,4 @@ export const { GET, POST, PUT } = serve({
   ],
   servePath: "/api/inngest",
   // Enable Inngest Dev Server in development
-  streamingHeaders: true,
 });

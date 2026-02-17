@@ -61,7 +61,7 @@ export default function AlertsPage() {
         description: "Check your inbox or Slack channel",
       });
     },
-    onError: (error: TRPCError) => {
+    onError: (error) => {
       toast({
         title: "Test failed",
         description: error.message || "Failed to send test notification",
@@ -74,7 +74,11 @@ export default function AlertsPage() {
     if (!localSettings || !workspaceId) return;
     updateMutation.mutate({
       workspaceId,
-      ...localSettings,
+      emailEnabled: localSettings.emailEnabled,
+      slackEnabled: localSettings.slackEnabled,
+      slackWebhookUrl: localSettings.slackWebhookUrl ?? undefined,
+      eventTypes: localSettings.eventTypes ?? undefined,
+      minConfidence: localSettings.minConfidence,
     });
   };
 

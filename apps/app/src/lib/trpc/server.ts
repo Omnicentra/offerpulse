@@ -1,8 +1,7 @@
 import "server-only";
 
-import { createTRPCContext } from "@/src/server/trpc/trpc";
-import { appRouter, type AppRouter } from "@/src/server/trpc/routers/root";
-import { createCallerFactory } from "@trpc/server";
+import { createTRPCContext, createCallerFactory } from "@/src/server/trpc/trpc";
+import { appRouter } from "@/src/server/trpc/routers/root";
 import { headers } from "next/headers";
 
 /**
@@ -13,12 +12,10 @@ export const createCaller = async () => {
   const headersList = await headers();
 
   const context = await createTRPCContext({
-    req: {
-      headers: headersList,
-    } as Request,
+    req: new Request("https://offerpulse.local", { headers: headersList }),
     resHeaders: new Headers(),
   });
 
-  const callerFactory = createCallerFactory<AppRouter>();
-  return callerFactory(appRouter)(context);
+  const caller = createCallerFactory(appRouter)(context);
+  return caller;
 };

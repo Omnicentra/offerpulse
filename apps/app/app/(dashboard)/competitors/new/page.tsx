@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { competitorsApi, monitorSettingsApi } from "@/src/mock/api";
+import { trpc } from "@/src/lib/trpc/client";
+import { useWorkspace } from "@/src/providers/workspace-provider";
 import { useToast } from "@/hooks/use-toast";
 import { X, Plus } from "lucide-react";
 
@@ -32,7 +32,8 @@ type CompetitorForm = z.infer<typeof competitorSchema>;
 export default function NewCompetitorPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { workspaceId } = useWorkspace();
+  const utils = trpc.useUtils();
 
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
@@ -85,41 +86,9 @@ export default function NewCompetitorPage() {
     setTags(tags.filter((t) => t !== tagToRemove));
   };
 
-  const createMutation = useMutation({
-    mutationFn: async (data: CompetitorForm) => {
-      const url = new URL(data.url);
-      const domain = url.hostname.replace("www.", "");
-      const baseUrl = `${url.protocol}//${url.hostname}`;
-
-      // Guess platform (simple heuristic)
-      const platformGuess = domain.includes("myshopify") || Math.random() > 0.5 ? "shopify" : "other";
-
-      const competitor = await competitorsApi.create({
-        name: data.name,
-        domain,
-        baseUrl,
-        platformGuess,
-        tags,
-        isActive: true,
-      });
-
-      // Create monitor settings
-      await monitorSettingsApi.upsert({
-        competitorId: competitor.id,
-        frequency: data.frequency,
-        track: {
-          promos: data.trackPromos,
-          shipping: data.trackShipping,
-          bundles: data.trackBundles,
-          cart: data.trackCart,
-          deliveryReturns: data.trackDeliveryReturns,
-        },
-      });
-
-      return competitor;
-    },
+  const createMutation = trpc.competitors.create.useMutation({
     onSuccess: (competitor) => {
-      queryClient.invalidateQueries({ queryKey: ["competitors"] });
+      utils.competitors.list.invalidate();
       toast({
         title: "Competitor added",
         description: `${competitor.name} is now being monitored.`,
@@ -136,7 +105,17 @@ export default function NewCompetitorPage() {
   });
 
   const onSubmit = (data: CompetitorForm) => {
-    createMutation.mutate(data);
+    if (!workspaceId) return;
+    const urlObj = new URL(data.url);
+    const baseUrl = urlObj.origin;
+    const domain = urlObj.hostname.replace(/^www\./, "");
+    createMutation.mutate({
+      workspaceId,
+      name: data.name,
+      domain,
+      baseUrl,
+      tags,
+    });
   };
 
   return (

@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
@@ -9,12 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChangeTypeBadge } from "@/components/ui/change-type-badge";
 import { ConfidenceBadge } from "@/components/ui/confidence-badge";
 import { Button } from "@/components/ui/button";
-import { 
-  competitorsApi, 
-  changeEventsApi, 
-  recommendationsApi, 
-  weeklyPulseApi 
-} from "@/src/mock/api";
+import { trpc } from "@/src/lib/trpc/client";
+import { useWorkspace } from "@/src/providers/workspace-provider";
 import { 
   TrendingUp, 
   Users, 
@@ -36,26 +31,27 @@ const formatDistanceToNow = (date: Date) => {
 
 export default function OverviewPage() {
   const router = useRouter();
+  const { workspaceId } = useWorkspace();
 
-  const { data: competitors, isLoading: isLoadingCompetitors } = useQuery({
-    queryKey: ["competitors"],
-    queryFn: () => competitorsApi.list(),
-  });
+  const { data: competitors, isLoading: isLoadingCompetitors } = trpc.competitors.list.useQuery(
+    { workspaceId: workspaceId! },
+    { enabled: !!workspaceId }
+  );
 
-  const { data: changeEvents, isLoading: isLoadingChanges } = useQuery({
-    queryKey: ["changeEvents"],
-    queryFn: () => changeEventsApi.list(),
-  });
+  const { data: changeEvents, isLoading: isLoadingChanges } = trpc.changeEvents.list.useQuery(
+    { workspaceId: workspaceId! },
+    { enabled: !!workspaceId }
+  );
 
-  const { data: recommendations, isLoading: isLoadingRecs } = useQuery({
-    queryKey: ["recommendations"],
-    queryFn: () => recommendationsApi.list(),
-  });
+  const { data: recommendations, isLoading: isLoadingRecs } = trpc.recommendations.list.useQuery(
+    { workspaceId: workspaceId! },
+    { enabled: !!workspaceId }
+  );
 
-  const { data: weeklyPulses } = useQuery({
-    queryKey: ["weeklyPulses"],
-    queryFn: () => weeklyPulseApi.list(),
-  });
+  const { data: weeklyPulses } = trpc.weeklyPulse.list.useQuery(
+    { workspaceId: workspaceId! },
+    { enabled: !!workspaceId }
+  );
 
   // Calculate stats
   const activeCompetitors = competitors?.filter((c) => c.isActive).length || 0;
@@ -229,7 +225,7 @@ export default function OverviewPage() {
               {/* Highlights */}
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-slate-900">Key Highlights</h3>
-                {currentPulse.highlights.slice(0, 3).map((highlight, idx) => (
+                {currentPulse.highlights?.slice(0, 3).map((highlight, idx) => (
                   <div key={idx} className="rounded-xl border border-slate-200 bg-blue-50/50 p-4">
                     <p className="text-sm font-medium text-slate-900">{highlight.title}</p>
                     <p className="mt-1 text-sm text-slate-600">{highlight.detail}</p>
