@@ -18,7 +18,7 @@ import {
 import { RefundPolicyDialog } from "@/components/RefundPolicyDialog";
 import { CheckCircle, AlertCircle, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { trackMetaEvent } from "@/components/MetaPixel";
+import { event } from "@/lib/meta-pixel";
 import { getStoredCompetitorUrl } from "@offerpulse/lib/routing";
 
 function SnapshotPageContent() {
@@ -52,7 +52,7 @@ function SnapshotPageContent() {
   
   useEffect(() => {
     if (!sessionId || refreshed === "true") return;
-    trackMetaEvent("Purchase", {
+    event("Purchase", {
       value: 19.0,
       currency: "GBP",
     });
