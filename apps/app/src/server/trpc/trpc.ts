@@ -76,7 +76,8 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
  * Adds the current workspace to the context
  */
 export const workspaceProcedure = protectedProcedure.use(
-  async ({ ctx, next, rawInput }) => {
+  async ({ ctx, next, getRawInput }) => {
+    const rawInput = await getRawInput();
     const input = rawInput as { workspaceId?: string };
 
     if (!input.workspaceId) {

@@ -266,7 +266,7 @@ Features:
   - Ready for external service integration (Sentry)
 
 #### 8.3 Environment Variables
-- ✅ Environment validation (`src/lib/env.ts`)
+- ✅ Environment validation (`env.ts` at project root, @t3-oss/env-nextjs)
   - Zod schema validation
   - Required vs optional checks
   - Helpful error messages
@@ -369,11 +369,11 @@ apps/app/
 │   ├── lib/
 │   │   ├── trpc/                    # tRPC client/server
 │   │   ├── logger.ts                # Logging utility
-│   │   ├── errors.ts                # Error classes
-│   │   └── env.ts                   # Environment validation
+│   │   └── errors.ts                # Error classes
 │   └── providers/
 │       ├── trpc-provider.tsx        # tRPC provider
 │       └── workspace-provider.tsx   # Workspace context
+├── env.ts                           # Environment validation (@t3-oss/env-nextjs)
 ├── app/
 │   └── api/
 │       ├── auth/[...all]/           # Better-auth route

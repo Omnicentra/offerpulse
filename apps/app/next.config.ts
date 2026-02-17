@@ -1,5 +1,7 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import "./env";
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
   transpilePackages: ["@offerpulse/lib", "@offerpulse/ui"],
   async rewrites() {
     return [

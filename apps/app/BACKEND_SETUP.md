@@ -77,10 +77,11 @@ Seed with demo data (optional):
 pnpm db:seed
 ```
 
-This creates a demo user:
+This creates a demo user (aligned with staging):
 
-- Email: `demo@offerpulse.com`
+- Email: `chipzstar.dev@googlemail.com`
 - Password: `demo123`
+- Name: Chisom Oguibe
 - Workspace: `Demo Store`
 
 ### 4. Install Playwright Browsers
@@ -124,8 +125,16 @@ pnpm db:push
 # Open Drizzle Studio (GUI)
 pnpm db:studio
 
-# Seed database
+# Seed database (all phases)
 pnpm db:seed
+
+# Seed only specific phases (e.g. users + workspaces)
+pnpm db:seed -- --only=users,workspaces
+
+# Or pass phase names as positional args
+pnpm db:seed -- users workspaces workspace-members
+
+# Phases (in order): users | workspaces | workspace-members | competitors | snapshots | alerts
 ```
 
 ## Project Structure
@@ -176,7 +185,7 @@ src/
 │   ├── trpc/               # tRPC client setup
 │   ├── logger.ts           # Centralized logging
 │   ├── errors.ts           # Custom error classes
-│   └── env.ts              # Environment validation
+│   env.ts                  # Environment validation (@t3-oss/env-nextjs, project root)
 └── providers/
     ├── trpc-provider.tsx   # tRPC React provider
     └── workspace-provider.tsx
@@ -314,9 +323,17 @@ Inngest webhook at `/api/inngest`:
 
 ### Vercel Deployment
 
-1. Connect your repository to Vercel
-2. Set up environment variables in Vercel dashboard
-3. Deploy!
+Projects live under the **Omnicentra** team. To link this repo to the existing Vercel projects (e.g. after a fresh clone), run from the **monorepo root**:
+
+```bash
+vercel link apps/app --yes --scope omnicentra --project offerpulse-app
+vercel link apps/marketing --yes --scope omnicentra --project offerpulse-marketing
+```
+
+Then:
+
+1. Set up environment variables in the Vercel dashboard for each project
+2. Deploy from each app: `cd apps/app && vercel` (or `vercel --prod`), and similarly for `apps/marketing`
 
 Vercel will automatically:
 - Build the Next.js app

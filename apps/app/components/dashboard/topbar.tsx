@@ -1,6 +1,6 @@
 "use client";
 
-import { signOut } from "next-auth/react";
+import { signOut } from "@/src/server/auth/client";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, User } from "lucide-react";
 
@@ -25,7 +25,7 @@ export function TopBar() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={() => signOut()}
         >
           <User className="h-4 w-4" />
         </Button>

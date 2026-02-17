@@ -18,9 +18,12 @@ export type OfferSnapshotInput = z.infer<typeof offerSnapshotSchema>;
  * Sign up form validation
  */
 export const signUpSchema = z.object({
-  email: z
+  name: z
     .string()
-    .min(1, "Email is required")
+    .min(2, "Name must be at least 2 characters")
+    .max(128, "Name must be at most 128 characters")
+    .trim(),
+  email: z
     .email("Please enter a valid email address"),
   password: z
     .string()
@@ -47,10 +50,7 @@ export type SignUpInput = z.infer<typeof signUpSchema>;
  * Sign in form validation
  */
 export const signInSchema = z.object({
-  email: z
-    .string()
-    .min(1, "Email is required")
-    .email("Please enter a valid email address"),
+  email: z.email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
 });
 

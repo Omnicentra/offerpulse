@@ -1,16 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useRouter, useSearchParams } from "next/navigation";
-import { PageHeader } from "@/components/ui/page-header";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { ChangeTypeBadge } from "@/components/ui/change-type-badge";
 import { ConfidenceBadge } from "@/components/ui/confidence-badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   Select,
   SelectContent,
@@ -25,9 +20,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { competitorsApi, changeEventsApi } from "@/src/mock/api";
-import { TrendingUp, Filter, X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { changeEventsApi, competitorsApi } from "@/src/mock/api";
 import type { ChangeEventType } from "@/src/mock/types";
+import { useQuery } from "@tanstack/react-query";
+import { Filter, TrendingUp, X } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function ChangesPage() {
   const router = useRouter();

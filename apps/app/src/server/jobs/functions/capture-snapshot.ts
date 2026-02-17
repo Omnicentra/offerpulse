@@ -48,7 +48,7 @@ export const captureSnapshotJob = inngest.createFunction(
     // Scrape the competitor's website
     const scrapeResult = await step.run("scrape-website", async () => {
       return await scrapeCompetitor({
-        url: competitor.url,
+        url: competitor.baseUrl,
         captureScreenshot: true,
         timeout: 45000,
       });
@@ -86,7 +86,7 @@ export const captureSnapshotJob = inngest.createFunction(
     await step.run("update-competitor", async () => {
       await db
         .update(competitors)
-        .set({ lastSnapshotAt: snapshot.capturedAt })
+        .set({ lastSnapshotAt: new Date(snapshot.capturedAt) })
         .where(eq(competitors.id, competitorId));
     });
 

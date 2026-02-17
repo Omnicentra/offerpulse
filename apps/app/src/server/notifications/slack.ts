@@ -24,7 +24,8 @@ export async function sendSlackAlert(
       DELIVERY_RETURNS: "🚚",
     };
 
-    const payload = {
+    // Slack Block Kit payload (blocks typed loosely to allow header, section, actions with elements)
+    const payload: { blocks: Array<Record<string, unknown>> } = {
       blocks: [
         {
           type: "header",
@@ -68,7 +69,7 @@ export async function sendSlackAlert(
       });
     }
 
-    // Add action buttons
+    // Add action buttons (Slack Block Kit "actions" block with elements)
     payload.blocks.push({
       type: "actions",
       elements: [
@@ -139,7 +140,7 @@ export async function sendSlackWeeklyPulse(
       year: "numeric",
     });
 
-    const payload = {
+    const payload: { blocks: Array<Record<string, unknown>> } = {
       blocks: [
         {
           type: "header",
@@ -188,7 +189,7 @@ export async function sendSlackWeeklyPulse(
       }
     }
 
-    // Add action button
+    // Add action button (Slack Block Kit "actions" block with elements)
     payload.blocks.push({
       type: "actions",
       elements: [

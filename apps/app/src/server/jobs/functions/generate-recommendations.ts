@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { generateRecommendation, getAvailableProvider } from "../../ai";
 import { detectChanges } from "../../change-detection";
+import type { ExtractedSignals } from "../../scraping/extractor";
 
 export const generateRecommendationsJob = inngest.createFunction(
   {
@@ -33,17 +34,19 @@ export const generateRecommendationsJob = inngest.createFunction(
     const aiRecommendation = await step.run("generate-ai-recommendation", async () => {
       const provider = getAvailableProvider();
 
-      // Re-run change detection to get detailed changes
-      const detectionResult = detectChanges(changeEvent.before, changeEvent.after);
+      // Re-run change detection to get detailed changes (guard null JSONB)
+      const beforeSignals = (changeEvent.before ?? { confidence: "low" }) as ExtractedSignals;
+      const afterSignals = (changeEvent.after ?? { confidence: "low" }) as ExtractedSignals;
+      const detectionResult = detectChanges(beforeSignals, afterSignals);
 
       const result = await generateRecommendation(
         {
           competitorName: changeEvent.competitor.name,
-          competitorUrl: changeEvent.competitor.url,
+          competitorUrl: changeEvent.competitor.baseUrl,
           changeType: changeEvent.type,
           changeSummary: changeEvent.summary,
-          beforeSignals: changeEvent.before,
-          afterSignals: changeEvent.after,
+          beforeSignals,
+          afterSignals,
           detectionResult,
         },
         provider || undefined
