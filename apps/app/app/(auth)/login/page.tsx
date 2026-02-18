@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import posthog from "posthog-js";
 import { signIn } from "@/src/server/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,10 +18,11 @@ const loginSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-type LoginForm = z.infer<typeof loginSchema>;
+type LoginFormValues = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,12 +31,39 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginForm>({
+  } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (data: LoginForm) => {
+  // Track page view and cross-domain tracking
+  useEffect(() => {
+    // Track signin page view (for analytics consistency)
+    posthog.capture("signin_page_viewed");
+
+    // Cross-domain tracking: Connect this session with marketing site session
+    const marketingDeviceId = searchParams.get("ph_device_id");
+
+    if (marketingDeviceId) {
+      try {
+        // Alias the marketing device ID to current session
+        posthog.alias(marketingDeviceId);
+
+        // Track that cross-domain tracking worked
+        posthog.capture("cross_domain_tracking_connected", {
+          marketing_device_id: marketingDeviceId,
+        });
+      } catch (error) {
+        console.error("Failed to alias PostHog device ID:", error);
+      }
+    }
+  }, [searchParams]);
+
+  const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
+    
+    // Track signin form submission
+    posthog.capture("signin_form_submitted");
+    
     try {
       const { error } = await signIn.email({
         email: data.email,
@@ -42,6 +71,11 @@ export default function LoginPage() {
       });
 
       if (error) {
+        // Track signin error
+        posthog.capture("signin_error", {
+          error_message: error.message,
+        });
+        
         toast({
           title: "Login failed",
           description: error.message ?? "Invalid credentials",
@@ -50,6 +84,17 @@ export default function LoginPage() {
         return;
       }
 
+      // Identify user in PostHog
+      posthog.identify(data.email, {
+        email: data.email,
+        last_signed_in_at: new Date().toISOString(),
+      });
+      
+      // Track successful signin
+      posthog.capture("signin_completed", {
+        email: data.email,
+      });
+
       toast({
         title: "Welcome back!",
         description: "You've successfully logged in.",
@@ -57,6 +102,11 @@ export default function LoginPage() {
 
       router.push("/overview");
     } catch (error) {
+      // Track unexpected error
+      posthog.capture("signin_error", {
+        error_message: error instanceof Error ? error.message : "Unknown error",
+      });
+      
       toast({
         title: "Login failed",
         description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
@@ -151,5 +201,42 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function LoginFormFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-50 px-4">
+      <div className="w-full max-w-md">
+        <div className="mb-8 text-center">
+          <div className="mb-4 flex justify-center">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 animate-pulse" />
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">OfferPulse</h1>
+          <p className="mt-2 text-sm text-slate-600">Sign in to your account</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-950/5">
+          <div className="space-y-5">
+            <div className="h-11 rounded-md bg-slate-100 animate-pulse" />
+            <div className="h-11 rounded-md bg-slate-100 animate-pulse" />
+            <div className="h-11 rounded-md bg-slate-200 animate-pulse" />
+          </div>
+          <div className="mt-6 text-center text-sm text-slate-600">
+            Don't have an account?{" "}
+            <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-700">
+              Sign up
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFormFallback />}>
+      <LoginForm />
+    </Suspense>
   );
 }

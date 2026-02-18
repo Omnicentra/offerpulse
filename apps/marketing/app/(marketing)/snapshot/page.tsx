@@ -154,6 +154,15 @@ function SnapshotPageContent() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    // Track waitlist form submission (client-side) for funnel tracking
+    posthog.capture("waitlist_form_submitted", {
+      email,
+      competitor_url: url,
+      utm_source: searchParams.get("utm_source"),
+      utm_medium: searchParams.get("utm_medium"),
+      utm_campaign: searchParams.get("utm_campaign"),
+    });
+
     try {
       const response = await fetch("/api/early-access/free-queue", {
         method: "POST",
@@ -169,6 +178,19 @@ function SnapshotPageContent() {
 
       if (!response.ok) throw new Error("Failed to join queue");
 
+      // Track successful waitlist join (client-side) for immediate feedback
+      posthog.capture("waitlist_joined", {
+        email,
+        competitor_url: url,
+        source: "snapshot_page",
+      });
+
+      // Identify user in PostHog
+      posthog.identify(email, {
+        email,
+        waitlist_joined_at: new Date().toISOString(),
+      });
+
       toast({
         title: "✅ You're on the list",
         description: "We'll email you when a slot opens.",
@@ -177,6 +199,14 @@ function SnapshotPageContent() {
       setEmail("");
     } catch (error) {
       console.error(error);
+      
+      // Track waitlist error
+      posthog.capture("waitlist_error", {
+        error_message: error instanceof Error ? error.message : "Unknown error",
+        email,
+        source: "snapshot_page",
+      });
+      
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",

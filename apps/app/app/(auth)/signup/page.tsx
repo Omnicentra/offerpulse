@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import posthog from "posthog-js";
 import { signUp } from "@/src/server/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,10 +19,11 @@ const signupSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-type SignupForm = z.infer<typeof signupSchema>;
+type SignupFormValues = z.infer<typeof signupSchema>;
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -30,12 +32,41 @@ export default function SignupPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<SignupForm>({
+  } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
   });
 
-  const onSubmit = async (data: SignupForm) => {
+  // Track page view and cross-domain tracking
+  useEffect(() => {
+    // Track signup page view (required for funnel tracking)
+    posthog.capture("signup_page_viewed");
+
+    // Cross-domain tracking: Connect this session with marketing site session
+    const marketingDeviceId = searchParams.get("ph_device_id");
+
+    if (marketingDeviceId) {
+      try {
+        // Alias the marketing device ID to current session
+        posthog.alias(marketingDeviceId);
+
+        // Track that cross-domain tracking worked
+        posthog.capture("cross_domain_tracking_connected", {
+          marketing_device_id: marketingDeviceId,
+        });
+      } catch (error) {
+        console.error("Failed to alias PostHog device ID:", error);
+      }
+    }
+  }, [searchParams]);
+
+  const onSubmit = async (data: SignupFormValues) => {
     setIsLoading(true);
+    
+    // Track signup form submission
+    posthog.capture("signup_form_submitted", {
+      has_name: !!data.name,
+    });
+    
     try {
       const { error } = await signUp.email({
         name: data.name,
@@ -44,6 +75,11 @@ export default function SignupPage() {
       });
 
       if (error) {
+        // Track signup error
+        posthog.capture("signup_error", {
+          error_message: error.message,
+        });
+        
         toast({
           title: "Signup failed",
           description: error.message ?? "An error occurred. Please try again.",
@@ -52,6 +88,19 @@ export default function SignupPage() {
         return;
       }
 
+      // Identify user in PostHog
+      posthog.identify(data.email, {
+        email: data.email,
+        name: data.name,
+        signed_up_at: new Date().toISOString(),
+      });
+      
+      // Track successful signup
+      posthog.capture("signup_completed", {
+        email: data.email,
+        source: "dashboard_app",
+      });
+
       toast({
         title: "Account created!",
         description: "Welcome to OfferPulse.",
@@ -59,6 +108,11 @@ export default function SignupPage() {
 
       router.push("/overview");
     } catch (error) {
+      // Track unexpected error
+      posthog.capture("signup_error", {
+        error_message: error instanceof Error ? error.message : "Unknown error",
+      });
+      
       toast({
         title: "Signup failed",
         description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
@@ -170,5 +224,43 @@ export default function SignupPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function SignupFormFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-50 px-4">
+      <div className="w-full max-w-md">
+        <div className="mb-8 text-center">
+          <div className="mb-4 flex justify-center">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 animate-pulse" />
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">OfferPulse</h1>
+          <p className="mt-2 text-sm text-slate-600">Create your account</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-950/5">
+          <div className="space-y-5">
+            <div className="h-11 rounded-md bg-slate-100 animate-pulse" />
+            <div className="h-11 rounded-md bg-slate-100 animate-pulse" />
+            <div className="h-11 rounded-md bg-slate-100 animate-pulse" />
+            <div className="h-11 rounded-md bg-slate-200 animate-pulse" />
+          </div>
+          <div className="mt-6 text-center text-sm text-slate-600">
+            Already have an account?{" "}
+            <Link href="/login" className="font-medium text-blue-600 hover:text-blue-700">
+              Sign in
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<SignupFormFallback />}>
+      <SignupForm />
+    </Suspense>
   );
 }

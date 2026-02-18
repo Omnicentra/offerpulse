@@ -1,29 +1,26 @@
 "use client"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
+  CardTitle
 } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Check } from "lucide-react"
-import { cn } from "@offerpulse/lib/utils"
-import { PRICING_PLANS, PRICING_NOTES, formatMonthlyPrice, formatYearlyPrice } from "@offerpulse/lib/pricing"
 import { track } from "@/lib/analytics"
+import { PRICING_NOTES, PRICING_PLANS } from "@offerpulse/lib/pricing"
 import { buildAppSignupUrl, getStoredCompetitorUrl } from "@offerpulse/lib/routing"
+import { cn } from "@offerpulse/lib/utils"
+import { Check } from "lucide-react"
 import posthog from "posthog-js"
 
 interface PricingCardsProps {
-  showFullDescription?: boolean
   billingPeriod?: "monthly" | "annual"
 }
 
 export function PricingCards({
-  showFullDescription = true,
   billingPeriod = "monthly",
 }: PricingCardsProps) {
   const handlePricingClick = (planName: string, price: number) => {
