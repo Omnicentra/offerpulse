@@ -576,7 +576,7 @@ export default function HomePage() {
           </ScrollReveal>
           <ScrollReveal delay={0.05}>
             <div className="mt-12">
-              <PricingCards showFullDescription={false} billingPeriod={billingPeriod} />
+              <PricingCards billingPeriod={billingPeriod} />
             </div>
           </ScrollReveal>
           <div className="mt-10 text-center">
