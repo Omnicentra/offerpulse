@@ -1,16 +1,18 @@
 import posthog from "posthog-js";
 
 const environment = process.env.NEXT_PUBLIC_ENVIRONMENT || "dev";
+const isProduction = environment === "prd";
+const isLocal = process.env.NODE_ENV === "development";
 
 posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-  api_host: process.env.NEXT_PUBLIC_DASHBOARD_APP_URL,
+  api_host: isProduction ? process.env.NEXT_PUBLIC_DASHBOARD_APP_URL : process.env.NEXT_PUBLIC_POSTHOG_HOST,
   ui_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
   // Enables capturing unhandled exceptions via Error Tracking
   capture_exceptions: true,
   // Turn on debug in development mode
-  debug: process.env.NODE_ENV === "development",
+  debug: isLocal,
   // Use environment-specific person profiles to separate data
-  person_profiles: environment === "prd" ? "identified_only" : "always",
+  person_profiles: isProduction ? "identified_only" : "always",
   // Automatically add environment to all events
   loaded: (posthogInstance) => {
     posthogInstance.register({
