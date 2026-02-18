@@ -2,7 +2,8 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
-import { MetaPixel } from "@/components/MetaPixel"
+import MetaPixel from "@/components/MetaPixel"
+import { Analytics } from "@vercel/analytics/next"
 import { CANONICAL_BASE_URL, SITE_CONFIG, ORGANIZATION, SOCIAL_LINKS } from "@/lib/seo/config"
 
 const inter = Inter({
@@ -131,6 +132,7 @@ export default function RootLayout({
         <MetaPixel />
         {children}
         <Toaster />
+        <Analytics />
       </body>
     </html>
   )

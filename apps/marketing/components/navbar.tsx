@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { Menu, X } from "lucide-react"
 import { cn } from "@offerpulse/lib/utils"
 import { OfferPulseMark } from "@/components/OfferPulseMark"
-import { buildAppSignupUrl, getStoredCompetitorUrl } from "@offerpulse/lib/routing"
 import { track } from "@/lib/analytics"
 
 const navLinks = [
@@ -22,21 +21,12 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const handleGetStarted = () => {
-    // Check if user has entered a competitor URL earlier in session
-    const competitorUrl = getStoredCompetitorUrl()
-    
-    const signupUrl = buildAppSignupUrl({
-      competitorUrl: competitorUrl || undefined,
-      source: "marketing_nav",
-    })
-
     track("marketing_cta_clicked", {
       source: "navbar",
-      hasCompetitorUrl: !!competitorUrl,
-      destination: signupUrl,
+      destination: "/snapshot",
     })
 
-    window.location.href = signupUrl
+    window.location.href = "/snapshot"
   }
 
   return (

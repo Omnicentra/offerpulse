@@ -75,7 +75,7 @@ export function FullReportLocked({ competitorUrl }: FullReportLockedProps) {
             </p>
             <div className="mt-6 flex flex-col gap-3">
               <Button asChild size="lg" onClick={handleUnlockClick}>
-                <Link href={`/auth/sign-up?competitorUrl=${encodedUrl}`}>
+                <Link href="/snapshot">
                   Create free account to unlock
                 </Link>
               </Button>

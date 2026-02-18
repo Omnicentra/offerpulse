@@ -434,7 +434,7 @@ export default function GuidePage() {
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
                 <Button asChild size="lg">
-                  <Link href="/">Start free trial</Link>
+                  <Link href="/snapshot">Start free trial</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
                   <Link href="/free-tools">Try free tools</Link>

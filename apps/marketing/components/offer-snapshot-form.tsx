@@ -16,7 +16,7 @@ import { Loader2, Search } from "lucide-react"
 import { offerSnapshotSchema, type OfferSnapshotInput } from "@offerpulse/lib/validators"
 import { track } from "@/lib/analytics"
 import { extractDomain } from "@offerpulse/lib/utils"
-import { buildAppSignupUrl, storeCompetitorUrl } from "@offerpulse/lib/routing"
+import { storeCompetitorUrl } from "@offerpulse/lib/routing"
 import { normalizeUrl, validateUrl } from "@/lib/url-helpers"
 
 interface OfferSnapshotFormProps {

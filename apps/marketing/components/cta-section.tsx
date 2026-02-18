@@ -18,7 +18,7 @@ export function CtaSection({
   title = "Ready to stay ahead?",
   description = "Join Shopify sellers who track competitors on autopilot.",
   primaryText = "Start your free trial",
-  primaryHref = "/auth/sign-up",
+  primaryHref = "/snapshot",
   secondaryText = "View pricing",
   secondaryHref = "/pricing",
 }: CtaSectionProps) {
