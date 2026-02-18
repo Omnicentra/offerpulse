@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { event } from "@/lib/meta-pixel";
 import { getStoredCompetitorUrl } from "@offerpulse/lib/routing";
 import posthog from "posthog-js";
+import { logger } from "@/lib/logger";
 
 function SnapshotPageContent() {
   const searchParams = useSearchParams();
@@ -29,6 +30,9 @@ function SnapshotPageContent() {
   // Track purchase event once and add refreshed param so we don't re-fire on refresh
   const refreshed = searchParams.get("refreshed");
 
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showRefundPolicy, setShowRefundPolicy] = useState(false);
   const [url, setUrl] = useState("");
 
   // Initialize URL from query param (from homepage form) or session storage fallback
@@ -45,22 +49,26 @@ function SnapshotPageContent() {
       if (stored) setUrl(stored);
     }
   }, [searchParams]);
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showRefundPolicy, setShowRefundPolicy] = useState(false);
 
   const { toast } = useToast();
-  
+
   useEffect(() => {
-    if (!sessionId || refreshed === "true") return;
+    if (!sessionId || refreshed === "true") {
+      logger.info(
+        "Snapshot page: No session ID or refreshed, skipping event tracking",
+      );
+      return;
+    }
+    logger.info("Snapshot page: Tracking purchase event");
     event("Purchase", {
       value: 19.0,
       currency: "GBP",
     });
+    logger.info("Snapshot page: Replacing URL with session ID and refreshed");
     window.history.replaceState(
       {},
       "",
-      `/snapshot?session_id=${sessionId}&refreshed=true`
+      `/snapshot?session_id=${sessionId}&refreshed=true`,
     );
   }, [sessionId, refreshed]);
 
@@ -73,9 +81,12 @@ function SnapshotPageContent() {
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
-            <h1 className="mt-6 text-4xl font-bold text-slate-900">Slot Reserved ✅</h1>
+            <h1 className="mt-6 text-4xl font-bold text-slate-900">
+              Slot Reserved ✅
+            </h1>
             <p className="mt-4 text-xl text-slate-700">
-              You&apos;ve reserved early access to OfferPulse. We&apos;ll email you when your slot is ready.
+              You&apos;ve reserved early access to OfferPulse. We&apos;ll email
+              you when your slot is ready.
             </p>
           </Container>
         </section>
@@ -84,23 +95,35 @@ function SnapshotPageContent() {
           <Container className="max-w-3xl">
             <Card>
               <CardContent className="p-8">
-                <h2 className="mb-6 text-xl font-semibold text-slate-900">What happens next</h2>
+                <h2 className="mb-6 text-xl font-semibold text-slate-900">
+                  What happens next
+                </h2>
                 <ul className="space-y-4">
                   <li className="flex gap-3">
                     <CheckCircle className="h-6 w-6 flex-shrink-0 text-green-600" />
-                    <span className="text-slate-700">You&apos;ll receive an email confirmation now</span>
+                    <span className="text-slate-700">
+                      You&apos;ll receive an email confirmation now
+                    </span>
                   </li>
                   <li className="flex gap-3">
                     <CheckCircle className="h-6 w-6 flex-shrink-0 text-green-600" />
-                    <span className="text-slate-700">Early access slots are opened in batches</span>
+                    <span className="text-slate-700">
+                      Early access slots are opened in batches
+                    </span>
                   </li>
                   <li className="flex gap-3">
                     <CheckCircle className="h-6 w-6 flex-shrink-0 text-green-600" />
-                    <span className="text-slate-700">Your £19 will be credited to your first paid month at launch</span>
+                    <span className="text-slate-700">
+                      Your £19 will be credited to your first paid month at
+                      launch
+                    </span>
                   </li>
                   <li className="flex gap-3">
                     <CheckCircle className="h-6 w-6 flex-shrink-0 text-green-600" />
-                    <span className="text-slate-700">Want a refund before launch? Reply to the email and we&apos;ll sort it</span>
+                    <span className="text-slate-700">
+                      Want a refund before launch? Reply to the email and
+                      we&apos;ll sort it
+                    </span>
                   </li>
                 </ul>
 
@@ -108,8 +131,15 @@ function SnapshotPageContent() {
                   <Button asChild size="lg" className="flex-1">
                     <Link href="/">Back to homepage</Link>
                   </Button>
-                  <Button asChild variant="outline" size="lg" className="flex-1">
-                    <Link href="/how-it-works">View what OfferPulse tracks</Link>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="lg"
+                    className="flex-1"
+                  >
+                    <Link href="/how-it-works">
+                      View what OfferPulse tracks
+                    </Link>
                   </Button>
                 </div>
               </CardContent>
@@ -187,7 +217,8 @@ function SnapshotPageContent() {
       if (!response.ok || !data.url) {
         toast({
           title: "Error",
-          description: data.error ?? "Failed to start checkout. Please try again.",
+          description:
+            data.error ?? "Failed to start checkout. Please try again.",
           variant: "destructive",
         });
         // Track checkout error
@@ -242,8 +273,8 @@ function SnapshotPageContent() {
               </span>
             </h2>
             <p className="mt-4 text-lg text-slate-600">
-              We&apos;re opening limited slots while we validate demand. Reserve a
-              slot to skip the queue.
+              We&apos;re opening limited slots while we validate demand. Reserve
+              a slot to skip the queue.
             </p>
             <p className="mt-2 text-sm text-slate-500">
               No lock-in. Refundable deposit.{" "}
@@ -421,7 +452,8 @@ function SnapshotPageContent() {
             incentives.
           </p>
           <p className="mt-3 text-sm text-slate-600">
-            This is a preview of the report format you&apos;ll get in early access.
+            This is a preview of the report format you&apos;ll get in early
+            access.
           </p>
         </Container>
       </section>
@@ -456,8 +488,8 @@ function SnapshotPageContent() {
               Preview Report
             </h2>
             <p className="mt-2 text-slate-600">
-              Here&apos;s what your competitor offer report looks like once early
-              access is enabled.
+              Here&apos;s what your competitor offer report looks like once
+              early access is enabled.
             </p>
           </div>
 
