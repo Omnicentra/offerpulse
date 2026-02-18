@@ -3,6 +3,7 @@
  */
 
 import posthog from "posthog-js"
+import { logger } from "./logger"
 
 type AnalyticsEvent =
   // Landing page events
@@ -46,7 +47,7 @@ const isDevelopment = process.env.NODE_ENV === "development"
  */
 export function track(event: AnalyticsEvent, properties?: EventProperties): void {
   if (isDevelopment) {
-    console.log("[Analytics]", event, properties || {})
+    logger.debug("[Analytics]", event, properties || {})
   }
 
   // Send to PostHog

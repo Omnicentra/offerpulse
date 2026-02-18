@@ -11,8 +11,6 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
   capture_exceptions: true,
   // Turn on debug in development mode
   debug: process.env.NODE_ENV === "development",
-  // Use environment-specific person profiles to separate data
-  person_profiles: environment === "prd" ? "identified_only" : "always",
   // Automatically add environment to all events
   loaded: (posthog) => {
     posthog.register({
