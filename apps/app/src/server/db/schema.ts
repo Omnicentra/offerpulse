@@ -1,16 +1,14 @@
+import { relations } from "drizzle-orm";
 import {
-  pgTable,
-  text,
-  timestamp,
   boolean,
+  index,
   integer,
   jsonb,
-  varchar,
-  serial,
   pgEnum,
-  index,
+  pgTable,
+  text,
+  timestamp
 } from "drizzle-orm/pg-core";
-import { relations, sql } from "drizzle-orm";
 
 // ============================================================================
 // ENUMS

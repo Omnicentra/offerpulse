@@ -50,6 +50,8 @@ export function track(event: AnalyticsEvent, properties?: EventProperties): void
     logger.debug("[Analytics]", event, properties || {})
   }
 
+  logger.info(typeof window !== "undefined" ? "PostHog" : "Console", event, properties || {})
+
   // Send to PostHog
   if (typeof window !== "undefined") {
     posthog.capture(event, properties)
