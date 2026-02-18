@@ -1,13 +1,11 @@
-"use client"
-
-import { useEffect } from "react"
-import Link from "next/link";
-import { Container } from "@/components/container";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { tools, generateToolListSchema } from "@/lib/tools/registry";
-import { track } from "@/lib/analytics";
+import Link from "next/link"
+import { Container } from "@/components/container"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { tools, generateToolListSchema } from "@/lib/tools/registry"
+import { FreeToolsPageViewTracker } from "./free-tools-page-view-tracker"
+import { TrackedToolLink } from "./tracked-tool-link"
 
 export const metadata = {
   title: "Free Competitor Offer Tracking Tools | OfferPulse",
@@ -35,21 +33,16 @@ export const metadata = {
     description: "Analyse competitor offers instantly. Free tools for Shopify merchants.",
     images: ["/og/og-default.png"],
   },
-};
+}
 
 export default function FreeToolsPage() {
-  const baseUrl = process.env.NEXT_PUBLIC_MARKETING_APP_URL || "https://offerpulse.com";
-  const schema = generateToolListSchema(tools, `${baseUrl}/free-tools`);
-
-  // Track page view on mount
-  useEffect(() => {
-    track("free_tools_page_viewed", {
-      referrer: typeof window !== "undefined" ? document.referrer : undefined,
-    })
-  }, [])
+  const baseUrl = process.env.NEXT_PUBLIC_MARKETING_APP_URL || "https://offerpulse.com"
+  const schema = generateToolListSchema(tools, `${baseUrl}/free-tools`)
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      <FreeToolsPageViewTracker />
+
       {/* JSON-LD Schema */}
       <script
         type="application/ld+json"
@@ -113,7 +106,7 @@ export default function FreeToolsPage() {
         {/* Tools Grid */}
         <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {tools.map((tool) => {
-            const Icon = tool.icon;
+            const Icon = tool.icon
             return (
               <Card
                 key={tool.slug}
@@ -134,22 +127,16 @@ export default function FreeToolsPage() {
                   <CardDescription>{tool.shortDescription}</CardDescription>
                 </CardHeader>
                 <CardContent className="mt-auto">
-                  <Button 
-                    asChild 
-                    className="w-full"
-                    onClick={() => {
-                      track("free_tool_opened", {
-                        tool_name: tool.name,
-                        tool_slug: tool.slug,
-                        is_featured: tool.isFeatured || false,
-                      })
-                    }}
+                  <TrackedToolLink
+                    name={tool.name}
+                    slug={tool.slug}
+                    isFeatured={tool.isFeatured}
                   >
-                    <Link href={`/free-tools/${tool.slug}`}>Open tool</Link>
-                  </Button>
+                    Open tool
+                  </TrackedToolLink>
                 </CardContent>
               </Card>
-            );
+            )
           })}
         </div>
 
@@ -167,5 +154,5 @@ export default function FreeToolsPage() {
         </div>
       </Container>
     </div>
-  );
+  )
 }
