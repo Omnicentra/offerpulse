@@ -32,8 +32,8 @@ export const env = createEnv({
       ),
     NEXT_PUBLIC_POSTHOG_HOST: z.url("NEXT_PUBLIC_POSTHOG_HOST must be a valid URL"),
     NEXT_PUBLIC_ENVIRONMENT: z.enum(["dev", "stg", "prd"]).default("dev"),
-    NEXT_PUBLIC_MARKETING_APP_URL: z.url().optional(),
-    NEXT_PUBLIC_DASHBOARD_APP_URL: z.url().optional(),
+    NEXT_PUBLIC_MARKETING_APP_URL: z.url(),
+    NEXT_PUBLIC_DASHBOARD_APP_URL: z.url(),
   },
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
