@@ -4,10 +4,10 @@ import { captureEvent, identifyUser, shutdownPostHog } from "@/lib/posthog-serve
 
 const freeQueueSchema = z.object({
   email: z.string().min(1, "Email required"),
-  competitorUrl: z.string().optional().nullable(),
-  utmSource: z.string().optional().nullable(),
-  utmMedium: z.string().optional().nullable(),
-  utmCampaign: z.string().optional().nullable(),
+  competitorUrl: z.string().optional(),
+  utmSource: z.string().optional(),
+  utmMedium: z.string().optional(),
+  utmCampaign: z.string().optional(),
 });
 
 export async function POST(request: Request) {
