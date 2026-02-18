@@ -1,40 +1,57 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useSession } from "../server/auth/client";
+import { useTRPC } from "@/src/lib/trpc/client";
 
 interface WorkspaceContextType {
   workspaceId: string | null;
-  workspace: any | null;
+  workspace: { id: string; name: string; slug: string; role: string } | null;
+  workspaces: { id: string; name: string; slug: string; role: string }[];
   isLoading: boolean;
+  setWorkspaceId: (id: string | null) => void;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType>({
   workspaceId: null,
   workspace: null,
+  workspaces: [],
   isLoading: true,
+  setWorkspaceId: () => {},
 });
 
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const trpc = useTRPC();
 
-  // For now, use a default workspace ID
-  // In production, this would come from the user's session or be selectable
+  const { data: workspaces = [], isLoading: isLoadingWorkspaces } = useQuery(
+    trpc.users.getMyWorkspaces.queryOptions(undefined, {
+      enabled: !!session?.user,
+    })
+  );
+
+  // Set default workspace to first one when workspaces load
   useEffect(() => {
-    if (session?.user) {
-      // TODO: Get actual workspace from user's memberships
-      // For now, use a placeholder
-      setWorkspaceId("workspace_demo");
+    if (session?.user && workspaces.length > 0 && !workspaceId) {
+      setWorkspaceId(workspaces[0].id);
     }
-  }, [session]);
+  }, [session?.user, workspaces, workspaceId]);
+
+  const currentWorkspace = workspaceId
+    ? workspaces.find((w) => w.id === workspaceId) ?? workspaces[0] ?? null
+    : workspaces[0] ?? null;
+  const effectiveWorkspaceId = currentWorkspace?.id ?? workspaceId;
 
   return (
     <WorkspaceContext.Provider
       value={{
-        workspaceId,
-        workspace: null,
-        isLoading: !workspaceId,
+        workspaceId: effectiveWorkspaceId ?? null,
+        workspace: currentWorkspace ?? null,
+        workspaces,
+        isLoading: !!session?.user && isLoadingWorkspaces,
+        setWorkspaceId,
       }}
     >
       {children}

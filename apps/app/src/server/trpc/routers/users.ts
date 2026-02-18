@@ -1,4 +1,4 @@
-import { router, workspaceProcedure } from "../trpc";
+import { router, protectedProcedure, workspaceProcedure } from "../trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { workspaceMembers, users } from "../../db/schema";
@@ -6,6 +6,20 @@ import { eq, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 export const usersRouter = router({
+  /** Get workspaces the current user is a member of (for workspace switcher / initial load) */
+  getMyWorkspaces: protectedProcedure.query(async ({ ctx }) => {
+    const memberships = await ctx.db.query.workspaceMembers.findMany({
+      where: eq(workspaceMembers.userId, ctx.user.id),
+      with: { workspace: true },
+    });
+    return memberships.map((m) => ({
+      id: m.workspace.id,
+      name: m.workspace.name,
+      slug: m.workspace.slug,
+      role: m.role,
+    }));
+  }),
+
   list: workspaceProcedure
     .input(z.object({ workspaceId: z.string() }))
     .query(async ({ ctx, input }) => {

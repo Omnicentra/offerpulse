@@ -2,6 +2,8 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../db";
 import * as schema from "../db/schema";
+import { workspaces, workspaceMembers } from "../db/schema";
+import { nanoid } from "nanoid";
 
 if (!process.env.BETTER_AUTH_SECRET) {
   throw new Error("BETTER_AUTH_SECRET is not set in environment variables");
@@ -35,6 +37,28 @@ export const auth = betterAuth({
     process.env.BETTER_AUTH_URL || "http://localhost:3001",
     process.env.NEXT_PUBLIC_MARKETING_APP_URL || "http://localhost:3000",
   ],
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          // Create a default workspace for the new user and add them as owner
+          const workspaceId = `workspace_${nanoid()}`;
+          const slug = `workspace-${user.id.slice(-8)}`;
+          await db.insert(workspaces).values({
+            id: workspaceId,
+            name: `${user.name ?? "My"} Store`,
+            slug,
+          });
+          await db.insert(workspaceMembers).values({
+            id: `wm_${nanoid()}`,
+            workspaceId,
+            userId: user.id,
+            role: "owner",
+          });
+        },
+      },
+    },
+  },
 });
 
 export type Session = typeof auth.$Infer.Session;

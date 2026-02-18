@@ -14,6 +14,18 @@ The backend consists of:
 - **AI**: OpenAI/Anthropic for recommendations
 - **Notifications**: Resend (email) and Slack (webhooks)
 
+### When is a workspace created?
+
+**A workspace is created automatically when a user signs up.**
+
+1. **On signup** – Better-auth creates the user in the `users` table, then a **database hook** (`databaseHooks.user.create.after`) runs and:
+   - Creates a new workspace (e.g. `"My Store"` or `"{name} Store"`)
+   - Inserts a row in `workspace_members` with role `owner` linking the user to that workspace
+
+2. **In the app** – The `WorkspaceProvider` calls `trpc.users.getMyWorkspaces` (when the user is logged in) and uses the first workspace as the current workspace. Users with multiple workspaces (e.g. after being invited) can switch via `setWorkspaceId`.
+
+So: **signup → user created → hook runs → workspace + membership created → app loads workspaces and picks the first one.**
+
 ## Prerequisites
 
 - Node.js 18+ and pnpm
