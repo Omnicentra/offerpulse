@@ -8,8 +8,6 @@ if (posthogKey && posthogHost) {
   posthog.init(posthogKey, {
     api_host: "/ingest",
     ui_host: posthogHost,
-    // Include the defaults option as required by PostHog
-    defaults: "2026-01-30",
     // Enables capturing unhandled exceptions via Error Tracking
     capture_exceptions: true,
     // Turn on debug in development mode

@@ -1,47 +1,41 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
-import Link from "next/link"
+import type { OfferSnapshotResponse } from "@/app/api/offer-snapshot/route"
+import { Container } from "@/components/container"
+import { CtaSection } from "@/components/cta-section"
+import { FaqAccordion } from "@/components/faq-accordion"
+import { HeroProductTheatre } from "@/components/hero-product-theatre"
+import { CheckoutRevealSection } from "@/components/home/CheckoutRevealSection"
+import { HowItWorksStepper } from "@/components/how-it-works-stepper"
+import { InputAnnotation } from "@/components/input-annotation"
+import { OfferSnapshotForm } from "@/components/offer-snapshot-form"
+import { OfferSnapshotSkeleton } from "@/components/offer-snapshot-skeleton"
+import { OfferSnapshotTeaser } from "@/components/offer-snapshot-teaser"
+import { PricingCards } from "@/components/pricing-cards"
+import { PricingToggle } from "@/components/pricing-toggle"
+import { ReportPreview } from "@/components/report-preview"
+import { ScrollReveal } from "@/components/scroll-reveal"
+import { Section } from "@/components/section"
+import { TestimonialCard } from "@/components/testimonial-card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { SectionHeading } from "@/components/section-heading"
 import { WhatWeTrackTabs } from "@/components/what-we-track-tabs"
-import { HowItWorksStepper } from "@/components/how-it-works-stepper"
-import { PricingCards } from "@/components/pricing-cards"
-import { PricingToggle } from "@/components/pricing-toggle"
-import { FaqAccordion } from "@/components/faq-accordion"
-import { CtaSection } from "@/components/cta-section"
-import { OfferSnapshotForm } from "@/components/offer-snapshot-form"
-import { OfferSnapshotTeaser } from "@/components/offer-snapshot-teaser"
-import { OfferSnapshotSkeleton } from "@/components/offer-snapshot-skeleton"
-import { FullReportLocked } from "@/components/full-report-locked"
-import { HeroProductTheatre } from "@/components/hero-product-theatre"
-import { IntegrationRow } from "@/components/integration-row"
-import { Container } from "@/components/container"
-import { Section } from "@/components/section"
-import { Heading } from "@/components/heading"
-import { Subheading } from "@/components/subheading"
-import { TestimonialCard } from "@/components/testimonial-card"
-import { ReportPreview } from "@/components/report-preview"
-import { ScrollReveal } from "@/components/scroll-reveal"
-import { LogoMarquee } from "@/components/LogoMarquee"
-import { InputAnnotation } from "@/components/input-annotation"
-import { CheckoutRevealSection } from "@/components/home/CheckoutRevealSection"
-import Image from "next/image"
+import { track } from "@/lib/analytics"
+import { extractDomain } from "@offerpulse/lib/utils"
 import {
-  CheckCircle,
+  AlertTriangle,
+  ArrowRight,
   Bell,
   Calendar,
-  XCircle,
-  ArrowRight,
+  CheckCircle,
   Mail,
   TrendingUp,
-  AlertTriangle,
+  XCircle,
 } from "lucide-react"
-import { extractDomain } from "@offerpulse/lib/utils"
-import type { OfferSnapshotResponse } from "@/app/api/offer-snapshot/route"
-import { track } from "@/lib/analytics"
+import Image from "next/image"
+import Link from "next/link"
+import { useCallback, useEffect, useState } from "react"
 
 const testimonials = [
   {
@@ -96,22 +90,6 @@ export default function HomePage() {
     setPreviewDomain(getPreviewDomain(rawUrl))
   }, [])
 
-  const handleSuccess = (data: OfferSnapshotResponse, url: string) => {
-    setSnapshotData(data)
-    setSubmittedUrl(url)
-    setError(null)
-  }
-
-  const handleError = (errorMessage: string) => {
-    setError(errorMessage)
-    setSnapshotData(null)
-  }
-
-  const handleLoading = (loading: boolean) => {
-    setIsLoading(loading)
-    if (loading) setError(null)
-  }
-
   return (
     <>
       {/* Hero — 2-column: left copy + form, right product theatre */}
@@ -131,7 +109,7 @@ export default function HomePage() {
                 Tracking 10,000+ promo changes/month
               </p>
               <h1 className="mt-2 text-4xl font-bold leading-[1.1] tracking-tight text-ink sm:text-5xl lg:text-6xl">
-                Never miss a competitor's promo change again
+                Never miss a competitor&apos;s promo change again
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-relaxed text-body sm:text-xl">
                 OfferPulse tracks competitor discounts, bundles, free-shipping thresholds and cart incentives — and alerts you instantly with suggested actions to protect conversion and AOV.
@@ -340,7 +318,7 @@ export default function HomePage() {
                 Reacting late hurts ROAS and conversion
               </h2>
               <p className="mt-5 text-lg leading-relaxed text-body">
-                Your competitors are constantly testing offers — discounts, free shipping thresholds, bundles. When they launch a new promo and you don't know, shoppers who compare prices will choose them.
+                Your competitors are constantly testing offers — discounts, free shipping thresholds, bundles. When they launch a new promo and you don&apos;t know, shoppers who compare prices will choose them.
               </p>
               <ul className="mt-8 space-y-5">
                 <li className="flex items-start gap-4">
@@ -372,7 +350,7 @@ export default function HomePage() {
                   </div>
                   <div className="space-y-3">
                     <p className="text-lg font-semibold text-ink">
-                      Competitor launched "20% OFF" 3 days ago
+                      Competitor launched &quot;20% OFF&quot; 3 days ago
                     </p>
                     <p className="text-body leading-relaxed">
                       You only noticed when your conversion rate dropped 15%. By
