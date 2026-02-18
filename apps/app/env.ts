@@ -23,8 +23,14 @@ export const env = createEnv({
     ALERT_EMAIL: z.email().optional(),
   },
   client: {
-    NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
-    NEXT_PUBLIC_POSTHOG_HOST: z.url().optional(),
+    NEXT_PUBLIC_POSTHOG_KEY: z
+      .string()
+      .min(1, "NEXT_PUBLIC_POSTHOG_KEY is required")
+      .refine(
+        (val) => val.startsWith("phc_"),
+        "NEXT_PUBLIC_POSTHOG_KEY must start with phc_"
+      ),
+    NEXT_PUBLIC_POSTHOG_HOST: z.url("NEXT_PUBLIC_POSTHOG_HOST must be a valid URL"),
     NEXT_PUBLIC_ENVIRONMENT: z.enum(["dev", "stg", "prd"]).default("dev"),
     NEXT_PUBLIC_MARKETING_APP_URL: z.url().optional(),
     NEXT_PUBLIC_DASHBOARD_APP_URL: z.url().optional(),
