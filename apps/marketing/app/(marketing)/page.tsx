@@ -9,7 +9,6 @@ import { CheckoutRevealSection } from "@/components/home/CheckoutRevealSection"
 import { HowItWorksStepper } from "@/components/how-it-works-stepper"
 import { InputAnnotation } from "@/components/input-annotation"
 import { OfferSnapshotForm } from "@/components/offer-snapshot-form"
-import { OfferSnapshotSkeleton } from "@/components/offer-snapshot-skeleton"
 import { OfferSnapshotTeaser } from "@/components/offer-snapshot-teaser"
 import { PricingCards } from "@/components/pricing-cards"
 import { PricingToggle } from "@/components/pricing-toggle"
@@ -22,6 +21,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { WhatWeTrackTabs } from "@/components/what-we-track-tabs"
 import { track } from "@/lib/analytics"
+import { buildAppSignupUrl } from "@offerpulse/lib/routing"
 import { extractDomain } from "@offerpulse/lib/utils"
 import {
   AlertTriangle,
@@ -71,10 +71,8 @@ function getPreviewDomain(rawUrl: string): string {
 }
 
 export default function HomePage() {
-  const [isLoading, setIsLoading] = useState(false)
   const [snapshotData, setSnapshotData] = useState<OfferSnapshotResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [submittedUrl, setSubmittedUrl] = useState<string>("")
   const [previewDomain, setPreviewDomain] = useState("competitor-store.com")
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly")
 
@@ -162,11 +160,10 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Snapshot results: loading, error, or success with blur + CTA */}
-          {(isLoading || snapshotData || error) && (
+          {/* Snapshot results: error or success with blur + CTA */}
+          {(snapshotData || error) && (
             <div className="mx-auto mt-16 max-w-3xl">
-              {isLoading && <OfferSnapshotSkeleton />}
-              {error && !isLoading && (
+              {error && (
                 <Card className="rounded-2xl border-destructive/30 bg-destructive/5">
                   <CardContent className="flex items-center gap-3 p-5">
                     <XCircle className="h-5 w-5 shrink-0 text-destructive" />
@@ -189,7 +186,7 @@ export default function HomePage() {
                   </CardContent>
                 </Card>
               )}
-              {snapshotData && !isLoading && (
+              {snapshotData && (
                 <div className="relative">
                   <div className="relative rounded-2xl">
                     <OfferSnapshotTeaser data={snapshotData} />
@@ -211,12 +208,15 @@ export default function HomePage() {
                           onClick={() => {
                             track("landing_cta_clicked", {
                               source: "snapshot_result",
-                              competitor_url: submittedUrl || snapshotData.domain,
+                              competitor_url: snapshotData.domain,
                               action: "start_trial"
                             })
                           }}
                         >
-                          <Link href={`/auth/sign-up?competitorUrl=${encodeURIComponent(submittedUrl || snapshotData.domain)}`}>
+                          <Link href={buildAppSignupUrl({
+                            competitorUrl: snapshotData.domain,
+                            source: "landing_snapshot_result"
+                          })}>
                             Start free trial →
                           </Link>
                         </Button>
@@ -228,7 +228,7 @@ export default function HomePage() {
                           onClick={() => {
                             track("landing_cta_clicked", {
                               source: "snapshot_result",
-                              competitor_url: submittedUrl || snapshotData.domain,
+                              competitor_url: snapshotData.domain,
                               action: "view_pricing"
                             })
                           }}
@@ -444,7 +444,18 @@ export default function HomePage() {
                 <span className="text-body/50">•</span>
                 <span>Cancel anytime</span>
               </p>
-              <Button asChild variant="outline" size="default">
+              <Button 
+                asChild 
+                variant="outline" 
+                size="default"
+                onClick={() => {
+                  track("landing_cta_clicked", {
+                    source: "how_it_works_section",
+                    action: "learn_more",
+                    destination: "/how-it-works"
+                  })
+                }}
+              >
                 <Link href="/how-it-works">
                   Learn more
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -569,7 +580,18 @@ export default function HomePage() {
             </div>
           </ScrollReveal>
           <div className="mt-10 text-center">
-            <Button asChild variant="outline" className="transition-transform hover:scale-[1.02]">
+            <Button 
+              asChild 
+              variant="outline" 
+              className="transition-transform hover:scale-[1.02]"
+              onClick={() => {
+                track("landing_cta_clicked", {
+                  source: "pricing_preview_section",
+                  action: "view_full_pricing",
+                  destination: "/pricing"
+                })
+              }}
+            >
               <Link href="/pricing">
                 View full pricing details
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -591,7 +613,7 @@ export default function HomePage() {
                 Frequently asked questions
               </h2>
               <p className="mt-5 text-lg leading-relaxed text-body">
-                Got questions? We've got answers.
+                Got questions? We&apos;ve got answers.
               </p>
             </div>
           </ScrollReveal>
@@ -617,7 +639,7 @@ export default function HomePage() {
           <ScrollReveal>
             <div className="text-center">
               <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">
-                Steal offers — don't guess
+                Steal offers — don&apos;t guess
               </h2>
               <p className="mt-4 text-lg text-slate-600">
                 Real insights from tracking competitor offers

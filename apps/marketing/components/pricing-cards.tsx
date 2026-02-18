@@ -29,6 +29,15 @@ export function PricingCards({
   const handlePricingClick = (planName: string, price: number) => {
     track("cta_signup_clicked", { source: "pricing", plan: planName })
 
+    // Track CTA click for consistency with landing page tracking
+    track("landing_cta_clicked", {
+      source: "pricing_cards",
+      action: "select_plan",
+      plan_name: planName,
+      billing_period: billingPeriod,
+      price,
+    })
+
     // Track pricing plan selection in PostHog
     posthog.capture("pricing_plan_selected", {
       plan_name: planName,
