@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { track } from "@/lib/analytics"
-import posthog from "posthog-js"
 
 interface CtaSectionProps {
   title?: string
@@ -22,14 +21,25 @@ export function CtaSection({
   secondaryText = "View pricing",
   secondaryHref = "/pricing",
 }: CtaSectionProps) {
-  const handleCtaClick = () => {
+  const handlePrimaryCtaClick = () => {
     track("cta_signup_clicked", { source: "cta_section" })
 
-    // Track CTA click in PostHog
-    posthog.capture("cta_clicked", {
+    // Track CTA click in PostHog with consistent event name
+    track("landing_cta_clicked", {
       source: "cta_section",
+      action: "primary_cta",
       cta_text: primaryText,
       destination: primaryHref,
+    })
+  }
+
+  const handleSecondaryCtaClick = () => {
+    // Track secondary CTA click
+    track("landing_cta_clicked", {
+      source: "cta_section",
+      action: "secondary_cta",
+      cta_text: secondaryText,
+      destination: secondaryHref,
     })
   }
 
@@ -51,13 +61,13 @@ export function CtaSection({
           {description}
         </p>
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Button asChild size="lg" onClick={handleCtaClick}>
+          <Button asChild size="lg" onClick={handlePrimaryCtaClick}>
             <Link href={primaryHref}>
               {primaryText}
             </Link>
           </Button>
           {secondaryText && secondaryHref && (
-            <Button asChild variant="outline" size="lg">
+            <Button asChild variant="outline" size="lg" onClick={handleSecondaryCtaClick}>
               <Link href={secondaryHref}>{secondaryText}</Link>
             </Button>
           )}
