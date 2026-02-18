@@ -5,28 +5,29 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  getOnboardingIntent, 
+import {
+  getOnboardingIntent,
   clearOnboardingIntent,
   STORAGE_KEYS,
 } from "@offerpulse/lib/routing";
 import { competitorsApi, snapshotsApi, monitorSettingsApi } from "@/src/mock/api";
 import { Loader2, Store, AlertCircle, CheckCircle2 } from "lucide-react";
-import { authApi } from "@/src/mock/api";
+import { useSession } from "@/src/server/auth/client";
 
 type ProvisioningStep = "idle" | "connecting" | "creating_competitor" | "capturing_snapshot" | "complete" | "error";
 
 export default function ShopifyOnboardingPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { data: session, isPending } = useSession();
 
   const [storeDomain, setStoreDomain] = useState("");
   const [connectDialogOpen, setConnectDialogOpen] = useState(false);
@@ -34,10 +35,12 @@ export default function ShopifyOnboardingPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [createdCompetitorId, setCreatedCompetitorId] = useState<string | null>(null);
 
-  // Check auth on mount
+  // Check auth and onboarding intent on mount
   useEffect(() => {
-    if (!authApi.isAuthenticated()) {
+    if (isPending) return;
+    if (!session?.user) {
       router.replace("/login");
+      return;
     }
 
     // Check if onboarding intent exists, redirect to overview if not
@@ -45,7 +48,7 @@ export default function ShopifyOnboardingPage() {
     if (!intent) {
       router.replace("/overview");
     }
-  }, [router]);
+  }, [session?.user, isPending, router]);
 
   const handleConnectShopify = () => {
     setConnectDialogOpen(true);

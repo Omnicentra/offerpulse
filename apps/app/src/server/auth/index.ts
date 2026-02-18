@@ -4,14 +4,7 @@ import { db } from "../db";
 import * as schema from "../db/schema";
 import { workspaces, workspaceMembers } from "../db/schema";
 import { nanoid } from "nanoid";
-
-if (!process.env.BETTER_AUTH_SECRET) {
-  throw new Error("BETTER_AUTH_SECRET is not set in environment variables");
-}
-
-if (!process.env.BETTER_AUTH_URL) {
-  throw new Error("BETTER_AUTH_URL is not set in environment variables");
-}
+import { env } from "@/env";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -23,8 +16,8 @@ export const auth = betterAuth({
       verification: schema.verificationTokens,
     },
   }),
-  secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL,
+  secret: env.BETTER_AUTH_SECRET,
+  baseURL: env.BETTER_AUTH_URL,
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false, // Set to true in production with email service
@@ -34,8 +27,8 @@ export const auth = betterAuth({
     updateAge: 60 * 60 * 24, // 1 day (update session if older than 1 day)
   },
   trustedOrigins: [
-    process.env.BETTER_AUTH_URL || "http://localhost:3001",
-    process.env.NEXT_PUBLIC_MARKETING_APP_URL || "http://localhost:3000",
+    env.BETTER_AUTH_URL,
+    env.NEXT_PUBLIC_MARKETING_APP_URL || "http://localhost:3000",
   ],
   databaseHooks: {
     user: {

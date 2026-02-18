@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Plus, Menu, LogOut, User as UserIcon } from "lucide-react";
-import { authApi } from "@/src/mock/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { signOut, useSession } from "@/src/server/auth/client";
 
 interface TopbarProps {
   onMenuClick?: () => void;
@@ -24,10 +24,11 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const user = authApi.getCurrentUser();
+  const { data: session } = useSession();
+  const user = session?.user ?? null;
 
   const handleLogout = async () => {
-    await authApi.logout();
+    await signOut();
     toast({
       title: "Logged out",
       description: "You've been successfully logged out.",
