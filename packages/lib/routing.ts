@@ -12,11 +12,38 @@ interface AppSignupParams {
 }
 
 /**
+ * Get PostHog device ID for cross-domain tracking
+ * Returns null if PostHog is not initialized or in server environment
+ */
+function getPostHogDeviceId(): string | null {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    // Dynamic import to avoid issues when posthog is not available
+    const posthog = (window as any).posthog;
+    if (posthog && typeof posthog.get_distinct_id === 'function') {
+      return posthog.get_distinct_id();
+    }
+  } catch (error) {
+    console.warn('PostHog not initialized for cross-domain tracking:', error);
+  }
+  
+  return null;
+}
+
+/**
  * Build the app signup URL with query parameters
+ * Includes PostHog device ID for cross-domain tracking
  */
 export function buildAppSignupUrl(params: AppSignupParams = {}): string {
   const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_APP_URL || 'http://localhost:3001';
   const url = new URL('/signup', dashboardUrl);
+
+  // Add PostHog device ID for cross-domain tracking
+  const deviceId = getPostHogDeviceId();
+  if (deviceId) {
+    url.searchParams.set('ph_device_id', deviceId);
+  }
 
   if (params.competitorUrl) {
     url.searchParams.set('competitorUrl', params.competitorUrl);
@@ -43,10 +70,19 @@ export function buildAppSignupUrl(params: AppSignupParams = {}): string {
 
 /**
  * Build the app login URL
+ * Includes PostHog device ID for cross-domain tracking
  */
 export function buildAppLoginUrl(): string {
   const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_APP_URL || 'http://localhost:3001';
-  return `${dashboardUrl}/login`;
+  const url = new URL('/login', dashboardUrl);
+  
+  // Add PostHog device ID for cross-domain tracking
+  const deviceId = getPostHogDeviceId();
+  if (deviceId) {
+    url.searchParams.set('ph_device_id', deviceId);
+  }
+  
+  return url.toString();
 }
 
 /**
