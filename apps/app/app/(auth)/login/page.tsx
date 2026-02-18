@@ -35,20 +35,18 @@ function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
 
-  // Track page view and cross-domain tracking
+  // Track page view once on mount only
   useEffect(() => {
-    // Track signin page view (for analytics consistency)
     posthog.capture("signin_page_viewed");
+  }, []);
 
-    // Cross-domain tracking: Connect this session with marketing site session
+  // Cross-domain tracking: run when searchParams (e.g. ph_device_id) is available or changes
+  useEffect(() => {
     const marketingDeviceId = searchParams.get("ph_device_id");
 
     if (marketingDeviceId) {
       try {
-        // Alias the marketing device ID to current session
         posthog.alias(marketingDeviceId);
-
-        // Track that cross-domain tracking worked
         posthog.capture("cross_domain_tracking_connected", {
           marketing_device_id: marketingDeviceId,
         });
