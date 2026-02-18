@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn } from "@/src/server/auth/client";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,22 +24,23 @@ export function LoginForm() {
     resolver: zodResolver(signInSchema),
   });
 
-  const onSubmit = async (data: SignInInput) => {
+  const onSubmit = async (values: SignInInput) => {
     setIsLoading(true);
     try {
-      const result = await signIn("credentials", {
-        email: data.email,
-        password: data.password,
-        redirect: false,
+      const { data, error } = await signIn.email({
+        email: values.email,
+        password: values.password,
       });
 
-      if (result?.error) {
+      if (error) {
         toast({
           title: "Error",
-          description: "Invalid email or password",
+          description: error.message,
           variant: "destructive",
         });
+        return;
       } else {
+        console.log(data);
         router.push("/dashboard");
         router.refresh();
       }

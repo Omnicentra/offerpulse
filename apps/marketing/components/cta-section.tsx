@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { track } from "@/lib/analytics"
+import posthog from "posthog-js"
 
 interface CtaSectionProps {
   title?: string
@@ -23,6 +24,13 @@ export function CtaSection({
 }: CtaSectionProps) {
   const handleCtaClick = () => {
     track("cta_signup_clicked", { source: "cta_section" })
+
+    // Track CTA click in PostHog
+    posthog.capture("cta_clicked", {
+      source: "cta_section",
+      cta_text: primaryText,
+      destination: primaryHref,
+    })
   }
 
   return (

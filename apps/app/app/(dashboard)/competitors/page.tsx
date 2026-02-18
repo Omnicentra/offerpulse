@@ -1,14 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { PageHeader } from "@/components/ui/page-header";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -17,13 +10,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { competitorsApi, changeEventsApi } from "@/src/mock/api";
-import { Plus, Search, MoreVertical, Pause, Play, Trash2, Edit, ExternalLink } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useTRPC } from "@/src/lib/trpc/client";
+import { useWorkspace } from "@/src/providers/workspace-provider";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ExternalLink, Pause, Play, Plus, Search, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function CompetitorsPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { workspaceId } = useWorkspace();
+  const trpc = useTRPC();
   const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -31,42 +34,47 @@ export default function CompetitorsPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused">("all");
   const [competitorToDelete, setCompetitorToDelete] = useState<string | null>(null);
 
-  const { data: competitors, isLoading } = useQuery({
-    queryKey: ["competitors"],
-    queryFn: () => competitorsApi.list(),
-  });
+  const { data: competitors, isLoading } = useQuery(
+    trpc.competitors.list.queryOptions(
+      { workspaceId: workspaceId! },
+      { enabled: !!workspaceId }
+    )
+  );
 
-  const { data: allChanges } = useQuery({
-    queryKey: ["changeEvents"],
-    queryFn: () => changeEventsApi.list(),
-  });
+  const { data: allChanges } = useQuery(
+    trpc.changeEvents.list.queryOptions(
+      { workspaceId: workspaceId! },
+      { enabled: !!workspaceId }
+    )
+  );
 
-  const deleteMutation = useMutation({
-    mutationFn: competitorsApi.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["competitors"] });
-      toast({
-        title: "Competitor deleted",
-        description: "The competitor has been removed.",
-      });
-      setCompetitorToDelete(null);
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete competitor.",
-        variant: "destructive",
-      });
-    },
-  });
+  const deleteMutation = useMutation(
+    trpc.competitors.delete.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.competitors.list.queryFilter());
+        toast({
+          title: "Competitor deleted",
+          description: "The competitor has been removed.",
+        });
+        setCompetitorToDelete(null);
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to delete competitor.",
+          variant: "destructive",
+        });
+      },
+    })
+  );
 
-  const toggleActiveMutation = useMutation({
-    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
-      competitorsApi.update(id, { isActive }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["competitors"] });
-    },
-  });
+  const toggleActiveMutation = useMutation(
+    trpc.competitors.toggleStatus.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.competitors.list.queryFilter());
+      },
+    })
+  );
 
   // Get all unique tags
   const allTags = Array.from(
@@ -80,7 +88,7 @@ export default function CompetitorsPage() {
       competitor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       competitor.domain.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesTag = !selectedTag || competitor.tags.includes(selectedTag);
+    const matchesTag = !selectedTag || competitor.tags?.includes(selectedTag);
 
     const matchesStatus =
       statusFilter === "all" ||
@@ -261,18 +269,18 @@ export default function CompetitorsPage() {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-slate-900">{competitor.name}</p>
-                          <p className="text-sm text-slate-500">{competitor.domain}</p>
+                          <p className="text-sm text-slate-500">{competitor.domain || new URL(competitor.baseUrl).hostname}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
-                        {competitor.tags.slice(0, 2).map((tag) => (
+                        {competitor.tags?.slice(0, 2).map((tag) => (
                           <Badge key={tag} variant="secondary" className="text-xs">
                             {tag}
                           </Badge>
                         ))}
-                        {competitor.tags.length > 2 && (
+                        {competitor.tags?.length && competitor.tags.length > 2 && (
                           <Badge variant="secondary" className="text-xs">
                             +{competitor.tags.length - 2}
                           </Badge>
@@ -293,7 +301,7 @@ export default function CompetitorsPage() {
                       </Badge>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600">
-                      {formatLastSnapshot(competitor.lastSnapshotAt)}
+                      {formatLastSnapshot(competitor.lastSnapshotAt?.toISOString())}
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm font-medium text-slate-900">
@@ -314,10 +322,7 @@ export default function CompetitorsPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            toggleActiveMutation.mutate({
-                              id: competitor.id,
-                              isActive: !competitor.isActive,
-                            })
+                            toggleActiveMutation.mutate({ workspaceId: competitor.workspaceId, id: competitor.id })
                           }
                           title={competitor.isActive ? "Pause" : "Resume"}
                         >
@@ -362,7 +367,7 @@ export default function CompetitorsPage() {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => competitorToDelete && deleteMutation.mutate(competitorToDelete)}
+              onClick={() => competitorToDelete && deleteMutation.mutate({ workspaceId: workspaceId!, id: competitorToDelete })}
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? "Deleting..." : "Delete"}

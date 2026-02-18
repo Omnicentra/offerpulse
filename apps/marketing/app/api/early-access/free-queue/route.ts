@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { captureEvent, identifyUser, shutdownPostHog } from "@/lib/posthog-server";
 
 export async function POST(request: Request) {
   try {
@@ -38,6 +39,27 @@ export async function POST(request: Request) {
       console.error("Failed to save to Airtable:", error);
       // Don't fail the request if Airtable save fails
     }
+
+    // Track waitlist signup in PostHog (server-side)
+    captureEvent({
+      distinctId: email,
+      event: "waitlist_joined",
+      properties: {
+        competitor_url: competitorUrl,
+        utm_source: utmSource,
+        utm_medium: utmMedium,
+        utm_campaign: utmCampaign,
+        lead_type: "free_queue",
+      },
+    });
+    identifyUser({
+      distinctId: email,
+      properties: {
+        email,
+        waitlist_joined_at: new Date().toISOString(),
+      },
+    });
+    await shutdownPostHog();
 
     return NextResponse.json({ success: true });
   } catch (error) {

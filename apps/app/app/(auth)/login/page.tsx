@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { authApi } from "@/src/mock/api";
+import { signIn } from "@/src/server/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,25 +31,35 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "demo@offerpulse.com",
-      password: "demo123",
-    },
   });
 
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
     try {
-      await authApi.login(data.email, data.password);
+      const { error } = await signIn.email({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (error) {
+        toast({
+          title: "Login failed",
+          description: error.message ?? "Invalid credentials",
+          variant: "destructive",
+        });
+        return;
+      }
+
       toast({
         title: "Welcome back!",
         description: "You've successfully logged in.",
       });
+
       router.push("/overview");
     } catch (error) {
       toast({
         title: "Login failed",
-        description: error instanceof Error ? error.message : "An error occurred",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -73,13 +83,6 @@ export default function LoginPage() {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-950/5">
-          <div className="mb-6 rounded-xl bg-blue-50 p-4">
-            <p className="text-sm font-medium text-blue-900">Demo Mode</p>
-            <p className="mt-1 text-xs text-blue-700">
-              Enter any email and password to access the dashboard
-            </p>
-          </div>
-
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -146,10 +149,6 @@ export default function LoginPage() {
             </Link>
           </div>
         </div>
-
-        <p className="mt-8 text-center text-xs text-slate-500">
-          Protected by demo authentication. All data is stored locally.
-        </p>
       </div>
     </div>
   );

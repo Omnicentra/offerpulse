@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -20,6 +20,7 @@ import { Activity, Loader2, CheckCircle, ArrowRight } from "lucide-react"
 import { signUpSchema, type SignUpInput } from "@offerpulse/lib/validators"
 import { track } from "@/lib/analytics"
 import { useToast } from "@/hooks/use-toast"
+import posthog from "posthog-js"
 
 function SignUpForm() {
   const searchParams = useSearchParams()
@@ -29,6 +30,15 @@ function SignUpForm() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+
+  // Track signup page view on mount
+  useEffect(() => {
+    track("signup_page_viewed", {
+      has_competitor_url: !!competitorUrl,
+      competitor_url: competitorUrl || undefined,
+      referrer: typeof window !== "undefined" ? document.referrer : undefined,
+    })
+  }, [])
 
   const form = useForm<SignUpInput>({
     resolver: zodResolver(signUpSchema),
@@ -44,6 +54,13 @@ function SignUpForm() {
     setIsSubmitting(true)
     track("cta_signup_clicked", { source: "signup_form" })
 
+    // Track signup form submission in PostHog
+    posthog.capture("signup_form_submitted", {
+      has_store_url: !!data.storeUrl,
+      has_competitor_url: !!data.competitorUrl,
+      source: "signup_form",
+    })
+
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500))
 
@@ -52,6 +69,19 @@ function SignUpForm() {
       title: "Account created",
       description: "Welcome to OfferPulse. Your 14-day free trial has started.",
     })
+
+    // Identify user and track signup completion in PostHog
+    posthog.identify(data.email, {
+      email: data.email,
+      store_url: data.storeUrl || undefined,
+      signed_up_at: new Date().toISOString(),
+    })
+    posthog.capture("signup_completed", {
+      email: data.email,
+      has_store_url: !!data.storeUrl,
+      has_competitor_url: !!data.competitorUrl,
+    })
+
     setIsSuccess(true)
     setIsSubmitting(false)
   }

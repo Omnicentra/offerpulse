@@ -20,6 +20,7 @@ import { CheckCircle, AlertCircle, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { event } from "@/lib/meta-pixel";
 import { getStoredCompetitorUrl } from "@offerpulse/lib/routing";
+import posthog from "posthog-js";
 
 function SnapshotPageContent() {
   const searchParams = useSearchParams();
@@ -157,6 +158,18 @@ function SnapshotPageContent() {
   };
 
   const handleDepositCheckout = async () => {
+    // Track checkout initiation in PostHog
+    posthog.capture("checkout_initiated", {
+      email: email || undefined,
+      competitor_url: url || undefined,
+      utm_source: searchParams.get("utm_source"),
+      utm_medium: searchParams.get("utm_medium"),
+      utm_campaign: searchParams.get("utm_campaign"),
+      source: "snapshot_page",
+      amount: 19,
+      currency: "GBP",
+    });
+
     try {
       const response = await fetch("/api/early-access/create-checkout", {
         method: "POST",
@@ -176,6 +189,11 @@ function SnapshotPageContent() {
           title: "Error",
           description: data.error ?? "Failed to start checkout. Please try again.",
           variant: "destructive",
+        });
+        // Track checkout error
+        posthog.capture("checkout_error", {
+          error: data.error ?? "Failed to start checkout",
+          source: "snapshot_page",
         });
         return;
       }

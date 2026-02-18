@@ -1,9 +1,13 @@
+"use client"
+
+import { useEffect } from "react"
 import Link from "next/link";
 import { Container } from "@/components/container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { tools, generateToolListSchema } from "@/lib/tools/registry";
+import { track } from "@/lib/analytics";
 
 export const metadata = {
   title: "Free Competitor Offer Tracking Tools | OfferPulse",
@@ -36,6 +40,13 @@ export const metadata = {
 export default function FreeToolsPage() {
   const baseUrl = process.env.NEXT_PUBLIC_MARKETING_APP_URL || "https://offerpulse.com";
   const schema = generateToolListSchema(tools, `${baseUrl}/free-tools`);
+
+  // Track page view on mount
+  useEffect(() => {
+    track("free_tools_page_viewed", {
+      referrer: typeof window !== "undefined" ? document.referrer : undefined,
+    })
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -123,7 +134,17 @@ export default function FreeToolsPage() {
                   <CardDescription>{tool.shortDescription}</CardDescription>
                 </CardHeader>
                 <CardContent className="mt-auto">
-                  <Button asChild className="w-full">
+                  <Button 
+                    asChild 
+                    className="w-full"
+                    onClick={() => {
+                      track("free_tool_opened", {
+                        tool_name: tool.name,
+                        tool_slug: tool.slug,
+                        is_featured: tool.isFeatured || false,
+                      })
+                    }}
+                  >
                     <Link href={`/free-tools/${tool.slug}`}>Open tool</Link>
                   </Button>
                 </CardContent>

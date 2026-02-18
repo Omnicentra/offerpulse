@@ -4,46 +4,46 @@ overview: Migrate from Prisma+mock data to a production-ready backend using Driz
 todos:
   - id: remove-prisma-setup-drizzle
     content: Remove Prisma, install Drizzle + dependencies, create database structure
-    status: pending
+    status: completed
   - id: create-db-schema
     content: Design and implement comprehensive Drizzle schema with all 15 tables
-    status: pending
+    status: completed
   - id: setup-better-auth
     content: Install Better-auth, create config, implement auth API routes
-    status: pending
+    status: completed
   - id: setup-trpc
     content: Install tRPC, create routers structure, setup API route, create client/server helpers
-    status: pending
+    status: completed
   - id: implement-trpc-routers
     content: Implement all tRPC routers (competitors, snapshots, changes, recommendations, etc.)
-    status: pending
+    status: completed
   - id: migrate-frontend-to-trpc
     content: Replace mock API calls with tRPC throughout frontend components
-    status: pending
+    status: completed
   - id: update-auth-pages
     content: Migrate auth pages and components to Better-auth
-    status: pending
+    status: completed
   - id: setup-inngest
     content: Install Inngest, create client, setup API route, create job functions
-    status: pending
+    status: completed
   - id: implement-scraping
     content: Build web scraping service with Playwright, extractor, and screenshot capture
-    status: pending
+    status: completed
   - id: implement-change-detection
     content: Create change detection algorithm and integration
-    status: pending
+    status: completed
   - id: integrate-ai
     content: Setup OpenAI/Anthropic, implement recommendation generation
-    status: pending
+    status: completed
   - id: setup-alerts
     content: Implement email (Resend) and Slack notification services
-    status: pending
+    status: completed
   - id: implement-scheduler
     content: Create monitoring scheduler and capture pipeline
-    status: pending
+    status: completed
   - id: polish-production
     content: Add error handling, logging, environment variables, database seed
-    status: pending
+    status: completed
 isProject: false
 ---
 

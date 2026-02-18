@@ -5,14 +5,15 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { competitorsApi, monitorSettingsApi } from "@/src/mock/api";
+import { useTRPC } from "@/src/lib/trpc/client";
+import { useWorkspace } from "@/src/providers/workspace-provider";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, Plus } from "lucide-react";
 
 const competitorSchema = z.object({
@@ -32,6 +33,8 @@ type CompetitorForm = z.infer<typeof competitorSchema>;
 export default function NewCompetitorPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { workspaceId } = useWorkspace();
+  const trpc = useTRPC();
   const queryClient = useQueryClient();
 
   const [tags, setTags] = useState<string[]>([]);
@@ -85,58 +88,38 @@ export default function NewCompetitorPage() {
     setTags(tags.filter((t) => t !== tagToRemove));
   };
 
-  const createMutation = useMutation({
-    mutationFn: async (data: CompetitorForm) => {
-      const url = new URL(data.url);
-      const domain = url.hostname.replace("www.", "");
-      const baseUrl = `${url.protocol}//${url.hostname}`;
-
-      // Guess platform (simple heuristic)
-      const platformGuess = domain.includes("myshopify") || Math.random() > 0.5 ? "shopify" : "other";
-
-      const competitor = await competitorsApi.create({
-        name: data.name,
-        domain,
-        baseUrl,
-        platformGuess,
-        tags,
-        isActive: true,
-      });
-
-      // Create monitor settings
-      await monitorSettingsApi.upsert({
-        competitorId: competitor.id,
-        frequency: data.frequency,
-        track: {
-          promos: data.trackPromos,
-          shipping: data.trackShipping,
-          bundles: data.trackBundles,
-          cart: data.trackCart,
-          deliveryReturns: data.trackDeliveryReturns,
-        },
-      });
-
-      return competitor;
-    },
-    onSuccess: (competitor) => {
-      queryClient.invalidateQueries({ queryKey: ["competitors"] });
-      toast({
-        title: "Competitor added",
-        description: `${competitor.name} is now being monitored.`,
-      });
-      router.push(`/competitors/${competitor.id}`);
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to add competitor",
-        variant: "destructive",
-      });
-    },
-  });
+  const createMutation = useMutation(
+    trpc.competitors.create.mutationOptions({
+      onSuccess: (competitor) => {
+        queryClient.invalidateQueries(trpc.competitors.list.queryFilter());
+        toast({
+          title: "Competitor added",
+          description: `${competitor.name} is now being monitored.`,
+        });
+        router.push(`/competitors/${competitor.id}`);
+      },
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to add competitor",
+          variant: "destructive",
+        });
+      },
+    })
+  );
 
   const onSubmit = (data: CompetitorForm) => {
-    createMutation.mutate(data);
+    if (!workspaceId) return;
+    const urlObj = new URL(data.url);
+    const baseUrl = urlObj.origin;
+    const domain = urlObj.hostname.replace(/^www\./, "");
+    createMutation.mutate({
+      workspaceId,
+      name: data.name,
+      domain,
+      baseUrl,
+      tags,
+    });
   };
 
   return (
@@ -261,7 +244,7 @@ export default function NewCompetitorPage() {
               </div>
               {frequency === "1h" && (
                 <p className="text-xs text-slate-600">
-                  💡 Hourly monitoring provides the most real-time insights for fast-moving competitors
+                  Hourly monitoring provides the most real-time insights for fast-moving competitors
                 </p>
               )}
             </div>

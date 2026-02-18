@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { signUp } from "@/src/server/auth/client";
 
 export function SignUpForm() {
   const router = useRouter();
@@ -23,25 +24,27 @@ export function SignUpForm() {
     resolver: zodResolver(signUpSchema),
   });
 
-  const onSubmit = async (data: SignUpInput) => {
+  const onSubmit = async (values: SignUpInput) => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+      const { data, error } = await signUp.email({
+        name: values.name,
+        email: values.email,
+        password: values.password,
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to create account");
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
       }
-
       toast({
         title: "Account created",
         description: "Please sign in with your new account",
       });
-
       router.push("/login");
     } catch (error) {
       toast({
@@ -56,6 +59,20 @@ export function SignUpForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="name">Name</Label>
+        <Input
+          id="name"
+          type="text"
+          placeholder="Your name"
+          autoComplete="name"
+          {...register("name")}
+        />
+        {errors.name && (
+          <p className="text-sm text-destructive">{errors.name.message}</p>
+        )}
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input

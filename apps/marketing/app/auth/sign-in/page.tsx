@@ -19,6 +19,7 @@ import {
 import { Activity, Loader2 } from "lucide-react"
 import { signInSchema, type SignInInput } from "@offerpulse/lib/validators"
 import { useToast } from "@/hooks/use-toast"
+import posthog from "posthog-js"
 
 export default function SignInPage() {
   const router = useRouter()
@@ -36,6 +37,9 @@ export default function SignInPage() {
   const onSubmit = async (data: SignInInput) => {
     setIsSubmitting(true)
 
+    // Track signin form submission in PostHog
+    posthog.capture("signin_form_submitted")
+
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500))
 
@@ -43,6 +47,15 @@ export default function SignInPage() {
     toast({
       title: "Signed in successfully",
       description: "Welcome back to OfferPulse!",
+    })
+
+    // Identify user and track signin completion in PostHog
+    posthog.identify(data.email, {
+      email: data.email,
+      last_signed_in_at: new Date().toISOString(),
+    })
+    posthog.capture("signin_completed", {
+      email: data.email,
     })
 
     setIsSubmitting(false)

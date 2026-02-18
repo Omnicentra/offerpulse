@@ -30,6 +30,9 @@ export const env = createEnv({
         "AIRTABLE_API_KEY must start with pat"
       ),
     AIRTABLE_BASE_ID: z.string().default("app2FMikxa9F6erFY"),
+    DOPPLER_CONFIG: z.string().default("dev"),
+    DOPPLER_ENVIRONMENT: z.enum(["dev", "stg", "prd"]).default("dev"),
+    DOPPLER_PROJECT: z.string().default("offerpulse"),
   },
   clientPrefix: "NEXT_PUBLIC_",
   client: {
@@ -37,6 +40,15 @@ export const env = createEnv({
       .string()
       .min(1, "NEXT_PUBLIC_MARKETING_APP_URL is required")
       .url("NEXT_PUBLIC_MARKETING_APP_URL must be a valid URL"),
+    NEXT_PUBLIC_POSTHOG_KEY: z
+      .string()
+      .min(1, "NEXT_PUBLIC_POSTHOG_KEY is required")
+      .refine(
+        (val) => val.startsWith("phc_"),
+        "NEXT_PUBLIC_POSTHOG_KEY must start with phc_"
+      ),
+    NEXT_PUBLIC_POSTHOG_HOST: z.url("NEXT_PUBLIC_POSTHOG_HOST must be a valid URL"),
+    NEXT_PUBLIC_ENVIRONMENT: z.enum(["dev", "stg", "prd"]).default("dev"),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

@@ -14,6 +14,8 @@ import { Check } from "lucide-react"
 import { cn } from "@offerpulse/lib/utils"
 import { PRICING_PLANS, PRICING_NOTES, formatMonthlyPrice, formatYearlyPrice } from "@offerpulse/lib/pricing"
 import { track } from "@/lib/analytics"
+import { buildAppSignupUrl, getStoredCompetitorUrl } from "@offerpulse/lib/routing"
+import posthog from "posthog-js"
 
 interface PricingCardsProps {
   showFullDescription?: boolean
@@ -24,10 +26,25 @@ export function PricingCards({
   showFullDescription = true,
   billingPeriod = "monthly",
 }: PricingCardsProps) {
-  const handlePricingClick = (planName: string) => {
+  const handlePricingClick = (planName: string, price: number) => {
     track("cta_signup_clicked", { source: "pricing", plan: planName })
-    
-    window.location.href = "/snapshot"
+
+    // Track pricing plan selection in PostHog
+    posthog.capture("pricing_plan_selected", {
+      plan_name: planName,
+      billing_period: billingPeriod,
+      price,
+      currency: "GBP",
+      source: "pricing_page",
+    })
+
+    const competitorUrl = getStoredCompetitorUrl()
+    const signupUrl = buildAppSignupUrl({
+      competitorUrl: competitorUrl || undefined,
+      source: "pricing",
+    })
+
+    window.location.href = signupUrl
   }
 
   const isAnnual = billingPeriod === "annual"
@@ -119,7 +136,7 @@ export function PricingCards({
                   size="lg"
                   className="h-12 w-full text-base font-semibold"
                   variant={plan.popular ? "default" : "outline"}
-                  onClick={() => handlePricingClick(plan.name)}
+                  onClick={() => handlePricingClick(plan.name, price)}
                 >
                   {plan.popular ? "Start free trial" : "Get started"}
                 </Button>

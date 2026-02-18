@@ -1,16 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { PageHeader } from "@/components/ui/page-header";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import { ChangeTypeBadge } from "@/components/ui/change-type-badge";
 import { ConfidenceBadge } from "@/components/ui/confidence-badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   Select,
   SelectContent,
@@ -25,14 +23,34 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { competitorsApi, changeEventsApi } from "@/src/mock/api";
-import { TrendingUp, Filter, X } from "lucide-react";
-import type { ChangeEventType } from "@/src/mock/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useTRPC } from "@/src/lib/trpc/client";
+import { useWorkspace } from "@/src/providers/workspace-provider";
+import { Filter, TrendingUp, X } from "lucide-react";
 
-export default function ChangesPage() {
+type ChangeEventType =
+  | "PROMO"
+  | "SHIPPING"
+  | "BUNDLE"
+  | "CART_INCENTIVE"
+  | "DELIVERY_RETURNS";
+
+function ChangesPageSkeleton() {
+  return (
+    <div>
+      <PageHeader title="Changes" />
+      <Skeleton className="h-96 rounded-2xl" />
+    </div>
+  );
+}
+
+function ChangesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedId = searchParams.get("selected");
+
+  const { workspaceId } = useWorkspace();
+  const trpc = useTRPC();
 
   const [competitorFilter, setCompetitorFilter] = useState<string>("all");
   const [typeFilters, setTypeFilters] = useState<ChangeEventType[]>([]);
@@ -40,15 +58,19 @@ export default function ChangesPage() {
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
   const [selectedChange, setSelectedChange] = useState<string | null>(null);
 
-  const { data: competitors } = useQuery({
-    queryKey: ["competitors"],
-    queryFn: () => competitorsApi.list(),
-  });
+  const { data: competitors } = useQuery(
+    trpc.competitors.list.queryOptions(
+      { workspaceId: workspaceId! },
+      { enabled: !!workspaceId }
+    )
+  );
 
-  const { data: allChanges, isLoading } = useQuery({
-    queryKey: ["changeEvents"],
-    queryFn: () => changeEventsApi.list(),
-  });
+  const { data: allChanges, isLoading } = useQuery(
+    trpc.changeEvents.list.queryOptions(
+      { workspaceId: workspaceId! },
+      { enabled: !!workspaceId }
+    )
+  );
 
   // Handle selected change from URL
   useEffect(() => {
@@ -64,7 +86,7 @@ export default function ChangesPage() {
   // Filter changes
   const filteredChanges = allChanges?.filter((change) => {
     if (competitorFilter && competitorFilter !== "all" && change.competitorId !== competitorFilter) return false;
-    if (typeFilters.length > 0 && !typeFilters.includes(change.type)) return false;
+    if (typeFilters.length > 0 && !typeFilters.includes(change.type as ChangeEventType)) return false;
     if (confidenceFilter && confidenceFilter !== "all" && change.confidence !== confidenceFilter) return false;
     return true;
   });
@@ -100,7 +122,7 @@ export default function ChangesPage() {
     setConfidenceFilter("all");
   };
 
-  const formatTime = (timestamp: string) => {
+  const formatTime = (timestamp: string | Date) => {
     return new Date(timestamp).toLocaleString("en-US", {
       month: "short",
       day: "numeric",
@@ -114,13 +136,11 @@ export default function ChangesPage() {
     (c) => c.id === selectedChangeData?.competitorId
   );
 
+  const beforeData = selectedChangeData?.before ?? {};
+  const afterData = selectedChangeData?.after ?? {};
+
   if (isLoading) {
-    return (
-      <div>
-        <PageHeader title="Changes" />
-        <Skeleton className="h-96 rounded-2xl" />
-      </div>
-    );
+    return <ChangesPageSkeleton />;
   }
 
   return (
@@ -224,7 +244,7 @@ export default function ChangesPage() {
                         setSelectedChange(change.id);
                         setDetailDrawerOpen(true);
                       }}
-                      className="flex w-full items-start gap-4 rounded-2xl border border-slate-200 bg-white p-6 text-left transition-colors hover:border-blue-200 hover:bg-blue-50/50"
+                      className="flex w-full items-start gap-4 rounded-2xl border border-slate-200 bg-white p-6 text-left transition-colors hover:border-slate-200 hover:bg-slate-50/50"
                     >
                       <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-sm font-semibold text-white">
                         {competitor?.name?.charAt(0) || "?"}
@@ -281,13 +301,13 @@ export default function ChangesPage() {
                       Before
                     </h4>
                     <div className="mt-2 space-y-1">
-                      {Object.entries(selectedChangeData.before).map(([key, value]) => (
+                      {Object.entries(beforeData).map(([key, value]) => (
                         <div key={key} className="text-sm">
                           <span className="font-medium text-slate-700">{key}: </span>
                           <span className="text-slate-600">{String(value)}</span>
                         </div>
                       ))}
-                      {Object.keys(selectedChangeData.before).length === 0 && (
+                      {Object.keys(beforeData).length === 0 && (
                         <p className="text-sm text-slate-500">No previous data</p>
                       )}
                     </div>
@@ -298,7 +318,7 @@ export default function ChangesPage() {
                       After
                     </h4>
                     <div className="mt-2 space-y-1">
-                      {Object.entries(selectedChangeData.after).map(([key, value]) => (
+                      {Object.entries(afterData).map(([key, value]) => (
                         <div key={key} className="text-sm">
                           <span className="font-medium text-slate-700">{key}: </span>
                           <span className="text-slate-600">{String(value)}</span>
@@ -341,5 +361,13 @@ export default function ChangesPage() {
         </SheetContent>
       </Sheet>
     </div>
+  );
+}
+
+export default function ChangesPage() {
+  return (
+    <Suspense fallback={<ChangesPageSkeleton />}>
+      <ChangesPageContent />
+    </Suspense>
   );
 }

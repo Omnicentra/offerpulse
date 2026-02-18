@@ -31,5 +31,8 @@
     ".next/dev/types/**/*.ts",
     "public/scripts/pixel.js"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "lib/__tests__"
+  ]
 }

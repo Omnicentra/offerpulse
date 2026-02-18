@@ -22,6 +22,7 @@ import { RecommendationsCard } from "@/components/snapshot-report/Recommendation
 import { Percent, Truck, Package, Gift, ShoppingCart, Clock } from "lucide-react";
 import { ArrowLeft, AlertCircle, ExternalLink, Loader2, Sparkles, ArrowRight, Lock, TrendingUp } from "lucide-react";
 import type { ExtractedOffer } from "@/lib/tools/extractor";
+import posthog from "posthog-js";
 
 export default function ToolPage() {
   const params = useParams();
@@ -90,8 +91,28 @@ export default function ToolPage() {
       }
 
       setResult(data);
+
+      // Track successful analysis in PostHog
+      posthog.capture("offer_tool_analyzed", {
+        tool_slug: slug,
+        analyzed_url: normalizedUrl,
+        offers_found: data.offers ? Object.values(data.offers).flat().length : 0,
+        has_discounts: data.offers?.discounts?.length > 0,
+        has_shipping: !!data.offers?.shippingThreshold,
+        has_bundles: data.offers?.bundles?.length > 0,
+        has_gifts: data.offers?.gifts?.length > 0,
+        cached: data.cached ?? false,
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      const errorMessage = err instanceof Error ? err.message : "An error occurred";
+      setError(errorMessage);
+
+      // Track error in PostHog
+      posthog.capture("offer_tool_error", {
+        tool_slug: slug,
+        analyzed_url: normalizedUrl,
+        error: errorMessage,
+      });
     } finally {
       setLoading(false);
     }

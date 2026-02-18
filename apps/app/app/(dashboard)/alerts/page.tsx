@@ -1,77 +1,98 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { alertsApi } from "@/src/mock/api";
-import { Bell, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { ChangeEventType } from "@/src/mock/types";
+import { useTRPC } from "@/src/lib/trpc/client";
+import { useWorkspace } from "@/src/providers/workspace-provider";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+type ChangeEventType =
+  | "PROMO"
+  | "SHIPPING"
+  | "BUNDLE"
+  | "CART_INCENTIVE"
+  | "DELIVERY_RETURNS";
 
 export default function AlertsPage() {
   const { toast } = useToast();
+  const { workspaceId } = useWorkspace();
+  const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const { data: settings, isLoading } = useQuery({
-    queryKey: ["alertSettings"],
-    queryFn: () => alertsApi.get(),
-  });
+  const { data: settings, isLoading } = useQuery(
+    trpc.alerts.get.queryOptions(
+      { workspaceId: workspaceId! },
+      { enabled: !!workspaceId }
+    )
+  );
 
   const [localSettings, setLocalSettings] = useState(settings);
 
   // Update local settings when data loads
-  useState(() => {
+  useEffect(() => {
     if (settings) {
       setLocalSettings(settings);
     }
-  });
+  }, [settings]);
 
-  const updateMutation = useMutation({
-    mutationFn: alertsApi.update,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["alertSettings"] });
-      toast({
-        title: "Settings saved",
-        description: "Your alert settings have been updated.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update settings",
-        variant: "destructive",
-      });
-    },
-  });
+  const updateMutation = useMutation(
+    trpc.alerts.update.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.alerts.get.queryFilter());
+        toast({
+          title: "Settings saved",
+          description: "Your alert settings have been updated.",
+        });
+      },
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to update settings",
+          variant: "destructive",
+        });
+      },
+    })
+  );
 
-  const testMutation = useMutation({
-    mutationFn: alertsApi.test,
-    onSuccess: (result) => {
-      toast({
-        title: result.message,
-        description: "Check your inbox or Slack channel",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Test failed",
-        description: error instanceof Error ? error.message : "Failed to send test notification",
-        variant: "destructive",
-      });
-    },
-  });
+  const testMutation = useMutation(
+    trpc.alerts.test.mutationOptions({
+      onSuccess: (result) => {
+        toast({
+          title: result.message,
+          description: "Check your inbox or Slack channel",
+        });
+      },
+      onError: (error) => {
+        toast({
+          title: "Test failed",
+          description: error.message || "Failed to send test notification",
+          variant: "destructive",
+        });
+      },
+    })
+  );
 
   const handleSave = () => {
-    if (!localSettings) return;
-    updateMutation.mutate(localSettings);
+    if (!localSettings || !workspaceId) return;
+    updateMutation.mutate({
+      workspaceId,
+      emailEnabled: localSettings.emailEnabled,
+      slackEnabled: localSettings.slackEnabled,
+      slackWebhookUrl: localSettings.slackWebhookUrl ?? undefined,
+      eventTypes: localSettings.eventTypes ?? undefined,
+      minConfidence: localSettings.minConfidence,
+    });
   };
 
   const handleTestNotification = () => {
-    testMutation.mutate();
+    if (!workspaceId) return;
+    testMutation.mutate({ workspaceId });
   };
 
   const eventTypeLabels: Record<ChangeEventType, string> = {
@@ -123,7 +144,7 @@ export default function AlertsPage() {
         {localSettings.emailEnabled && (
           <div className="mt-4 rounded-lg bg-blue-50 p-4">
             <p className="text-sm text-blue-900">
-              ✉️ Alerts will be sent to <strong>demo@offerpulse.com</strong>
+              Alerts will be sent to your registered email
             </p>
           </div>
         )}
@@ -197,11 +218,12 @@ export default function AlertsPage() {
             >
               <input
                 type="checkbox"
-                checked={localSettings.eventTypes.includes(type)}
+                checked={localSettings.eventTypes?.includes(type) || false}
                 onChange={(e) => {
+                  const currentTypes = localSettings.eventTypes || [];
                   const newTypes = e.target.checked
-                    ? [...localSettings.eventTypes, type]
-                    : localSettings.eventTypes.filter((t) => t !== type);
+                    ? [...currentTypes, type]
+                    : currentTypes.filter((t) => t !== type);
                   setLocalSettings({ ...localSettings, eventTypes: newTypes });
                 }}
                 className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"

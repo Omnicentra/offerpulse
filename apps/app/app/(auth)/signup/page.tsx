@@ -1,88 +1,67 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { authApi } from "@/src/mock/api";
+import { signUp } from "@/src/server/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { storeOnboardingIntent, isValidUrl } from "@offerpulse/lib/routing";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  competitorUrl: z.string().optional().refine((url) => !url || isValidUrl(url), {
-    message: "Please enter a valid URL",
-  }),
 });
 
 type SignupForm = z.infer<typeof signupSchema>;
 
-function SignupPageContent() {
+export default function SignupPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Get query params
-  const competitorUrl = searchParams.get("competitorUrl");
-  const source = searchParams.get("source");
-  const utm_source = searchParams.get("utm_source");
-  const utm_medium = searchParams.get("utm_medium");
-  const utm_campaign = searchParams.get("utm_campaign");
-
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm<SignupForm>({
     resolver: zodResolver(signupSchema),
-    defaultValues: {
-      competitorUrl: competitorUrl || "",
-    },
   });
-
-  // Set competitor URL when params change
-  useEffect(() => {
-    if (competitorUrl) {
-      setValue("competitorUrl", competitorUrl);
-    }
-  }, [competitorUrl, setValue]);
 
   const onSubmit = async (data: SignupForm) => {
     setIsLoading(true);
     try {
-      // Store onboarding intent before creating account
-      storeOnboardingIntent({
-        competitorUrl: data.competitorUrl || undefined,
-        source: source || undefined,
-        utm_source: utm_source || undefined,
-        utm_medium: utm_medium || undefined,
-        utm_campaign: utm_campaign || undefined,
+      const { error } = await signUp.email({
+        name: data.name,
+        email: data.email,
+        password: data.password,
       });
 
-      // Create account
-      await authApi.signup(data.name, data.email, data.password);
-      
+      if (error) {
+        toast({
+          title: "Signup failed",
+          description: error.message ?? "An error occurred. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       toast({
         title: "Account created!",
-        description: "Let's connect your Shopify store.",
+        description: "Welcome to OfferPulse.",
       });
 
-      // Route to Shopify connect (Step 2 of 2)
-      router.push("/onboarding/shopify");
+      router.push("/overview");
     } catch (error) {
       toast({
         title: "Signup failed",
-        description: error instanceof Error ? error.message : "An error occurred",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -106,30 +85,13 @@ function SignupPageContent() {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-950/5">
-          {competitorUrl && (
-            <div className="mb-6 rounded-xl bg-blue-50 p-4">
-              <p className="text-sm font-medium text-blue-900">Step 1 of 2</p>
-              <p className="mt-1 text-xs text-blue-700">
-                Create your account to start monitoring competitors
-              </p>
-            </div>
-          )}
-          {!competitorUrl && (
-            <div className="mb-6 rounded-xl bg-blue-50 p-4">
-              <p className="text-sm font-medium text-blue-900">Demo Mode</p>
-              <p className="mt-1 text-xs text-blue-700">
-                Enter any details to create your demo account
-              </p>
-            </div>
-          )}
-
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Name</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="John Doe"
+                placeholder="Your name"
                 {...register("name")}
                 className="h-11"
                 aria-invalid={errors.name ? "true" : "false"}
@@ -157,28 +119,6 @@ function SignupPageContent() {
                 </p>
               )}
             </div>
-
-            {competitorUrl && (
-              <div className="space-y-2">
-                <Label htmlFor="competitorUrl">Competitor URL</Label>
-                <Input
-                  id="competitorUrl"
-                  type="url"
-                  placeholder="https://competitor.com"
-                  {...register("competitorUrl")}
-                  className="h-11"
-                  aria-invalid={errors.competitorUrl ? "true" : "false"}
-                />
-                {errors.competitorUrl && (
-                  <p className="text-sm text-red-600" role="alert">
-                    {errors.competitorUrl.message}
-                  </p>
-                )}
-                <p className="text-xs text-slate-500">
-                  We'll create your first competitor monitor and capture a snapshot
-                </p>
-              </div>
-            )}
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -228,23 +168,7 @@ function SignupPageContent() {
             </Link>
           </div>
         </div>
-
-        <p className="mt-8 text-center text-xs text-slate-500">
-          Protected by demo authentication. All data is stored locally.
-        </p>
       </div>
     </div>
-  );
-}
-
-export default function SignupPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
-      </div>
-    }>
-      <SignupPageContent />
-    </Suspense>
   );
 }
