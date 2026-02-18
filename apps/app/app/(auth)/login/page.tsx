@@ -36,10 +36,19 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
     try {
-      await signIn.email({
+      const { error } = await signIn.email({
         email: data.email,
         password: data.password,
       });
+
+      if (error) {
+        toast({
+          title: "Login failed",
+          description: error.message ?? "Invalid credentials",
+          variant: "destructive",
+        });
+        return;
+      }
 
       toast({
         title: "Welcome back!",
@@ -50,7 +59,7 @@ export default function LoginPage() {
     } catch (error) {
       toast({
         title: "Login failed",
-        description: error instanceof Error ? error.message : "Invalid credentials",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {

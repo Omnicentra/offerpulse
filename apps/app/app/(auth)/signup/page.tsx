@@ -37,11 +37,20 @@ export default function SignupPage() {
   const onSubmit = async (data: SignupForm) => {
     setIsLoading(true);
     try {
-      await signUp.email({
+      const { error } = await signUp.email({
         name: data.name,
         email: data.email,
         password: data.password,
       });
+
+      if (error) {
+        toast({
+          title: "Signup failed",
+          description: error.message ?? "An error occurred. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       toast({
         title: "Account created!",
@@ -52,7 +61,7 @@ export default function SignupPage() {
     } catch (error) {
       toast({
         title: "Signup failed",
-        description: error instanceof Error ? error.message : "An error occurred",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
