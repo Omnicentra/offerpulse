@@ -8,6 +8,8 @@ import { Menu, X } from "lucide-react"
 import { cn } from "@offerpulse/lib/utils"
 import { OfferPulseMark } from "@/components/OfferPulseMark"
 import { track } from "@/lib/analytics"
+import { getStoredCompetitorUrl } from "@offerpulse/lib/routing"
+import { normalizeUrl, validateUrl } from "@/lib/url-helpers"
 
 const navLinks = [
   { href: "/how-it-works", label: "How it works" },
@@ -21,12 +23,28 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const handleGetStarted = () => {
+    // Check for stored competitor URL from previous form submission
+    const storedUrl = getStoredCompetitorUrl()
+    let destination = "/snapshot"
+
+    if (storedUrl) {
+      // Normalize and validate the stored URL
+      const normalizedUrl = normalizeUrl(storedUrl)
+      const validation = validateUrl(storedUrl)
+
+      if (validation.ok && normalizedUrl) {
+        // Include normalized URL with UTM parameters
+        destination = `/snapshot?url=${encodeURIComponent(normalizedUrl)}&utm_source=navbar&utm_medium=cta&utm_campaign=get_started`
+      }
+    }
+
     track("marketing_cta_clicked", {
       source: "navbar",
-      destination: "/snapshot",
+      destination,
+      hasStoredUrl: !!storedUrl,
     })
 
-    window.location.href = "/snapshot"
+    window.location.href = destination
   }
 
   return (

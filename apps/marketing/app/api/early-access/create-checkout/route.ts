@@ -10,9 +10,9 @@ export async function POST(request: Request) {
     const schema = z.object({
       email: z.string().optional().nullable(),
       competitorUrl: z.string().optional().default(""),
-      utmSource: z.string().optional(),
-      utmMedium: z.string().optional(),
-      utmCampaign: z.string().optional(),
+      utmSource: z.string().optional().nullable(),
+      utmMedium: z.string().optional().nullable(),
+      utmCampaign: z.string().optional().nullable(),
     });
 
     const parseResult = schema.safeParse(body);
@@ -71,9 +71,9 @@ export async function POST(request: Request) {
       ...(email && { customer_email: email }),
       metadata: {
         competitorUrl: (competitorUrl ?? "").trim(),
-        utmSource: utmSource ?? "",
-        utmMedium: utmMedium ?? "",
-        utmCampaign: utmCampaign ?? "",
+        ...(utmSource != null && { utmSource: utmSource }),
+        ...(utmMedium != null && { utmMedium: utmMedium }),
+        ...(utmCampaign != null && { utmCampaign: utmCampaign }),
       },
       allow_promotion_codes: true,
     });

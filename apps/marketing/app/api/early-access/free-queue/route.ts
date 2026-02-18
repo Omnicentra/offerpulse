@@ -1,14 +1,29 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { captureEvent, identifyUser, shutdownPostHog } from "@/lib/posthog-server";
+
+const freeQueueSchema = z.object({
+  email: z.string().min(1, "Email required"),
+  competitorUrl: z.string().optional().nullable(),
+  utmSource: z.string().optional().nullable(),
+  utmMedium: z.string().optional().nullable(),
+  utmCampaign: z.string().optional().nullable(),
+});
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, competitorUrl, utmSource, utmMedium, utmCampaign } = body;
+    const parseResult = freeQueueSchema.safeParse(body);
 
-    if (!email) {
-      return NextResponse.json({ error: "Email required" }, { status: 400 });
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: parseResult.error.message || "Invalid input" },
+        { status: 400 }
+      );
     }
+
+    const { email, competitorUrl, utmSource, utmMedium, utmCampaign } =
+      parseResult.data;
 
     // Log to console
     console.log("Free queue signup:", {
