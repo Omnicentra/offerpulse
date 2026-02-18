@@ -21,7 +21,7 @@ initializeFacebookPixel(
   window,
   document,
   "script",
-  "https://connect.facebook.net/en_US/fbevents.js",
+  "https://www.offerpulse.io/api/fbevents",
 );
 
 window.fbq("init", PIXEL_ID);
