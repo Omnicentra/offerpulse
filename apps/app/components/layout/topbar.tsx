@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
 import { Search, Plus, Menu, LogOut, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,7 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
   const user = session?.user ?? null;
 
   const handleLogout = async () => {
+    posthog.reset();
     await signOut();
     toast({
       title: "Logged out",
