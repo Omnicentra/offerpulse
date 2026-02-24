@@ -9,15 +9,36 @@ import { ScanProgress } from "@/components/snapshot-report/ScanProgress";
 import { ScoreSummary } from "@/components/snapshot-report/ScoreSummary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ExtractedOffer } from "@/lib/tools/extractor";
 import { getToolBySlug } from "@/lib/tools/registry";
-import { calculateOfferScore, getScoreInterpretation } from "@/lib/tools/scoring";
+import {
+  calculateOfferScore,
+  getScoreInterpretation,
+} from "@/lib/tools/scoring";
 import { normalizeUrl, validateUrl } from "@/lib/url-helpers";
-import { AlertCircle, ArrowRight, Clock, ExternalLink, Gift, Loader2, Package, Percent, ShoppingCart, Sparkles, Truck } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  Clock,
+  ExternalLink,
+  Gift,
+  Loader2,
+  Package,
+  Percent,
+  ShoppingCart,
+  Sparkles,
+  Truck,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
@@ -42,7 +63,13 @@ export default function ToolPage() {
 
   // Auto-run if URL is in query params (only once)
   useEffect(() => {
-    if (urlParam && slug === "offer-snapshot" && !hasAutoRun.current && !result && !loading) {
+    if (
+      urlParam &&
+      slug === "offer-snapshot" &&
+      !hasAutoRun.current &&
+      !result &&
+      !loading
+    ) {
       hasAutoRun.current = true;
       handleSubmit(new Event("submit") as any);
     }
@@ -98,7 +125,9 @@ export default function ToolPage() {
       posthog.capture("offer_tool_analyzed", {
         tool_slug: slug,
         analyzed_url: normalizedUrl,
-        offers_found: data.offers ? Object.values(data.offers).flat().length : 0,
+        offers_found: data.offers
+          ? Object.values(data.offers).flat().length
+          : 0,
         has_discounts: data.offers?.discounts?.length > 0,
         has_shipping: !!data.offers?.shippingThreshold,
         has_bundles: data.offers?.bundles?.length > 0,
@@ -106,7 +135,8 @@ export default function ToolPage() {
         cached: data.cached ?? false,
       });
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred";
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
 
       // Track error in PostHog
@@ -122,14 +152,16 @@ export default function ToolPage() {
 
   // Calculate score if we have results
   const offerScore = result?.offers ? calculateOfferScore(result.offers) : null;
-  const scoreInterpretation = offerScore ? getScoreInterpretation(offerScore.total) : "";
+  const scoreInterpretation = offerScore
+    ? getScoreInterpretation(offerScore.total)
+    : "";
 
   // Show SEOptimer-style report if this is offer-snapshot tool with results
   if (slug === "offer-snapshot" && result && offerScore) {
     const offers = result.offers;
     const domain = new URL(result.url).hostname;
     const screenshotUrl = result.screenshotUrl;
-    
+
     // Build metrics
     const metrics = {
       discounts: offers.discounts.length,
@@ -147,11 +179,15 @@ export default function ToolPage() {
       evidenceText: d.evidenceText,
     }));
 
-    const shippingItems = offers.shippingThreshold ? [{
-      text: `Free shipping over ${offers.shippingThreshold.currency}${offers.shippingThreshold.amount}`,
-      location: offers.shippingThreshold.locationHint,
-      evidenceText: offers.shippingThreshold.evidenceText,
-    }] : [];
+    const shippingItems = offers.shippingThreshold
+      ? [
+          {
+            text: `Free shipping over ${offers.shippingThreshold.currency}${offers.shippingThreshold.amount}`,
+            location: offers.shippingThreshold.locationHint,
+            evidenceText: offers.shippingThreshold.evidenceText,
+          },
+        ]
+      : [];
 
     const bundleItems = offers.bundles.map((b: any) => ({
       text: b.evidenceText,
@@ -189,15 +225,24 @@ export default function ToolPage() {
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
           {/* Score Summary Section */}
           <div className="mb-16">
-            <h2 className="mb-2 text-3xl font-bold text-slate-900">Your Competitor Offer Report</h2>
-            <p className="mb-8 text-slate-600">Comprehensive analysis of promotional mechanics</p>
-            <ScoreSummary score={offerScore} interpretation={scoreInterpretation} />
+            <h2 className="mb-2 text-3xl font-bold text-slate-900">
+              Your Competitor Offer Report
+            </h2>
+            <p className="mb-8 text-slate-600">
+              Comprehensive analysis of promotional mechanics
+            </p>
+            <ScoreSummary
+              score={offerScore}
+              interpretation={scoreInterpretation}
+            />
           </div>
 
           {/* Screenshot Section */}
           {screenshotUrl && (
             <div className="mb-16">
-              <h3 className="mb-6 text-2xl font-bold text-slate-900">Site Screenshot</h3>
+              <h3 className="mb-6 text-2xl font-bold text-slate-900">
+                Site Screenshot
+              </h3>
               <Card className="overflow-hidden">
                 <CardContent className="p-0">
                   <div
@@ -223,9 +268,13 @@ export default function ToolPage() {
                   </div>
                   <div className="p-4 bg-slate-50">
                     <p className="text-sm text-slate-600">
-                      Captured on {new Date(result.timestamp).toLocaleDateString()} at {new Date(result.timestamp).toLocaleTimeString()}
+                      Captured on{" "}
+                      {new Date(result.timestamp).toLocaleDateString()} at{" "}
+                      {new Date(result.timestamp).toLocaleTimeString()}
                     </p>
-                    <p className="text-xs text-slate-500 mt-1">Click to view full size</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Click to view full size
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -234,13 +283,17 @@ export default function ToolPage() {
 
           {/* Metrics Overview */}
           <div className="mb-16">
-            <h3 className="mb-6 text-xl font-semibold text-slate-900">Quick Metrics</h3>
+            <h3 className="mb-6 text-xl font-semibold text-slate-900">
+              Quick Metrics
+            </h3>
             <MetricsRow metrics={metrics} />
           </div>
 
           {/* Offer Stack Detected */}
           <div className="mb-16">
-            <h3 className="mb-6 text-2xl font-bold text-slate-900">Offer Stack Detected</h3>
+            <h3 className="mb-6 text-2xl font-bold text-slate-900">
+              Offer Stack Detected
+            </h3>
             <div className="grid gap-6 lg:grid-cols-2">
               <OfferStackCard
                 category="Discounts & Codes"
@@ -269,7 +322,10 @@ export default function ToolPage() {
               />
               <OfferStackCard
                 category="Urgency Signals"
-                items={offers.announcements.map((a: string) => ({ text: a, location: "Announcement bar" }))}
+                items={offers.announcements.map((a: string) => ({
+                  text: a,
+                  location: "Announcement bar",
+                }))}
                 icon={Clock}
               />
             </div>
@@ -292,12 +348,11 @@ export default function ToolPage() {
                 Start Tracking {domain}
               </h2>
               <p className="mt-3 text-slate-700">
-                Get instant alerts when they change offers, shipping thresholds, bundles, or cart incentives
+                Get instant alerts when they change offers, shipping thresholds,
+                bundles, or cart incentives
               </p>
               <Button asChild size="lg" className="mt-6">
-                <Link href="/snapshot">
-                  Start monitoring this competitor
-                </Link>
+                <Link href="/snapshot">Start monitoring this competitor</Link>
               </Button>
               <p className="mt-4 text-sm text-slate-600">
                 From £19/mo • 14-day free trial • No credit card required
@@ -317,8 +372,18 @@ export default function ToolPage() {
                 onClick={() => setShowScreenshotModal(false)}
                 className="absolute right-4 top-4 z-10 rounded-full bg-white p-2 shadow-lg hover:bg-slate-100"
               >
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
               <Image
@@ -337,50 +402,54 @@ export default function ToolPage() {
     );
   }
 
-// Helper function to generate recommendations
-function generateRecommendations(offers: ExtractedOffer) {
-  const visible = [];
-  const locked = 3;
+  // Helper function to generate recommendations
+  function generateRecommendations(offers: ExtractedOffer) {
+    const visible = [];
+    const locked = 3;
 
-  if (offers.shippingThreshold) {
-    visible.push({
-      title: `Match or test a ${offers.shippingThreshold.currency}${offers.shippingThreshold.amount} free shipping threshold`,
-      description: `They offer free shipping at ${offers.shippingThreshold.currency}${offers.shippingThreshold.amount}. Consider matching this threshold or testing a higher threshold with a gift-with-purchase to protect margin.`,
-      effort: "Low" as const,
-      impact: "High" as const,
-    });
+    if (offers.shippingThreshold) {
+      visible.push({
+        title: `Match or test a ${offers.shippingThreshold.currency}${offers.shippingThreshold.amount} free shipping threshold`,
+        description: `They offer free shipping at ${offers.shippingThreshold.currency}${offers.shippingThreshold.amount}. Consider matching this threshold or testing a higher threshold with a gift-with-purchase to protect margin.`,
+        effort: "Low" as const,
+        impact: "High" as const,
+      });
+    }
+
+    if (offers.bundles.length > 0) {
+      visible.push({
+        title: "Add a bundle offer to protect margin vs straight discounts",
+        description:
+          "Bundle offers preserve margin better than percentage discounts while creating perceived value.",
+        effort: "Medium" as const,
+        impact: "High" as const,
+      });
+    }
+
+    if (offers.discounts.length > 0) {
+      visible.push({
+        title:
+          "Counter with a different offer type instead of matching discount",
+        description:
+          "Instead of matching their discount percentage, consider a bundle, gift, or shipping offer that protects margin.",
+        effort: "Low" as const,
+        impact: "Medium" as const,
+      });
+    }
+
+    // Ensure at least 3 recommendations
+    while (visible.length < 3) {
+      visible.push({
+        title: "Add a cart progress incentive to increase AOV",
+        description:
+          "Show customers how close they are to free shipping or a gift to encourage higher order values.",
+        effort: "Medium" as const,
+        impact: "High" as const,
+      });
+    }
+
+    return { visible: visible.slice(0, 3), locked };
   }
-
-  if (offers.bundles.length > 0) {
-    visible.push({
-      title: "Add a bundle offer to protect margin vs straight discounts",
-      description: "Bundle offers preserve margin better than percentage discounts while creating perceived value.",
-      effort: "Medium" as const,
-      impact: "High" as const,
-    });
-  }
-
-  if (offers.discounts.length > 0) {
-    visible.push({
-      title: "Counter with a different offer type instead of matching discount",
-      description: "Instead of matching their discount percentage, consider a bundle, gift, or shipping offer that protects margin.",
-      effort: "Low" as const,
-      impact: "Medium" as const,
-    });
-  }
-
-  // Ensure at least 3 recommendations
-  while (visible.length < 3) {
-    visible.push({
-      title: "Add a cart progress incentive to increase AOV",
-      description: "Show customers how close they are to free shipping or a gift to encourage higher order values.",
-      effort: "Medium" as const,
-      impact: "High" as const,
-    });
-  }
-
-  return { visible: visible.slice(0, 3), locked };
-}
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -405,8 +474,12 @@ function generateRecommendations(offers: ExtractedOffer) {
               <Icon className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">{tool.name}</h1>
-              <p className="mt-1 text-sm text-slate-600">{tool.shortDescription}</p>
+              <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+                {tool.name}
+              </h1>
+              <p className="mt-1 text-sm text-slate-600">
+                {tool.shortDescription}
+              </p>
             </div>
           </div>
         </div>
@@ -418,7 +491,9 @@ function generateRecommendations(offers: ExtractedOffer) {
             <Card>
               <CardHeader>
                 <CardTitle>Analyse a store</CardTitle>
-                <CardDescription>Enter any competitor store URL</CardDescription>
+                <CardDescription>
+                  Enter any competitor store URL
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -447,7 +522,8 @@ function generateRecommendations(offers: ExtractedOffer) {
                 </form>
 
                 <p className="mt-4 text-xs text-slate-500">
-                  Some stores block automated checks. Results may vary. For public information only.
+                  Some stores block automated checks. Results may vary. For
+                  public information only.
                 </p>
               </CardContent>
             </Card>
@@ -458,7 +534,10 @@ function generateRecommendations(offers: ExtractedOffer) {
                 <CardTitle className="text-base">About this tool</CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-slate-700">
-                <Link href={`/free-tools/${slug}`} className="flex items-center gap-2 text-blue-600 hover:underline">
+                <Link
+                  href={`/free-tools/${slug}`}
+                  className="flex items-center gap-2 text-blue-600 hover:underline"
+                >
                   Learn more about {tool.name}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -476,7 +555,8 @@ function generateRecommendations(offers: ExtractedOffer) {
                         Want alerts when this changes?
                       </p>
                       <p className="mt-1 text-sm text-slate-600">
-                        Start monitoring to get instant notifications when competitors update their offers
+                        Start monitoring to get instant notifications when
+                        competitors update their offers
                       </p>
                       <Button asChild size="sm" className="mt-4">
                         <Link href="/">Start monitoring →</Link>
@@ -490,9 +570,7 @@ function generateRecommendations(offers: ExtractedOffer) {
 
           {/* Right: Results */}
           <div>
-            {loading && slug === "offer-snapshot" && (
-              <ScanProgress />
-            )}
+            {loading && slug === "offer-snapshot" && <ScanProgress />}
 
             {loading && slug !== "offer-snapshot" && (
               <Card>
@@ -513,7 +591,9 @@ function generateRecommendations(offers: ExtractedOffer) {
                 <CardContent className="flex items-start gap-3 pt-6">
                   <AlertCircle className="h-5 w-5 flex-shrink-0 text-red-600" />
                   <div>
-                    <p className="font-semibold text-red-900">Analysis failed</p>
+                    <p className="font-semibold text-red-900">
+                      Analysis failed
+                    </p>
                     <p className="mt-1 text-sm text-red-700">{error}</p>
                     <Button
                       variant="outline"
@@ -544,7 +624,10 @@ function generateRecommendations(offers: ExtractedOffer) {
                         </CardDescription>
                       </div>
                       {result.cached && (
-                        <Badge variant="outline" className="text-xs flex-shrink-0">
+                        <Badge
+                          variant="outline"
+                          className="text-xs flex-shrink-0"
+                        >
                           Cached
                         </Badge>
                       )}
@@ -563,7 +646,9 @@ function generateRecommendations(offers: ExtractedOffer) {
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
                     <Icon className="h-8 w-8 text-slate-400" />
                   </div>
-                  <p className="mt-4 font-medium text-slate-900">Enter a URL to get started</p>
+                  <p className="mt-4 font-medium text-slate-900">
+                    Enter a URL to get started
+                  </p>
                   <p className="mt-1 text-sm text-slate-600">
                     Results will appear here after analysis
                   </p>
@@ -589,7 +674,8 @@ function OfferResults({ offers }: { offers: ExtractedOffer }) {
     return (
       <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-8 text-center">
         <p className="text-sm text-slate-600">
-          No obvious offer text detected. Offers might be dynamic, require login, or hidden in cart flow.
+          No obvious offer text detected. Offers might be dynamic, require
+          login, or hidden in cart flow.
         </p>
       </div>
     );
@@ -606,13 +692,16 @@ function OfferResults({ offers }: { offers: ExtractedOffer }) {
                 Free Shipping
               </p>
               <p className="mt-2 text-lg font-bold text-blue-800">
-                {offers.shippingThreshold.currency} {offers.shippingThreshold.amount}
+                {offers.shippingThreshold.currency}{" "}
+                {offers.shippingThreshold.amount}
               </p>
               <p className="mt-1 text-sm text-blue-700 break-words">
-                "{offers.shippingThreshold.evidenceText}"
+                &quot;{offers.shippingThreshold.evidenceText}&quot;
               </p>
             </div>
-            <Badge variant="outline" className="flex-shrink-0">{offers.shippingThreshold.locationHint}</Badge>
+            <Badge variant="outline" className="flex-shrink-0">
+              {offers.shippingThreshold.locationHint}
+            </Badge>
           </div>
         </div>
       )}
@@ -625,13 +714,18 @@ function OfferResults({ offers }: { offers: ExtractedOffer }) {
           </p>
           <div className="mt-3 space-y-2">
             {offers.discounts.map((discount, idx) => (
-              <div key={idx} className="flex items-start justify-between gap-4 flex-wrap">
+              <div
+                key={idx}
+                className="flex items-start justify-between gap-4 flex-wrap"
+              >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-purple-800">
                     {discount.value}% off
                     {discount.code && ` • Code: ${discount.code}`}
                   </p>
-                  <p className="text-xs text-purple-700 break-words">"{discount.evidenceText}"</p>
+                  <p className="text-xs text-purple-700 break-words">
+                    &quot;{discount.evidenceText}&quot;
+                  </p>
                 </div>
                 <Badge variant="outline" className="text-xs flex-shrink-0">
                   {discount.locationHint}
@@ -651,7 +745,9 @@ function OfferResults({ offers }: { offers: ExtractedOffer }) {
           <div className="mt-3 space-y-2">
             {offers.bundles.map((bundle, idx) => (
               <div key={idx}>
-                <p className="text-sm text-orange-800 break-words">"{bundle.evidenceText}"</p>
+                <p className="text-sm text-orange-800 break-words">
+                  &quot;{bundle.evidenceText}&quot;
+                </p>
                 <Badge variant="outline" className="mt-1 text-xs">
                   {bundle.locationHint}
                 </Badge>
@@ -670,7 +766,9 @@ function OfferResults({ offers }: { offers: ExtractedOffer }) {
           <div className="mt-3 space-y-2">
             {offers.gifts.map((gift, idx) => (
               <div key={idx}>
-                <p className="text-sm text-green-800 break-words">"{gift.evidenceText}"</p>
+                <p className="text-sm text-green-800 break-words">
+                  &quot;{gift.evidenceText}&quot;
+                </p>
                 <Badge variant="outline" className="mt-1 text-xs">
                   {gift.locationHint}
                 </Badge>
@@ -689,7 +787,9 @@ function OfferResults({ offers }: { offers: ExtractedOffer }) {
           <div className="mt-3 space-y-2">
             {offers.cartIncentives.map((incentive, idx) => (
               <div key={idx}>
-                <p className="text-sm text-indigo-800 break-words">"{incentive.evidenceText}"</p>
+                <p className="text-sm text-indigo-800 break-words">
+                  &quot;{incentive.evidenceText}&quot;
+                </p>
                 <Badge variant="outline" className="mt-1 text-xs">
                   {incentive.locationHint}
                 </Badge>
@@ -707,7 +807,7 @@ function OfferResults({ offers }: { offers: ExtractedOffer }) {
           </p>
           {offers.announcements.map((ann, idx) => (
             <p key={idx} className="mt-2 text-sm text-slate-700 break-words">
-              "{ann}"
+              &quot;{ann}&quot;
             </p>
           ))}
         </div>
