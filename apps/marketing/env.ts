@@ -33,6 +33,27 @@ export const env = createEnv({
     DOPPLER_CONFIG: z.string().default("dev"),
     DOPPLER_ENVIRONMENT: z.enum(["dev", "stg", "prd"]).default("dev"),
     DOPPLER_PROJECT: z.string().default("offerpulse"),
+    BROWSERLESS_API_KEY: z
+      .string()
+      .min(1, "BROWSERLESS_API_KEY is required for JS-rendered scraping"),
+    BROWSERLESS_WSS_URL: z
+      .url()
+      .default("wss://production-lon.browserless.io"),
+    R2_ACCOUNT_ID: z
+      .string()
+      .min(1, "R2_ACCOUNT_ID is required for screenshot storage"),
+    R2_ACCESS_KEY_ID: z
+      .string()
+      .min(1, "R2_ACCESS_KEY_ID is required for screenshot storage"),
+    R2_SECRET_ACCESS_KEY: z
+      .string()
+      .min(1, "R2_SECRET_ACCESS_KEY is required for screenshot storage"),
+    R2_BUCKET_NAME: z
+      .string()
+      .min(1, "R2_BUCKET_NAME is required for screenshot storage").default("offerpulse-snapshots"),
+    R2_PUBLIC_URL: z
+      .url()
+      .optional().default("https://pub-d1037b173c5f40ebb985230458591c67.r2.dev"),
   },
   clientPrefix: "NEXT_PUBLIC_",
   client: {
@@ -60,6 +81,13 @@ export const env = createEnv({
     DOPPLER_CONFIG: process.env.DOPPLER_CONFIG,
     DOPPLER_ENVIRONMENT: process.env.DOPPLER_ENVIRONMENT,
     DOPPLER_PROJECT: process.env.DOPPLER_PROJECT,
+    BROWSERLESS_API_KEY: process.env.BROWSERLESS_API_KEY,
+    BROWSERLESS_WSS_URL: process.env.BROWSERLESS_WSS_URL,
+    R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
+    R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
+    R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
+    R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
+    R2_PUBLIC_URL: process.env.R2_PUBLIC_URL,
     NEXT_PUBLIC_MARKETING_APP_URL: process.env.NEXT_PUBLIC_MARKETING_APP_URL,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,

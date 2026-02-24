@@ -54,22 +54,45 @@ export function extractOffers(html: string, url: string): ExtractedOffer {
     $('meta[name="description"]').attr("content") ||
     undefined;
 
-  // Get all text content
+  // Get all text content with better structure
   const bodyText = $("body").text();
   const headerText = $("header, [role='banner'], .header, #header").text();
-  const announcementBarText = $(
-    ".announcement-bar, .promo-banner, .top-bar, [class*='announcement'], [class*='promo']"
-  ).first().text();
+  const heroText = $(".hero, [class*='hero'], [class*='banner']:not([class*='announcement'])").first().text();
+  const navText = $("nav, [role='navigation'], .navigation").text();
+  
+  // Extract announcement bars with Shopify-specific selectors
+  const announcementSelectors = [
+    ".announcement-bar",
+    ".announcement-bar__message",
+    "[data-section-type='announcement-bar']",
+    ".promo-banner",
+    ".top-bar",
+    ".topbar",
+    "[class*='announcement']",
+    "[class*='promo-bar']",
+    "marquee",
+  ];
+  
+  const announcementElements = $(announcementSelectors.join(", "));
+  announcementElements.each((_, elem) => {
+    const text = $(elem).text().trim();
+    if (text && text.length > 5 && text.length < 300) {
+      result.announcements.push(text);
+    }
+  });
+  
+  // Remove duplicate announcements
+  result.announcements = [...new Set(result.announcements)];
 
-  if (announcementBarText) {
-    result.announcements.push(announcementBarText.trim());
-  }
-
-  // Extract shipping threshold
+  // Extract shipping threshold - expanded patterns
   const shippingPatterns = [
-    /free\s+shipping\s+(?:on\s+orders?\s+)?(?:over|above)\s+[£$€]?\s*(\d+)/gi,
-    /spend\s+[£$€]?\s*(\d+)\s+(?:for|to\s+get)\s+free\s+shipping/gi,
-    /orders?\s+(?:over|above)\s+[£$€]?\s*(\d+)\s+ship\s+free/gi,
+    /free\s+(?:standard\s+)?shipping\s+(?:on\s+)?(?:all\s+)?orders?\s+(?:over|above)\s+[£$€A$NZ$CA$]?\s*(\d+)/gi,
+    /free\s+delivery\s+(?:on\s+)?orders?\s+(?:over|above)\s+[£$€A$NZ$CA$]?\s*(\d+)/gi,
+    /spend\s+[£$€A$NZ$CA$]?\s*(\d+)\s+(?:for|to\s+get|and\s+get)\s+free\s+(?:shipping|delivery)/gi,
+    /orders?\s+(?:over|above)\s+[£$€A$NZ$CA$]?\s*(\d+)\s+ship\s+free/gi,
+    /complimentary\s+shipping\s+(?:over|above)\s+[£$€A$NZ$CA$]?\s*(\d+)/gi,
+    /[£$€A$NZ$CA$]?\s*(\d+)\+\s+free\s+(?:shipping|delivery)/gi,
+    /free\s+(?:shipping|delivery)\s+(?:on|for)\s+[£$€A$NZ$CA$]?\s*(\d+)\+/gi,
   ];
 
   for (const pattern of shippingPatterns) {
@@ -78,96 +101,155 @@ export function extractOffers(html: string, url: string): ExtractedOffer {
       const match = matches[0];
       const amount = parseInt(match[1]);
       const currency = detectCurrency(match[0]);
+      const locationHint = determineLocation($, match[0], {
+        announcements: result.announcements,
+        headerText,
+        heroText,
+      });
       
       result.shippingThreshold = {
         amount,
         currency,
-        evidenceText: match[0].trim(),
-        locationHint: announcementBarText.includes(match[0]) ? "Announcement bar" : "Site content",
+        evidenceText: match[0].trim().substring(0, 100),
+        locationHint,
       };
       break;
     }
   }
 
-  // Extract discounts
+  // Extract discounts - significantly expanded patterns
   const discountPatterns = [
-    { pattern: /(\d+)%\s+off/gi, type: "percentage" as const },
-    { pattern: /save\s+(\d+)%/gi, type: "percentage" as const },
-    { pattern: /\b(\d{2,3})%\s+discount/gi, type: "percentage" as const },
-    { pattern: /save\s+[£$€]\s*(\d+)/gi, type: "fixed" as const },
-    { pattern: /[£$€]\s*(\d+)\s+off/gi, type: "fixed" as const },
+    { pattern: /(?:up\s+to\s+)?(\d+)%\s+off/gi, type: "percentage" as const },
+    { pattern: /save\s+(?:up\s+to\s+)?(\d+)%/gi, type: "percentage" as const },
+    { pattern: /(\d+)%\s+(?:discount|sale)/gi, type: "percentage" as const },
+    { pattern: /get\s+(\d+)%\s+off/gi, type: "percentage" as const },
+    { pattern: /(\d+)%\s+off\s+(?:your\s+first\s+order|everything|sitewide|all)/gi, type: "percentage" as const },
+    { pattern: /sale\s+[:-]?\s*(?:up\s+to\s+)?(\d+)%\s+off/gi, type: "percentage" as const },
+    { pattern: /extra\s+(\d+)%\s+off/gi, type: "percentage" as const },
+    { pattern: /save\s+[£$€A$NZ$CA$]\s*(\d+)/gi, type: "fixed" as const },
+    { pattern: /[£$€A$NZ$CA$]\s*(\d+)\s+off/gi, type: "fixed" as const },
+    { pattern: /(\d+)%\s+off\s+with\s+code/gi, type: "percentage" as const },
   ];
 
-  const codePattern = /(?:code|promo|coupon)[:\s]+([A-Z0-9]{4,15})/gi;
-  const codes = [...bodyText.matchAll(codePattern)].map((m) => m[1]);
+  // Extract promo codes more aggressively
+  const codePatterns = [
+    /(?:code|promo|coupon)[:\s]+([A-Z0-9]{4,15})/gi,
+    /use\s+code[:\s]+([A-Z0-9]{4,15})/gi,
+    /code[:\s]+['"]([A-Z0-9]{4,15})['"]/gi,
+    /\b([A-Z0-9]{6,12})\b.*?(?:checkout|discount|off)/gi,
+  ];
+  
+  const codes: string[] = [];
+  for (const pattern of codePatterns) {
+    const matches = [...bodyText.matchAll(pattern)];
+    codes.push(...matches.map((m) => m[1]));
+  }
+  const uniqueCodes = [...new Set(codes)].slice(0, 5);
 
   for (const { pattern, type } of discountPatterns) {
     const matches = [...bodyText.matchAll(pattern)];
     for (const match of matches.slice(0, 5)) {
-      // Limit to top 5
+      const evidenceText = match[0].trim().substring(0, 100);
+      const locationHint = determineLocation($, match[0], {
+        announcements: result.announcements,
+        headerText,
+        heroText,
+      });
+      
       result.discounts.push({
         type,
         value: parseInt(match[1]),
-        code: codes[0],
-        evidenceText: match[0].trim(),
-        locationHint: headerText.includes(match[0])
-          ? "Header"
-          : announcementBarText.includes(match[0])
-          ? "Announcement bar"
-          : "Page content",
+        code: uniqueCodes[0],
+        evidenceText,
+        locationHint,
       });
     }
   }
 
-  // BOGO / Bundle patterns
+  // BOGO / Bundle patterns - expanded
   const bundlePatterns = [
-    /buy\s+(\d+)\s+get\s+(\d+)\s+free/gi,
-    /(\d+)\s+for\s+(\d+)/gi,
-    /bundle\s+and\s+save/gi,
-    /multi-buy/gi,
+    /buy\s+(\d+)\s+get\s+(\d+)\s+(?:free|off)/gi,
+    /buy\s+(\d+)\s+get\s+(\d+)\s+at\s+\d+%\s+off/gi,
+    /(\d+)\s+for\s+[£$€A$NZ$CA$]?\s*(\d+)/gi,
+    /bundle\s+(?:and\s+save|deal|offer)/gi,
+    /multi-?buy/gi,
+    /mix\s+(?:and|&)\s+match/gi,
+    /(\d+)\s+for\s+the\s+price\s+of\s+(\d+)/gi,
+    /spend\s+[£$€A$NZ$CA$]?\s*(\d+)\s+save\s+[£$€A$NZ$CA$]?\s*(\d+)/gi,
+    /sets?\s+from\s+[£$€A$NZ$CA$]?\s*(\d+)/gi,
+    /save\s+when\s+you\s+buy\s+(\d+)/gi,
   ];
 
   for (const pattern of bundlePatterns) {
     const matches = [...bodyText.matchAll(pattern)];
     for (const match of matches.slice(0, 3)) {
+      const evidenceText = match[0].trim().substring(0, 100);
+      const locationHint = determineLocation($, match[0], {
+        announcements: result.announcements,
+        headerText,
+        heroText,
+      });
+      
       result.bundles.push({
-        evidenceText: match[0].trim(),
-        locationHint: "Page content",
+        evidenceText,
+        locationHint,
       });
     }
   }
 
-  // Gift patterns
+  // Gift patterns - expanded
   const giftPatterns = [
-    /free\s+gift\s+with\s+purchase/gi,
-    /complimentary\s+gift/gi,
-    /free\s+sample/gi,
-    /gift\s+with\s+orders?\s+over/gi,
+    /free\s+gift\s+with\s+(?:purchase|every\s+order)/gi,
+    /free\s+(?:.+?)\s+with\s+every\s+order/gi,
+    /complimentary\s+(?:gift|.+?)\s+with/gi,
+    /free\s+samples?/gi,
+    /gift\s+with\s+orders?\s+over\s+[£$€A$NZ$CA$]?\s*(\d+)/gi,
+    /receive\s+a\s+free\s+.+?\s+with/gi,
+    /free\s+.+?\s+on\s+orders?\s+over/gi,
   ];
 
   for (const pattern of giftPatterns) {
     const matches = [...bodyText.matchAll(pattern)];
     for (const match of matches.slice(0, 3)) {
+      const evidenceText = match[0].trim().substring(0, 100);
+      const locationHint = determineLocation($, match[0], {
+        announcements: result.announcements,
+        headerText,
+        heroText,
+      });
+      
       result.gifts.push({
-        evidenceText: match[0].trim(),
-        locationHint: "Page content",
+        evidenceText,
+        locationHint,
       });
     }
   }
 
-  // Cart incentive patterns
+  // Cart incentive patterns - expanded
   const cartIncentivePatterns = [
-    /(?:you're|you\s+are)\s+[£$€]?\s*(\d+)\s+away/gi,
-    /(?:add|spend)\s+[£$€]?\s*(\d+)\s+more/gi,
-    /unlock\s+free\s+(?:shipping|gift)/gi,
+    /(?:you're|you\s+are)\s+[£$€A$NZ$CA$]?\s*(\d+)\s+away\s+from/gi,
+    /(?:add|spend)\s+[£$€A$NZ$CA$]?\s*(\d+)\s+more/gi,
+    /unlock\s+(?:free\s+)?(?:shipping|gift|delivery)/gi,
+    /(?:only|just)\s+[£$€A$NZ$CA$]?\s*(\d+)\s+(?:away|more)/gi,
+    /spend\s+[£$€A$NZ$CA$]?\s*(\d+)\s+(?:get|unlock)/gi,
+    /add\s+[£$€A$NZ$CA$]?\s*(\d+)\s+for\s+free/gi,
+    /tiered\s+(?:discount|offer)/gi,
+    /spend\s+[£$€A$NZ$CA$]?\s*(\d+)\s+get\s+.+?,\s+spend\s+[£$€A$NZ$CA$]?\s*(\d+)\s+get/gi,
   ];
 
   for (const pattern of cartIncentivePatterns) {
     const matches = [...bodyText.matchAll(pattern)];
     for (const match of matches.slice(0, 3)) {
+      const evidenceText = match[0].trim().substring(0, 100);
+      const locationHint = determineLocation($, match[0], {
+        announcements: result.announcements,
+        headerText,
+        heroText,
+      });
+      
       result.cartIncentives.push({
-        evidenceText: match[0].trim(),
-        locationHint: "Cart/Product page",
+        evidenceText,
+        locationHint,
       });
     }
   }
@@ -182,10 +264,60 @@ export function extractOffers(html: string, url: string): ExtractedOffer {
 }
 
 function detectCurrency(text: string): string {
-  if (text.includes("£")) return "GBP";
-  if (text.includes("$")) return "USD";
-  if (text.includes("€")) return "EUR";
-  return "USD"; // default
+  if (text.includes("£") || /GBP/i.test(text)) return "£";
+  if (text.includes("€") || /EUR/i.test(text)) return "€";
+  if (/A\$|AUD/i.test(text)) return "A$";
+  if (/NZ\$|NZD/i.test(text)) return "NZ$";
+  if (/CA\$|CAD/i.test(text)) return "CA$";
+  if (text.includes("$") || /USD/i.test(text)) return "$";
+  return "$"; // default
+}
+
+/**
+ * Determine location of matched text within page structure
+ */
+function determineLocation(
+  $: cheerio.CheerioAPI,
+  matchText: string,
+  context: {
+    announcements: string[];
+    headerText: string;
+    heroText: string;
+  }
+): string {
+  const { announcements, headerText, heroText } = context;
+  
+  // Check if in announcement bar
+  for (const announcement of announcements) {
+    if (announcement.includes(matchText)) {
+      return "Announcement bar";
+    }
+  }
+  
+  // Check if in header
+  if (headerText.includes(matchText)) {
+    return "Header";
+  }
+  
+  // Check if in hero section
+  if (heroText.includes(matchText)) {
+    return "Hero banner";
+  }
+  
+  // Check if in navigation
+  const navText = $("nav, [role='navigation']").text();
+  if (navText.includes(matchText)) {
+    return "Navigation";
+  }
+  
+  // Check if in footer
+  const footerText = $("footer, [role='contentinfo'], .footer").text();
+  if (footerText.includes(matchText)) {
+    return "Footer";
+  }
+  
+  // Default
+  return "Page content";
 }
 
 function uniqueBy<T>(arr: T[], keyFn: (item: T) => string): T[] {

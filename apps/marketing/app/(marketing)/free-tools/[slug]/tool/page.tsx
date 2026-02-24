@@ -1,28 +1,28 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useParams, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { Container } from "@/components/container";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { getToolBySlug } from "@/lib/tools/registry";
-import { calculateOfferScore, getScoreInterpretation, getMechanicCount } from "@/lib/tools/scoring";
-import { normalizeUrl, validateUrl } from "@/lib/url-helpers";
-import { ScoreSummary } from "@/components/snapshot-report/ScoreSummary";
-import { ScanProgress } from "@/components/snapshot-report/ScanProgress";
-import { ReportHeader } from "@/components/snapshot-report/ReportHeader";
 import { MetricsRow } from "@/components/snapshot-report/MetricsRow";
 import { OfferStackCard } from "@/components/snapshot-report/OfferStackCard";
 import { RecommendationsCard } from "@/components/snapshot-report/RecommendationsCard";
-import { Percent, Truck, Package, Gift, ShoppingCart, Clock } from "lucide-react";
-import { ArrowLeft, AlertCircle, ExternalLink, Loader2, Sparkles, ArrowRight, Lock, TrendingUp } from "lucide-react";
+import { ReportHeader } from "@/components/snapshot-report/ReportHeader";
+import { ScanProgress } from "@/components/snapshot-report/ScanProgress";
+import { ScoreSummary } from "@/components/snapshot-report/ScoreSummary";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ExtractedOffer } from "@/lib/tools/extractor";
+import { getToolBySlug } from "@/lib/tools/registry";
+import { calculateOfferScore, getScoreInterpretation } from "@/lib/tools/scoring";
+import { normalizeUrl, validateUrl } from "@/lib/url-helpers";
+import { AlertCircle, ArrowRight, Clock, ExternalLink, Gift, Loader2, Package, Percent, ShoppingCart, Sparkles, Truck } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useParams, useSearchParams } from "next/navigation";
 import posthog from "posthog-js";
+import { useEffect, useRef, useState } from "react";
 
 export default function ToolPage() {
   const params = useParams();
@@ -37,6 +37,8 @@ export default function ToolPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  // Modal state for screenshot lightbox
+  const [showScreenshotModal, setShowScreenshotModal] = useState(false);
 
   // Auto-run if URL is in query params (only once)
   useEffect(() => {
@@ -126,6 +128,7 @@ export default function ToolPage() {
   if (slug === "offer-snapshot" && result && offerScore) {
     const offers = result.offers;
     const domain = new URL(result.url).hostname;
+    const screenshotUrl = result.screenshotUrl;
     
     // Build metrics
     const metrics = {
@@ -190,6 +193,44 @@ export default function ToolPage() {
             <p className="mb-8 text-slate-600">Comprehensive analysis of promotional mechanics</p>
             <ScoreSummary score={offerScore} interpretation={scoreInterpretation} />
           </div>
+
+          {/* Screenshot Section */}
+          {screenshotUrl && (
+            <div className="mb-16">
+              <h3 className="mb-6 text-2xl font-bold text-slate-900">Site Screenshot</h3>
+              <Card className="overflow-hidden">
+                <CardContent className="p-0">
+                  <div
+                    className="relative h-[420px] overflow-y-auto overflow-x-hidden border-b border-slate-200 bg-slate-100 cursor-pointer group rounded-t-lg"
+                    onClick={() => setShowScreenshotModal(true)}
+                  >
+                    <div className="relative w-full min-h-full">
+                      <Image
+                        src={screenshotUrl}
+                        alt={`Screenshot of ${domain}`}
+                        width={1920}
+                        height={5000}
+                        className="w-full min-w-full object-top object-contain transition-opacity group-hover:opacity-90"
+                        unoptimized
+                        sizes="(max-width: 1024px) 100vw, 1152px"
+                      />
+                    </div>
+                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center bg-black/0 group-hover:bg-black/10 transition-colors">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white rounded-full p-3 shadow-lg">
+                        <ExternalLink className="h-6 w-6 text-slate-900" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-slate-50">
+                    <p className="text-sm text-slate-600">
+                      Captured on {new Date(result.timestamp).toLocaleDateString()} at {new Date(result.timestamp).toLocaleTimeString()}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">Click to view full size</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Metrics Overview */}
           <div className="mb-16">
@@ -264,6 +305,34 @@ export default function ToolPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Screenshot Lightbox Modal */}
+        {showScreenshotModal && screenshotUrl && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+            onClick={() => setShowScreenshotModal(false)}
+          >
+            <div className="relative max-h-[90vh] max-w-[90vw] overflow-auto">
+              <button
+                onClick={() => setShowScreenshotModal(false)}
+                className="absolute right-4 top-4 z-10 rounded-full bg-white p-2 shadow-lg hover:bg-slate-100"
+              >
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <Image
+                src={screenshotUrl}
+                alt={`Full screenshot of ${domain}`}
+                width={1920}
+                height={1080}
+                className="rounded-lg object-contain"
+                onClick={(e) => e.stopPropagation()}
+                unoptimized
+              />
+            </div>
+          </div>
+        )}
       </div>
     );
   }

@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@offerpulse/lib", "@offerpulse/ui"],
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**.r2.dev", pathname: "/**" },
+      { protocol: "https", hostname: "cdn.offerpulse.com", pathname: "/**" },
+    ],
+  },
   turbopack: {
     root: "../../",
   },

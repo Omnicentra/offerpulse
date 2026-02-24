@@ -11,12 +11,16 @@ interface ReportHeaderProps {
 
 export function ReportHeader({ domain, timestamp, url, onRescan }: ReportHeaderProps) {
   const { toast } = useToast();
+  
+  const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
+    // Create shareable URL with the scanned URL as a parameter
+    const shareUrl = `${window.location.origin}/free-tools/offer-snapshot/tool?url=${encodeURIComponent(url)}`;
+    navigator.clipboard.writeText(shareUrl);
     toast({
       title: "Link copied",
-      description: "Report URL copied to clipboard",
+      description: "Shareable report URL copied to clipboard",
     });
   };
 
@@ -33,10 +37,16 @@ export function ReportHeader({ domain, timestamp, url, onRescan }: ReportHeaderP
         <div className="flex flex-wrap items-center justify-between gap-4">
           {/* Left: Site info */}
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white">
+              <img
+                src={faviconUrl}
+                alt={`${domain} favicon`}
+                className="h-6 w-6"
+                onError={(e) => {
+                  // Fallback to generic icon if favicon fails to load
+                  e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2'%3E%3Cpath d='M13 10V3L4 14h7v7l9-11h-7z'/%3E%3C/svg%3E";
+                }}
+              />
             </div>
             <div>
               <div className="font-semibold text-slate-900">{domain}</div>

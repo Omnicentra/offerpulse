@@ -456,7 +456,7 @@ pnpm add @slack/webhook  # for Slack
 
 **Inngest Function** (`schedule-captures`):
 
-- Run every hour (cron: `0 * * * *`)
+- Run every hour (cron: `0` * * * *)
 - Query active competitors
 - Check monitor settings (frequency)
 - Calculate next capture time
