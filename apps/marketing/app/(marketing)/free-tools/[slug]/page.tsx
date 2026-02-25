@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { getToolBySlug, getAllToolSlugs } from "@/lib/tools/registry";
+import { getToolBySlug, getAllToolSlugs, isToolImplemented } from "@/lib/tools/registry";
 import { generateToolMetadata } from "@/lib/seo/metadata";
 import { generateToolSchema } from "@/lib/seo/schema";
-import { CheckCircle, Sparkles, ArrowRight } from "lucide-react";
+import { CheckCircle, Clock, Sparkles } from "lucide-react";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -82,10 +82,17 @@ export default async function ToolLandingPage({ params }: Props) {
               {tool.name}
             </h1>
             <p className="mt-6 text-lg text-slate-600 sm:text-xl">{tool.longDescription}</p>
-            <div className="mt-8 flex justify-center gap-4">
-              <Button asChild size="lg">
-                <Link href={`/free-tools/${slug}/tool`}>Open tool</Link>
-              </Button>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              {isToolImplemented(slug) ? (
+                <Button asChild size="lg">
+                  <Link href={`/free-tools/${slug}/tool`}>Open tool</Link>
+                </Button>
+              ) : (
+                <Button size="lg" disabled className="cursor-not-allowed">
+                  <Clock className="mr-2 h-4 w-4" />
+                  Coming soon
+                </Button>
+              )}
               <Button asChild variant="outline" size="lg">
                 <Link href="/">Start monitoring</Link>
               </Button>

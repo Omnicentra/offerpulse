@@ -382,6 +382,13 @@ export function getAllToolSlugs(): string[] {
   return tools.map((t) => t.slug);
 }
 
+/** Tool slugs that have a dedicated tool page and API implemented */
+export const IMPLEMENTED_TOOL_SLUGS = ["offer-snapshot", "offer-clarity-check"] as const;
+
+export function isToolImplemented(slug: string): boolean {
+  return IMPLEMENTED_TOOL_SLUGS.includes(slug as (typeof IMPLEMENTED_TOOL_SLUGS)[number]);
+}
+
 export function generateToolListSchema(toolList: Tool[], url: string) {
   return {
     "@context": "https://schema.org",

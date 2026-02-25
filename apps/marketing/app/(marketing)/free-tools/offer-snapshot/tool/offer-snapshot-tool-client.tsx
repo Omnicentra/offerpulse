@@ -18,9 +18,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import type { ExtractedOffer } from "@/lib/tools/extractor";
-import { getToolBySlug } from "@/lib/tools/registry";
+import type { OfferSnapshotResponse } from "@/app/api/tools/offer-snapshot/route";
 import {
   calculateOfferScore,
   getScoreInterpretation,
@@ -29,7 +28,7 @@ import { normalizeUrl, validateUrl } from "@/lib/url-helpers";
 import {
   AlertCircle,
   ArrowRight,
-  CheckCircle,
+  Camera,
   Clock,
   ExternalLink,
   Gift,
@@ -42,54 +41,29 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
 import posthog from "posthog-js";
 import { useEffect, useRef, useState } from "react";
 
-export default function ToolPage() {
-  const params = useParams();
-  const searchParams = useSearchParams();
-  const slug = params.slug as string;
-  const tool = getToolBySlug(slug);
+interface OfferSnapshotToolClientProps {
+  urlParam: string | null;
+}
 
-  const urlParam = searchParams.get("url");
+export function OfferSnapshotToolClient({ urlParam }: OfferSnapshotToolClientProps) {
   const hasAutoRun = useRef(false);
 
   const [url, setUrl] = useState(urlParam || "");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<unknown>(null);
+  const [result, setResult] = useState<OfferSnapshotResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Modal state for screenshot lightbox
   const [showScreenshotModal, setShowScreenshotModal] = useState(false);
 
   // Auto-run if URL is in query params (only once)
   useEffect(() => {
-    if (
-      urlParam &&
-      (slug === "offer-snapshot" || slug === "offer-clarity-check") &&
-      !hasAutoRun.current &&
-      !result &&
-      !loading
-    ) {
+    if (urlParam && !hasAutoRun.current && !result && !loading) {
       hasAutoRun.current = true;
       handleSubmit(new Event("submit") as unknown as React.FormEvent);
     }
-  }, [urlParam, slug]);
-
-  if (!tool) {
-    return (
-      <Container className="py-16">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Tool not found</h1>
-          <Button asChild className="mt-4">
-            <Link href="/free-tools">Back to tools</Link>
-          </Button>
-        </div>
-      </Container>
-    );
-  }
-
-  const Icon = tool.icon;
+  }, [urlParam]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,40 +82,30 @@ export default function ToolPage() {
     }
 
     try {
-      const response = await fetch("/api/tools/extract", {
+      const response = await fetch("/api/tools/offer-snapshot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: normalizedUrl,
-          ...(slug === "offer-clarity-check" && { tool: "offer-clarity-check" }),
-        }),
+        body: JSON.stringify({ url: normalizedUrl }),
       });
 
-      const data = await response.json();
+      const data: OfferSnapshotResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to analyse store");
+        throw new Error((data as unknown as { error?: string }).error || "Failed to analyse store");
       }
 
       setResult(data);
 
       // Track successful analysis in PostHog
       posthog.capture("offer_tool_analyzed", {
-        tool_slug: slug,
+        tool_slug: "offer-snapshot",
         analyzed_url: normalizedUrl,
-        offers_found: data.offers
-          ? Object.values(data.offers).flat().length
-          : 0,
-        has_discounts: data.offers?.discounts?.length > 0,
-        has_shipping: !!data.offers?.shippingThreshold,
-        has_bundles: data.offers?.bundles?.length > 0,
-        has_gifts: data.offers?.gifts?.length > 0,
+        offers_found: Object.values(data.offers).flat().length,
+        has_discounts: data.offers.discounts.length > 0,
+        has_shipping: !!data.offers.shippingThreshold,
+        has_bundles: data.offers.bundles.length > 0,
+        has_gifts: data.offers.gifts.length > 0,
         cached: data.cached ?? false,
-        ...(slug === "offer-clarity-check" &&
-          data.clarity && {
-            clarity_score: data.clarity.score,
-            clarity_suggestions_count: data.clarity.suggestions?.length ?? 0,
-          }),
       });
     } catch (err) {
       const errorMessage =
@@ -150,7 +114,7 @@ export default function ToolPage() {
 
       // Track error in PostHog
       posthog.capture("offer_tool_error", {
-        tool_slug: slug,
+        tool_slug: "offer-snapshot",
         analyzed_url: normalizedUrl,
         error: errorMessage,
       });
@@ -165,174 +129,8 @@ export default function ToolPage() {
     ? getScoreInterpretation(offerScore.total)
     : "";
 
-  // Show clarity report if this is offer-clarity-check with results
-  if (slug === "offer-clarity-check" && result?.clarity) {
-    const { clarity } = result;
-    const domain = new URL(result.url).hostname;
-
-    return (
-      <div className="min-h-screen bg-white">
-        <ReportHeader
-          domain={domain}
-          timestamp={new Date(result.timestamp).toLocaleString()}
-          url={result.url}
-          onRescan={() => {
-            setResult(null);
-            setError(null);
-            setUrl(result.url);
-          }}
-        />
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-          <h2 className="mb-2 text-3xl font-bold text-slate-900">
-            Offer Clarity Report
-          </h2>
-          <p className="mb-8 text-slate-600">
-            How clearly your store presents offers and what to improve
-          </p>
-
-          {/* Clarity score 0-10 */}
-          <div className="mb-12">
-            <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
-              <CardContent className="py-8">
-                <div className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-6">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-sm border border-blue-100">
-                      <span className="text-4xl font-bold text-blue-700">
-                        {clarity.score}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-lg font-semibold text-slate-900">
-                        Clarity score
-                      </p>
-                      <p className="text-sm text-slate-600">
-                        Out of 10 — based on offer visibility, shipping/returns messaging, and CTAs
-                      </p>
-                    </div>
-                  </div>
-                  <Badge
-                    variant={clarity.score >= 7 ? "default" : "secondary"}
-                    className={
-                      clarity.score >= 7
-                        ? "bg-green-600 hover:bg-green-700"
-                        : "bg-amber-600 hover:bg-amber-700"
-                    }
-                  >
-                    {clarity.score >= 8 ? "Strong" : clarity.score >= 6 ? "Good" : "Needs improvement"}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Issues & strengths */}
-          <div className="mb-12 grid gap-6 md:grid-cols-2">
-            {clarity.issues.length > 0 && (
-              <Card className="border-amber-200 bg-amber-50/50">
-                <CardHeader>
-                  <CardTitle className="text-amber-900">Issues found</CardTitle>
-                  <CardDescription>Areas that lower your clarity score</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {clarity.issues.map((issue, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-amber-800">
-                        <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                        {issue}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            )}
-            {clarity.strengths.length > 0 && (
-              <Card className="border-green-200 bg-green-50/50">
-                <CardHeader>
-                  <CardTitle className="text-green-900">Strengths</CardTitle>
-                  <CardDescription>What you're doing well</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {clarity.strengths.map((strength, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-green-800">
-                        <CheckCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                        {strength}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* AI-suggested fixes */}
-          {clarity.suggestions.length > 0 && (
-            <div className="mb-12">
-              <h3 className="mb-4 text-xl font-semibold text-slate-900">
-                Suggested improvements
-              </h3>
-              <p className="mb-6 text-sm text-slate-600">
-                Actionable fixes tailored to your store (powered by AI)
-              </p>
-              <div className="space-y-4">
-                {clarity.suggestions.map((fix, i) => (
-                  <Card key={i} className="border-slate-200">
-                    <CardContent className="pt-6">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="font-semibold text-slate-900">{fix.title}</p>
-                          <p className="mt-2 text-sm text-slate-600">{fix.description}</p>
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className={
-                            fix.priority === "high"
-                              ? "border-red-300 text-red-700"
-                              : fix.priority === "medium"
-                                ? "border-amber-300 text-amber-700"
-                                : "border-slate-300 text-slate-600"
-                          }
-                        >
-                          {fix.priority}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
-            <CardContent className="p-8 text-center">
-              <Sparkles className="mx-auto h-12 w-12 text-blue-600" />
-              <h2 className="mt-4 text-2xl font-bold text-slate-900">
-                Keep improving
-              </h2>
-              <p className="mt-3 text-slate-700">
-                Re-run this check after you make changes to see your new score
-              </p>
-              <Button
-                variant="outline"
-                size="lg"
-                className="mt-6"
-                onClick={() => {
-                  setResult(null);
-                  setError(null);
-                  setUrl(result.url);
-                }}
-              >
-                Check again
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // Show SEOptimer-style report if this is offer-snapshot tool with results
-  if (slug === "offer-snapshot" && result && offerScore) {
+  // Show SEOptimer-style report if we have results
+  if (result && offerScore) {
     const offers = result.offers;
     const domain = new URL(result.url).hostname;
     const screenshotUrl = result.screenshotUrl;
@@ -348,7 +146,7 @@ export default function ToolPage() {
     };
 
     // Build offer items by category
-    const discountItems = offers.discounts.map((d: any) => ({
+    const discountItems = offers.discounts.map((d) => ({
       text: `${d.value}% off${d.code ? ` • Code: ${d.code}` : ""}`,
       location: d.locationHint,
       evidenceText: d.evidenceText,
@@ -364,17 +162,17 @@ export default function ToolPage() {
         ]
       : [];
 
-    const bundleItems = offers.bundles.map((b: any) => ({
+    const bundleItems = offers.bundles.map((b) => ({
       text: b.evidenceText,
       location: b.locationHint,
     }));
 
-    const giftItems = offers.gifts.map((g: any) => ({
+    const giftItems = offers.gifts.map((g) => ({
       text: g.evidenceText,
       location: g.locationHint,
     }));
 
-    const cartItems = offers.cartIncentives.map((c: any) => ({
+    const cartItems = offers.cartIncentives.map((c) => ({
       text: c.evidenceText,
       location: c.locationHint,
     }));
@@ -635,8 +433,8 @@ export default function ToolPage() {
             Free tools
           </Link>
           <span>/</span>
-          <Link href={`/free-tools/${slug}`} className="hover:text-slate-900">
-            {tool.name}
+          <Link href="/free-tools/offer-snapshot" className="hover:text-slate-900">
+            Competitor Offer Snapshot
           </Link>
           <span>/</span>
           <span className="text-slate-900">Tool</span>
@@ -646,14 +444,14 @@ export default function ToolPage() {
         <div className="mb-12">
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100">
-              <Icon className="h-6 w-6 text-blue-600" />
+              <Camera className="h-6 w-6 text-blue-600" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-                {tool.name}
+                Competitor Offer Snapshot
               </h1>
               <p className="mt-1 text-sm text-slate-600">
-                {tool.shortDescription}
+                Capture and analyse all visible offers from any store instantly
               </p>
             </div>
           </div>
@@ -665,13 +463,9 @@ export default function ToolPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>
-                  {slug === "offer-clarity-check" ? "Check your store" : "Analyse a store"}
-                </CardTitle>
+                <CardTitle>Analyse a store</CardTitle>
                 <CardDescription>
-                  {slug === "offer-clarity-check"
-                    ? "Enter your store URL to score offer visibility and get improvements"
-                    : "Enter any competitor store URL"}
+                  Enter any competitor store URL
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -681,7 +475,7 @@ export default function ToolPage() {
                     <Input
                       id="url"
                       type="text"
-                      placeholder={slug === "offer-clarity-check" ? "your-store.com" : "competitor-store.com"}
+                      placeholder="competitor-store.com"
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
                       required
@@ -692,10 +486,8 @@ export default function ToolPage() {
                     {loading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {slug === "offer-clarity-check" ? "Checking clarity..." : "Analysing..."}
+                        Analysing...
                       </>
-                    ) : slug === "offer-clarity-check" ? (
-                      "Check clarity"
                     ) : (
                       "Analyse store"
                     )}
@@ -716,10 +508,10 @@ export default function ToolPage() {
               </CardHeader>
               <CardContent className="text-sm text-slate-700">
                 <Link
-                  href={`/free-tools/${slug}`}
+                  href="/free-tools/offer-snapshot"
                   className="flex items-center gap-2 text-blue-600 hover:underline"
                 >
-                  Learn more about {tool.name}
+                  Learn more about Competitor Offer Snapshot
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </CardContent>
@@ -751,21 +543,7 @@ export default function ToolPage() {
 
           {/* Right: Results */}
           <div>
-            {loading && slug === "offer-snapshot" && <ScanProgress />}
-
-            {loading && slug !== "offer-snapshot" && (
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-6 w-32" />
-                  <Skeleton className="mt-2 h-4 w-full" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Skeleton className="h-24 w-full rounded-xl" />
-                  <Skeleton className="h-24 w-full rounded-xl" />
-                  <Skeleton className="h-24 w-full rounded-xl" />
-                </CardContent>
-              </Card>
-            )}
+            {loading && <ScanProgress />}
 
             {error && (
               <Card className="border-red-200 bg-red-50">
@@ -825,7 +603,7 @@ export default function ToolPage() {
               <Card className="border-2 border-dashed border-slate-200">
                 <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
-                    <Icon className="h-8 w-8 text-slate-400" />
+                    <Camera className="h-8 w-8 text-slate-400" />
                   </div>
                   <p className="mt-4 font-medium text-slate-900">
                     Enter a URL to get started

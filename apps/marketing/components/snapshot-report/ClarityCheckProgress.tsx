@@ -1,0 +1,73 @@
+import { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2, CheckCircle2 } from "lucide-react";
+
+const claritySteps = [
+  { id: 1, label: "Fetching your storefront...", duration: 1500 },
+  { id: 2, label: "Checking offer visibility...", duration: 1800 },
+  { id: 3, label: "Auditing shipping & returns...", duration: 1200 },
+  { id: 4, label: "Evaluating CTAs...", duration: 1500 },
+  { id: 5, label: "Building your clarity report...", duration: 1000 },
+];
+
+export function ClarityCheckProgress() {
+  const [currentStep, setCurrentStep] = useState(0);
+
+  useEffect(() => {
+    const timers: NodeJS.Timeout[] = [];
+    let elapsed = 0;
+
+    claritySteps.forEach((step, index) => {
+      elapsed += claritySteps[index - 1]?.duration ?? 0;
+      const timer = setTimeout(() => {
+        setCurrentStep(index);
+      }, elapsed);
+      timers.push(timer);
+    });
+
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  return (
+    <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+      <CardContent className="p-12">
+        <div className="mx-auto max-w-md space-y-6">
+          <div className="text-center">
+            <Loader2 className="mx-auto h-12 w-12 animate-spin text-blue-600" />
+            <h3 className="mt-4 text-xl font-semibold text-slate-900">
+              Checking offer clarity...
+            </h3>
+          </div>
+
+          <div className="space-y-3">
+            {claritySteps.map((step, index) => (
+              <div
+                key={step.id}
+                className={`flex items-center gap-3 rounded-lg p-3 transition-all ${
+                  index <= currentStep
+                    ? "bg-white shadow-sm"
+                    : "bg-slate-50/50"
+                }`}
+              >
+                {index < currentStep ? (
+                  <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-green-600" />
+                ) : index === currentStep ? (
+                  <Loader2 className="h-5 w-5 flex-shrink-0 animate-spin text-blue-600" />
+                ) : (
+                  <div className="h-5 w-5 flex-shrink-0 rounded-full border-2 border-slate-300" />
+                )}
+                <span
+                  className={`text-sm ${
+                    index <= currentStep ? "font-medium text-slate-900" : "text-slate-500"
+                  }`}
+                >
+                  {step.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

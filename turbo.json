@@ -25,7 +25,8 @@
     "STRIPE_WEBHOOK_SECRET",
     "STRIPE_PRICE_LOOKUP_KEY",
     "AIRTABLE_API_KEY",
-    "AIRTABLE_BASE_ID"
+    "AIRTABLE_BASE_ID",
+    "OPENROUTER_API_KEY"
   ],
   "tasks": {
     "build": {
