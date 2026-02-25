@@ -396,3 +396,113 @@ export function calculateOfferClarity(html: string): {
     strengths,
   };
 }
+
+/**
+ * Build a short text summary of extracted offers for AI context
+ */
+export function formatOffersSummary(offers: ExtractedOffer): string {
+  const parts: string[] = [];
+  if (offers.shippingThreshold) {
+    parts.push(
+      `Free shipping over ${offers.shippingThreshold.currency}${offers.shippingThreshold.amount} (${offers.shippingThreshold.locationHint})`
+    );
+  }
+  if (offers.discounts.length > 0) {
+    parts.push(
+      `Discounts: ${offers.discounts.map((d) => `${d.value}% off${d.code ? ` code ${d.code}` : ""}`).join("; ")}`
+    );
+  }
+  if (offers.bundles.length > 0) {
+    parts.push(`Bundles: ${offers.bundles.map((b) => b.evidenceText).join("; ")}`);
+  }
+  if (offers.gifts.length > 0) {
+    parts.push(`Gifts: ${offers.gifts.map((g) => g.evidenceText).join("; ")}`);
+  }
+  if (offers.cartIncentives.length > 0) {
+    parts.push(`Cart incentives: ${offers.cartIncentives.map((c) => c.evidenceText).join("; ")}`);
+  }
+  if (offers.announcements.length > 0) {
+    parts.push(`Announcement bar: ${offers.announcements.join("; ")}`);
+  }
+  return parts.length ? parts.join("\n") : "No offers detected on the page.";
+}
+
+/**
+ * Normalize evidence text for deduplication (lowercase, trim, collapse whitespace)
+ */
+function normalizeEvidence(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+/**
+ * Merge offers from HTML/regex extraction with offers from vision (screenshot) extraction.
+ * Deduplicates by normalized evidence text so the same offer found in both is not duplicated.
+ * HTML/regex results are preferred for shippingThreshold when both exist.
+ */
+export function mergeExtractedOffers(
+  htmlOffers: ExtractedOffer,
+  visualOffers: ExtractedOffer
+): ExtractedOffer {
+  const merged: ExtractedOffer = {
+    discounts: [],
+    bundles: [],
+    gifts: [],
+    cartIncentives: [],
+    announcements: [],
+    metaTitle: htmlOffers.metaTitle,
+    metaDescription: htmlOffers.metaDescription,
+  };
+
+  // Shipping: prefer HTML if both have it; otherwise use whichever is set
+  merged.shippingThreshold =
+    htmlOffers.shippingThreshold ?? visualOffers.shippingThreshold ?? undefined;
+
+  // Merge arrays and dedupe by normalized evidence text
+  merged.discounts = mergeByEvidence(htmlOffers.discounts, visualOffers.discounts, (d) => d.evidenceText);
+  merged.bundles = mergeByEvidence(htmlOffers.bundles, visualOffers.bundles, (b) => b.evidenceText);
+  merged.gifts = mergeByEvidence(htmlOffers.gifts, visualOffers.gifts, (g) => g.evidenceText);
+  merged.cartIncentives = mergeByEvidence(
+    htmlOffers.cartIncentives,
+    visualOffers.cartIncentives,
+    (c) => c.evidenceText
+  );
+
+  // Announcements: merge and dedupe by normalized text
+  const annNorm = new Map<string, string>();
+  for (const a of htmlOffers.announcements) {
+    if (a.trim().length > 0 && a.length < 300) annNorm.set(normalizeEvidence(a), a);
+  }
+  for (const a of visualOffers.announcements) {
+    if (a.trim().length > 0 && a.length < 300) annNorm.set(normalizeEvidence(a), a);
+  }
+  merged.announcements = [...annNorm.values()];
+
+  return merged;
+}
+
+function mergeByEvidence<T>(
+  primary: T[],
+  secondary: T[],
+  getEvidence: (item: T) => string
+): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const item of primary) {
+    const key = normalizeEvidence(getEvidence(item));
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(item);
+    }
+  }
+  for (const item of secondary) {
+    const key = normalizeEvidence(getEvidence(item));
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(item);
+    }
+  }
+  return out;
+}

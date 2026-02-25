@@ -54,6 +54,9 @@ export const env = createEnv({
     R2_PUBLIC_URL: z
       .url()
       .optional().default("https://pub-d1037b173c5f40ebb985230458591c67.r2.dev"),
+    OPENROUTER_API_KEY: z
+      .string()
+      .min(1, "OPENROUTER_API_KEY is required for OpenRouter API"),
   },
   clientPrefix: "NEXT_PUBLIC_",
   client: {
@@ -88,6 +91,7 @@ export const env = createEnv({
     R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
     R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
     R2_PUBLIC_URL: process.env.R2_PUBLIC_URL,
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
     NEXT_PUBLIC_MARKETING_APP_URL: process.env.NEXT_PUBLIC_MARKETING_APP_URL,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,

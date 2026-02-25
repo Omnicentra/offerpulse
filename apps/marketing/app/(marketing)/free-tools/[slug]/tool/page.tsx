@@ -29,6 +29,7 @@ import { normalizeUrl, validateUrl } from "@/lib/url-helpers";
 import {
   AlertCircle,
   ArrowRight,
+  CheckCircle,
   Clock,
   ExternalLink,
   Gift,
@@ -65,7 +66,7 @@ export default function ToolPage() {
   useEffect(() => {
     if (
       urlParam &&
-      slug === "offer-snapshot" &&
+      (slug === "offer-snapshot" || slug === "offer-clarity-check") &&
       !hasAutoRun.current &&
       !result &&
       !loading
@@ -110,7 +111,10 @@ export default function ToolPage() {
       const response = await fetch("/api/tools/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: normalizedUrl }),
+        body: JSON.stringify({
+          url: normalizedUrl,
+          ...(slug === "offer-clarity-check" && { tool: "offer-clarity-check" }),
+        }),
       });
 
       const data = await response.json();
@@ -133,6 +137,11 @@ export default function ToolPage() {
         has_bundles: data.offers?.bundles?.length > 0,
         has_gifts: data.offers?.gifts?.length > 0,
         cached: data.cached ?? false,
+        ...(slug === "offer-clarity-check" &&
+          data.clarity && {
+            clarity_score: data.clarity.score,
+            clarity_suggestions_count: data.clarity.suggestions?.length ?? 0,
+          }),
       });
     } catch (err) {
       const errorMessage =
@@ -155,6 +164,172 @@ export default function ToolPage() {
   const scoreInterpretation = offerScore
     ? getScoreInterpretation(offerScore.total)
     : "";
+
+  // Show clarity report if this is offer-clarity-check with results
+  if (slug === "offer-clarity-check" && result?.clarity) {
+    const { clarity } = result;
+    const domain = new URL(result.url).hostname;
+
+    return (
+      <div className="min-h-screen bg-white">
+        <ReportHeader
+          domain={domain}
+          timestamp={new Date(result.timestamp).toLocaleString()}
+          url={result.url}
+          onRescan={() => {
+            setResult(null);
+            setError(null);
+            setUrl(result.url);
+          }}
+        />
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+          <h2 className="mb-2 text-3xl font-bold text-slate-900">
+            Offer Clarity Report
+          </h2>
+          <p className="mb-8 text-slate-600">
+            How clearly your store presents offers and what to improve
+          </p>
+
+          {/* Clarity score 0-10 */}
+          <div className="mb-12">
+            <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+              <CardContent className="py-8">
+                <div className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-6">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-sm border border-blue-100">
+                      <span className="text-4xl font-bold text-blue-700">
+                        {clarity.score}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-slate-900">
+                        Clarity score
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        Out of 10 — based on offer visibility, shipping/returns messaging, and CTAs
+                      </p>
+                    </div>
+                  </div>
+                  <Badge
+                    variant={clarity.score >= 7 ? "default" : "secondary"}
+                    className={
+                      clarity.score >= 7
+                        ? "bg-green-600 hover:bg-green-700"
+                        : "bg-amber-600 hover:bg-amber-700"
+                    }
+                  >
+                    {clarity.score >= 8 ? "Strong" : clarity.score >= 6 ? "Good" : "Needs improvement"}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Issues & strengths */}
+          <div className="mb-12 grid gap-6 md:grid-cols-2">
+            {clarity.issues.length > 0 && (
+              <Card className="border-amber-200 bg-amber-50/50">
+                <CardHeader>
+                  <CardTitle className="text-amber-900">Issues found</CardTitle>
+                  <CardDescription>Areas that lower your clarity score</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {clarity.issues.map((issue, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-amber-800">
+                        <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                        {issue}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+            {clarity.strengths.length > 0 && (
+              <Card className="border-green-200 bg-green-50/50">
+                <CardHeader>
+                  <CardTitle className="text-green-900">Strengths</CardTitle>
+                  <CardDescription>What you're doing well</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {clarity.strengths.map((strength, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-green-800">
+                        <CheckCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                        {strength}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* AI-suggested fixes */}
+          {clarity.suggestions.length > 0 && (
+            <div className="mb-12">
+              <h3 className="mb-4 text-xl font-semibold text-slate-900">
+                Suggested improvements
+              </h3>
+              <p className="mb-6 text-sm text-slate-600">
+                Actionable fixes tailored to your store (powered by AI)
+              </p>
+              <div className="space-y-4">
+                {clarity.suggestions.map((fix, i) => (
+                  <Card key={i} className="border-slate-200">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="font-semibold text-slate-900">{fix.title}</p>
+                          <p className="mt-2 text-sm text-slate-600">{fix.description}</p>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={
+                            fix.priority === "high"
+                              ? "border-red-300 text-red-700"
+                              : fix.priority === "medium"
+                                ? "border-amber-300 text-amber-700"
+                                : "border-slate-300 text-slate-600"
+                          }
+                        >
+                          {fix.priority}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+            <CardContent className="p-8 text-center">
+              <Sparkles className="mx-auto h-12 w-12 text-blue-600" />
+              <h2 className="mt-4 text-2xl font-bold text-slate-900">
+                Keep improving
+              </h2>
+              <p className="mt-3 text-slate-700">
+                Re-run this check after you make changes to see your new score
+              </p>
+              <Button
+                variant="outline"
+                size="lg"
+                className="mt-6"
+                onClick={() => {
+                  setResult(null);
+                  setError(null);
+                  setUrl(result.url);
+                }}
+              >
+                Check again
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   // Show SEOptimer-style report if this is offer-snapshot tool with results
   if (slug === "offer-snapshot" && result && offerScore) {
@@ -490,9 +665,13 @@ export default function ToolPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Analyse a store</CardTitle>
+                <CardTitle>
+                  {slug === "offer-clarity-check" ? "Check your store" : "Analyse a store"}
+                </CardTitle>
                 <CardDescription>
-                  Enter any competitor store URL
+                  {slug === "offer-clarity-check"
+                    ? "Enter your store URL to score offer visibility and get improvements"
+                    : "Enter any competitor store URL"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -502,7 +681,7 @@ export default function ToolPage() {
                     <Input
                       id="url"
                       type="text"
-                      placeholder="competitor-store.com"
+                      placeholder={slug === "offer-clarity-check" ? "your-store.com" : "competitor-store.com"}
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
                       required
@@ -513,8 +692,10 @@ export default function ToolPage() {
                     {loading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Analysing...
+                        {slug === "offer-clarity-check" ? "Checking clarity..." : "Analysing..."}
                       </>
+                    ) : slug === "offer-clarity-check" ? (
+                      "Check clarity"
                     ) : (
                       "Analyse store"
                     )}
