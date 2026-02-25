@@ -57,7 +57,7 @@ export default function ToolPage() {
 
   const [url, setUrl] = useState(urlParam || "");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
   // Modal state for screenshot lightbox
   const [showScreenshotModal, setShowScreenshotModal] = useState(false);
@@ -72,7 +72,7 @@ export default function ToolPage() {
       !loading
     ) {
       hasAutoRun.current = true;
-      handleSubmit(new Event("submit") as any);
+      handleSubmit(new Event("submit") as unknown as React.FormEvent);
     }
   }, [urlParam, slug]);
 

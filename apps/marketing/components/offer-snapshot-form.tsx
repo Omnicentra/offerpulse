@@ -61,8 +61,8 @@ export function OfferSnapshotForm({
       // Store normalized URL
       storeCompetitorUrl(normalizedUrl)
 
-      // Route to snapshot with normalized URL
-      const toolUrl = `/snapshot?url=${encodeURIComponent(normalizedUrl)}&utm_source=homepage&utm_medium=cta&utm_campaign=free_snapshot`
+      // Route to Competitor Offer Snapshot tool (auto-submits when url is in query)
+      const toolUrl = `/free-tools/offer-snapshot/tool?url=${encodeURIComponent(normalizedUrl)}&utm_source=homepage&utm_medium=cta&utm_campaign=free_snapshot`
 
       track("marketing_cta_clicked", { 
         url: normalizedUrl, 
@@ -70,7 +70,7 @@ export function OfferSnapshotForm({
         destination: toolUrl 
       })
 
-      // Navigate to snapshot
+      // Navigate to tool page; tool page auto-runs snapshot when url param is present
       window.location.href = toolUrl
     } catch (error) {
       const message =
