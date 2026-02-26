@@ -1,55 +1,60 @@
 /**
- * Simple IP-based rate limiting for tool endpoints
+ * Redis-based rate limiting for tool endpoints using Upstash
  * Prevents abuse of free tools
+ * Works across serverless function instances
  */
 
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+import { env } from "@/env";
+import { logger } from "@/lib/logger";
 
-class RateLimiter {
-  private limits = new Map<string, RateLimitEntry>();
-  private readonly MAX_REQUESTS = 20; // requests per window
-  private readonly WINDOW_MS = 60 * 60 * 1000; // 1 hour
+// Initialize Upstash Redis client
+const redis = new Redis({
+  url: env.UPSTASH_REDIS_REST_URL,
+  token: env.UPSTASH_REDIS_REST_TOKEN,
+});
 
-  isRateLimited(identifier: string): boolean {
-    const now = Date.now();
-    const entry = this.limits.get(identifier);
+// Create rate limiter: 5 requests per 15 minutes
+const ratelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(5, "15 m"),
+  analytics: true,
+  prefix: "@offerpulse/marketing",
+});
 
-    if (!entry || now > entry.resetAt) {
-      // Reset or create new entry
-      this.limits.set(identifier, {
-        count: 1,
-        resetAt: now + this.WINDOW_MS,
-      });
+export const rateLimiter = {
+  async isRateLimited(identifier: string): Promise<boolean> {
+    try {
+      const { success } = await ratelimit.limit(identifier);
+      return !success;
+    } catch (error) {
+      logger.error("[rate-limit] Upstash rate limit check failed:", error);
+      // Fail open: if rate limiter is down, allow request
       return false;
     }
+  },
 
-    if (entry.count >= this.MAX_REQUESTS) {
-      return true;
+  async getRemainingRequests(identifier: string): Promise<number> {
+    try {
+      const { remaining } = await ratelimit.limit(identifier);
+      return remaining;
+    } catch (error) {
+      logger.error("[rate-limit] Failed to get remaining requests:", error);
+      return 5; // Return max on error
     }
+  },
 
-    entry.count++;
-    return false;
-  }
-
-  getRemainingRequests(identifier: string): number {
-    const entry = this.limits.get(identifier);
-    if (!entry || Date.now() > entry.resetAt) {
-      return this.MAX_REQUESTS;
+  async getResetTime(identifier: string): Promise<number> {
+    try {
+      const { reset } = await ratelimit.limit(identifier);
+      return reset;
+    } catch (error) {
+      logger.error("[rate-limit] Failed to get reset time:", error);
+      return Date.now() + 15 * 60 * 1000; // 15 minutes from now
     }
-    return Math.max(0, this.MAX_REQUESTS - entry.count);
-  }
-
-  getResetTime(identifier: string): number {
-    const entry = this.limits.get(identifier);
-    if (!entry) return 0;
-    return entry.resetAt;
-  }
-}
-
-export const rateLimiter = new RateLimiter();
+  },
+};
 
 export function getClientIdentifier(request: Request): string {
   // In production, use real IP from headers

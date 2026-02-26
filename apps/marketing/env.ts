@@ -57,6 +57,19 @@ export const env = createEnv({
     OPENROUTER_API_KEY: z
       .string()
       .min(1, "OPENROUTER_API_KEY is required for OpenRouter API"),
+    FIRECRAWL_API_KEY: z
+      .string()
+      .min(1, "FIRECRAWL_API_KEY is required for URL discovery")
+      .refine(
+        (val) => val.startsWith("fc-"),
+        "FIRECRAWL_API_KEY must start with fc-"
+      ),
+    UPSTASH_REDIS_REST_URL: z
+      .string()
+      .url("UPSTASH_REDIS_REST_URL must be a valid URL"),
+    UPSTASH_REDIS_REST_TOKEN: z
+      .string()
+      .min(1, "UPSTASH_REDIS_REST_TOKEN is required for rate limiting"),
   },
   clientPrefix: "NEXT_PUBLIC_",
   client: {
@@ -92,6 +105,9 @@ export const env = createEnv({
     R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
     R2_PUBLIC_URL: process.env.R2_PUBLIC_URL,
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+    FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY,
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     NEXT_PUBLIC_MARKETING_APP_URL: process.env.NEXT_PUBLIC_MARKETING_APP_URL,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,

@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const identifier = getClientIdentifier(request);
     logger.debug("[offer-clarity-check] client identifier", identifier);
 
-    if (rateLimiter.isRateLimited(identifier)) {
+    if (await rateLimiter.isRateLimited(identifier)) {
       logger.debug("[offer-clarity-check] rate limited");
       return NextResponse.json(
         { error: "Rate limit exceeded. Please try again later." },

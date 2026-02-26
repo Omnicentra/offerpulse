@@ -6,6 +6,7 @@ interface OfferItem {
   text: string;
   location: string;
   evidenceText?: string;
+  sourcePages?: string[];
 }
 
 interface OfferStackCardProps {
@@ -40,10 +41,16 @@ export function OfferStackCard({ category, items, icon: Icon, emptyMessage }: Of
                   {item.evidenceText && (
                     <p className="mt-1 text-xs text-slate-600">"{item.evidenceText}"</p>
                   )}
-                  <div className="mt-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
                     <Badge variant="outline" className="text-xs">
                       {item.location}
                     </Badge>
+                    {item.sourcePages && item.sourcePages.length > 0 && (
+                      <Badge className="bg-blue-100 text-blue-800 text-xs">
+                        Found on: {item.sourcePages.slice(0, 2).join(", ")}
+                        {item.sourcePages.length > 2 && ` +${item.sourcePages.length - 2}`}
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </div>

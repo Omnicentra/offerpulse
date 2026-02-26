@@ -3,11 +3,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, CheckCircle2 } from "lucide-react";
 
 const scanSteps = [
-  { id: 1, label: "Fetching storefront...", duration: 1500 },
-  { id: 2, label: "Detecting visible promos...", duration: 1800 },
-  { id: 3, label: "Checking cart incentives...", duration: 1200 },
-  { id: 4, label: "Checking checkout signals...", duration: 1500 },
-  { id: 5, label: "Building your report...", duration: 1000 },
+  { id: 1, label: "Discovering domain pages...", duration: 3500 },
+  { id: 2, label: "Filtering relevant pages...", duration: 1500 },
+  { id: 3, label: "Scraping 15-20 pages in parallel...", duration: 35000 },
+  { id: 4, label: "Extracting offers from each page...", duration: 4000 },
+  { id: 5, label: "Aggregating and deduplicating offers...", duration: 2200 },
+  { id: 6, label: "Building your comprehensive report...", duration: 2500 },
 ];
 
 export function ScanProgress() {
@@ -37,6 +38,9 @@ export function ScanProgress() {
             <h3 className="mt-4 text-xl font-semibold text-slate-900">
               Analysing competitor store...
             </h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Scanning multiple pages for comprehensive offer detection
+            </p>
           </div>
 
           <div className="space-y-3">
