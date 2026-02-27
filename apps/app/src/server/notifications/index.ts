@@ -1,2 +1,6 @@
-export { sendChangeAlertEmail, sendWeeklyPulseEmail } from "./email";
+export {
+  sendChangeAlertEmail,
+  sendWeeklyPulseEmail,
+  sendWelcomeEmail,
+} from "./email";
 export { sendSlackAlert, sendSlackWeeklyPulse } from "./slack";

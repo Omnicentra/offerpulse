@@ -1,18 +1,9 @@
+import { render } from "@react-email/render";
 import { Resend } from "resend";
+import { env } from "@/env";
+import { WelcomeEmail } from "./emails/welcome-email";
 
-let resendClient: Resend | null = null;
-
-function getResend(): Resend {
-  if (!resendClient && process.env.RESEND_API_KEY) {
-    resendClient = new Resend(process.env.RESEND_API_KEY);
-  }
-
-  if (!resendClient) {
-    throw new Error("Resend API key not configured");
-  }
-
-  return resendClient;
-}
+const resend = new Resend(env.RESEND_API_KEY);
 
 export interface EmailAlertData {
   competitorName: string;
@@ -25,6 +16,46 @@ export interface EmailAlertData {
   dashboardUrl: string;
 }
 
+const WELCOME_FROM = `OfferPulse <${env.RESEND_FROM_EMAIL}>`;
+
+/**
+ * Send welcome email to new signups. Uses React Email template.
+ * Skips sending if RESEND_API_KEY is not configured.
+ */
+export async function sendWelcomeEmail(
+  to: string,
+  options: { userName?: string | null; dashboardUrl?: string }
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    const dashboardUrl =
+      options.dashboardUrl ?? env.NEXT_PUBLIC_DASHBOARD_APP_URL ?? "https://app.offerpulse.com";
+    const logoUrl = `${env.NEXT_PUBLIC_MARKETING_APP_URL ?? "https://offerpulse.io"}/favicon.svg`;
+    const html = await render(
+      WelcomeEmail({
+        userName: options.userName ?? null,
+        dashboardUrl,
+        logoUrl,
+      })
+    );
+    const result = await resend.emails.send({
+      from: WELCOME_FROM,
+      to,
+      subject: "Welcome to OfferPulse — add your first competitor",
+      html,
+    });
+    return {
+      success: true,
+      messageId: result.data?.id,
+    };
+  } catch (error) {
+    console.error("Welcome email send failed:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
 /**
  * Send change alert email
  */
@@ -33,8 +64,6 @@ export async function sendChangeAlertEmail(
   data: EmailAlertData
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    const resend = getResend();
-
     const confidenceEmoji = {
       high: "🔴",
       medium: "🟡",
@@ -138,7 +167,7 @@ export async function sendChangeAlertEmail(
     `.trim();
 
     const result = await resend.emails.send({
-      from: "OfferPulse <alerts@offerpulse.com>",
+      from: WELCOME_FROM,
       to,
       subject: `[${data.changeType}] ${data.competitorName} changed their offer`,
       html,
@@ -174,8 +203,6 @@ export async function sendWeeklyPulseEmail(
   }
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    const resend = getResend();
-
     const weekLabel = data.weekOf.toLocaleDateString("en-GB", {
       month: "long",
       day: "numeric",
@@ -271,7 +298,7 @@ export async function sendWeeklyPulseEmail(
     `.trim();
 
     const result = await resend.emails.send({
-      from: "OfferPulse <pulse@offerpulse.com>",
+      from: WELCOME_FROM,
       to,
       subject: `📊 Your Weekly Pulse - ${data.totalChanges} changes detected`,
       html,

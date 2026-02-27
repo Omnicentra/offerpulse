@@ -5,6 +5,7 @@ import * as schema from "../db/schema";
 import { workspaces, workspaceMembers } from "../db/schema";
 import { nanoid } from "nanoid";
 import { env } from "@/env";
+import { sendWelcomeEmail } from "../notifications";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -48,6 +49,16 @@ export const auth = betterAuth({
             userId: user.id,
             role: "owner",
           });
+
+          // Send welcome email (fire-and-forget; do not block signup)
+          if (user.email) {
+            sendWelcomeEmail(user.email, {
+              userName: user.name ?? null,
+              dashboardUrl: env.NEXT_PUBLIC_DASHBOARD_APP_URL,
+            }).catch((err) => {
+              console.warn("Welcome email failed:", err);
+            });
+          }
         },
       },
     },
