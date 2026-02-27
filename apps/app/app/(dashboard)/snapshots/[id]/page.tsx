@@ -66,9 +66,13 @@ export default function SnapshotDetailPage() {
   };
 
   const handleDownload = () => {
+    const prevTitle = document.title;
+    document.title = `Snapshot Report - ${competitor?.name ?? "Competitor"} - ${formatTime(snapshot.capturedAt)}`;
+    window.print();
+    document.title = prevTitle;
     toast({
-      title: "Coming soon",
-      description: "Snapshot download will be available soon",
+      title: "Print / PDF",
+      description: "Use your browser's print dialog to save as PDF",
     });
   };
 
@@ -194,7 +198,7 @@ export default function SnapshotDetailPage() {
           variant="ghost"
           size="sm"
           onClick={() => router.push("/snapshots")}
-          className="mb-4 gap-2"
+          className="mb-4 gap-2 no-print"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Snapshots
@@ -204,7 +208,11 @@ export default function SnapshotDetailPage() {
           title="Snapshot Details"
           description={`${competitor?.name || "Unknown Competitor"} • ${formatTime(snapshot.capturedAt)}`}
           action={
-            <Button variant="outline" onClick={handleDownload} className="gap-2">
+            <Button
+              variant="outline"
+              onClick={handleDownload}
+              className="gap-2 no-print"
+            >
               <Download className="h-4 w-4" />
               Download Report
             </Button>

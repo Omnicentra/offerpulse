@@ -4,6 +4,9 @@ import { TRPCError } from "@trpc/server";
 import { alertSettings } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { sendChangeAlertEmail } from "../../notifications/email";
+import { sendSlackAlert } from "../../notifications/slack";
+import { env } from "@/env";
 
 export const alertsRouter = router({
   get: workspaceProcedure
@@ -92,8 +95,6 @@ export const alertsRouter = router({
   test: workspaceProcedure
     .input(z.object({ workspaceId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // TODO: Implement actual notification sending in Phase 4
-      // For now, just return success
       const settings = await ctx.db.query.alertSettings.findFirst({
         where: eq(alertSettings.workspaceId, input.workspaceId),
       });
@@ -105,17 +106,68 @@ export const alertsRouter = router({
         });
       }
 
-      // Simulate success (90% of the time)
-      if (Math.random() > 0.1) {
-        return {
-          success: true,
-          message: "Test notification sent successfully!",
-        };
-      } else {
+      const dashboardUrl =
+        env.NEXT_PUBLIC_DASHBOARD_APP_URL ?? "https://app.offerpulse.com";
+      const testAlertData = {
+        competitorName: "Test Competitor",
+        competitorUrl: "https://example.com",
+        changeType: "PROMO",
+        changeSummary:
+          "This is a test notification from OfferPulse. Your alerts are working correctly.",
+        confidence: "medium" as const,
+        recommendationTitle: "No action needed",
+        recommendationStrategy: "Test alert",
+        dashboardUrl: `${dashboardUrl}/changes`,
+      };
+
+      const sent: string[] = [];
+      const errors: string[] = [];
+
+      if (settings.emailEnabled && ctx.user.email) {
+        const emailResult = await sendChangeAlertEmail(
+          ctx.user.email,
+          testAlertData
+        );
+        if (emailResult.success) {
+          sent.push("email");
+        } else {
+          errors.push(`Email: ${emailResult.error ?? "Unknown error"}`);
+        }
+      } else if (settings.emailEnabled && !ctx.user.email) {
+        errors.push("Email: No email address for current user");
+      }
+
+      if (settings.slackEnabled && settings.slackWebhookUrl) {
+        const slackResult = await sendSlackAlert(
+          settings.slackWebhookUrl,
+          testAlertData
+        );
+        if (slackResult.success) {
+          sent.push("Slack");
+        } else {
+          errors.push(`Slack: ${slackResult.error ?? "Unknown error"}`);
+        }
+      }
+
+      if (sent.length === 0 && errors.length > 0) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send test notification. Please check your settings.",
+          message: errors.join(". "),
         });
       }
+
+      if (sent.length === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Enable at least one channel (email or Slack) and ensure your account has an email before testing.",
+        });
+      }
+
+      const channelList = sent.join(" and ");
+      return {
+        success: true,
+        message: `Test notification sent successfully via ${channelList}.`,
+      };
     }),
 });

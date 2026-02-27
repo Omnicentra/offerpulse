@@ -7,9 +7,10 @@ interface ReportHeaderProps {
   timestamp: string;
   url: string;
   onRescan: () => void;
+  onDownloadPDF?: () => void;
 }
 
-export function ReportHeader({ domain, timestamp, url, onRescan }: ReportHeaderProps) {
+export function ReportHeader({ domain, timestamp, url, onRescan, onDownloadPDF }: ReportHeaderProps) {
   const { toast } = useToast();
   
   const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
@@ -25,10 +26,13 @@ export function ReportHeader({ domain, timestamp, url, onRescan }: ReportHeaderP
   };
 
   const handleDownload = () => {
-    toast({
-      title: "Coming soon",
-      description: "PDF download will be available soon",
-    });
+    if (onDownloadPDF) {
+      onDownloadPDF();
+      toast({
+        title: "Print / PDF",
+        description: "Use your browser's print dialog to save as PDF",
+      });
+    }
   };
 
   return (
@@ -55,7 +59,7 @@ export function ReportHeader({ domain, timestamp, url, onRescan }: ReportHeaderP
           </div>
 
           {/* Right: Actions */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 no-print">
             <Button variant="outline" size="sm" onClick={onRescan} className="gap-2">
               <RefreshCw className="h-4 w-4" />
               Re-scan
@@ -64,7 +68,13 @@ export function ReportHeader({ domain, timestamp, url, onRescan }: ReportHeaderP
               <Share2 className="h-4 w-4" />
               <span className="hidden sm:inline">Share</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2" disabled>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownload}
+              className="gap-2 no-print"
+              disabled={!onDownloadPDF}
+            >
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline">PDF</span>
             </Button>

@@ -214,6 +214,12 @@ export function OfferSnapshotToolClient({
             setError(null);
             setUrl(result.url);
           }}
+          onDownloadPDF={() => {
+            const prevTitle = document.title;
+            document.title = `Competitor Offer Report - ${domain}`;
+            window.print();
+            document.title = prevTitle;
+          }}
         />
 
         {/* Main Report Content */}

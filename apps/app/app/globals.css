@@ -57,3 +57,10 @@
     @apply bg-bg text-ink font-sans antialiased;
   }
 }
+
+/* Print: hide actions so report can be saved as PDF cleanly */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
