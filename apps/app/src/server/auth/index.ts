@@ -7,6 +7,14 @@ import { nanoid } from "nanoid";
 import { env } from "@/env";
 import { sendWelcomeEmail } from "../notifications";
 
+const googleProvider =
+  env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+    ? {
+        clientId: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+      }
+    : undefined;
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -23,6 +31,11 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: false, // Set to true in production with email service
   },
+  ...(googleProvider && {
+    socialProviders: {
+      google: googleProvider,
+    },
+  }),
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 1 day (update session if older than 1 day)
