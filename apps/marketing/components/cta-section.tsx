@@ -26,29 +26,29 @@ export function CtaSection({
 
   const handlePrimaryCtaClick = () => {
     track("cta_signup_clicked", { source: "cta_section" })
-    if (isSignupCta) {
-      const signupUrl = buildAppSignupUrl({
-        competitorUrl: getStoredCompetitorUrl() ?? undefined,
-        source: "cta_section",
-      })
-      track("landing_cta_clicked", {
-        source: "cta_section",
-        action: "primary_cta",
-        cta_text: primaryText,
-        destination: signupUrl,
-      })
-      window.location.href = signupUrl
-    } else {
-      track("landing_cta_clicked", {
-        source: "cta_section",
-        action: "primary_cta",
-        cta_text: primaryText,
-        destination: primaryHref,
-      })
-    }
+    const signupUrl = buildAppSignupUrl({
+      competitorUrl: getStoredCompetitorUrl() ?? undefined,
+      source: "cta_section",
+    })
+    track("landing_cta_clicked", {
+      source: "cta_section",
+      action: "primary_cta",
+      cta_text: primaryText,
+      destination: signupUrl,
+    })
+    window.location.href = signupUrl
   }
 
-  const handleSecondaryCtaClick = () => {
+  const handlePrimaryLinkClick = () => {
+    track("landing_cta_clicked", {
+      source: "cta_section",
+      action: "primary_cta",
+      cta_text: primaryText,
+      destination: primaryHref,
+    })
+  }
+
+  const handleSecondaryLinkClick = () => {
     track("landing_cta_clicked", {
       source: "cta_section",
       action: "secondary_cta",
@@ -80,15 +80,15 @@ export function CtaSection({
               {primaryText}
             </Button>
           ) : (
-            <Button asChild size="lg" onClick={handlePrimaryCtaClick}>
-              <Link href={primaryHref!}>
+            <Button asChild size="lg">
+              <Link href={primaryHref!} onClick={handlePrimaryLinkClick}>
                 {primaryText}
               </Link>
             </Button>
           )}
           {secondaryText && secondaryHref && (
-            <Button asChild variant="outline" size="lg" onClick={handleSecondaryCtaClick}>
-              <Link href={secondaryHref}>{secondaryText}</Link>
+            <Button asChild variant="outline" size="lg">
+              <Link href={secondaryHref} onClick={handleSecondaryLinkClick}>{secondaryText}</Link>
             </Button>
           )}
         </div>
