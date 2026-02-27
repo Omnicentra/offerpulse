@@ -1,7 +1,8 @@
-import Link from "next/link";
+"use client";
+
 import { Container } from "@/components/container";
-import { Button } from "@/components/ui/button";
 import { Section } from "@/components/section";
+import { SignupCtaButton } from "@/components/signup-cta-button";
 import { CheckoutRevealDemo } from "./CheckoutRevealDemo";
 import { CheckCircle } from "lucide-react";
 
@@ -34,9 +35,9 @@ export function CheckoutRevealSection() {
             </ul>
 
             <div className="mt-8">
-              <Button asChild size="lg">
-                <Link href="/snapshot">Generate free snapshot</Link>
-              </Button>
+              <SignupCtaButton size="lg" source="checkout_reveal_section">
+                Generate free snapshot
+              </SignupCtaButton>
             </div>
           </div>
 

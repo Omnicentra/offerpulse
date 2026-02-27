@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Container } from "@/components/container";
 import { Button } from "@/components/ui/button";
+import { SignupCtaButton } from "@/components/signup-cta-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -116,9 +117,9 @@ export default async function SolutionPage({ params }: Props) {
           </p>
 
           <div className="mt-8 flex gap-4">
-            <Button asChild size="lg">
-              <Link href="/snapshot">Start free trial</Link>
-            </Button>
+            <SignupCtaButton size="lg" source="solutions">
+              Start free trial
+            </SignupCtaButton>
             <Button asChild variant="outline" size="lg">
               <Link href={`/free-tools/${relatedTools[0]?.slug || "offer-snapshot"}`}>
                 Try free tool
@@ -199,9 +200,9 @@ export default async function SolutionPage({ params }: Props) {
               <p className="mt-3 text-slate-700">
                 Get instant alerts when competitors change their promotions, with suggested actions
               </p>
-              <Button asChild size="lg" className="mt-6">
-                <Link href="/snapshot">Start free trial</Link>
-              </Button>
+              <SignupCtaButton size="lg" className="mt-6" source="solutions">
+                Start free trial
+              </SignupCtaButton>
             </CardContent>
           </Card>
         </Container>

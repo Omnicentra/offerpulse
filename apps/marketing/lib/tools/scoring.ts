@@ -4,6 +4,7 @@
  */
 
 import type { ExtractedOffer } from "./extractor";
+import type { AggregatedOffer } from "./aggregator";
 
 export interface OfferScore {
   total: number; // 0-100
@@ -19,7 +20,7 @@ export interface OfferScore {
   };
 }
 
-export function calculateOfferScore(offers: ExtractedOffer): OfferScore {
+export function calculateOfferScore(offers: ExtractedOffer | AggregatedOffer): OfferScore {
   let score = 0;
   const breakdown = {
     discounts: 0,
@@ -101,7 +102,7 @@ function getGrade(score: number): string {
   return "D";
 }
 
-function getConfidence(offers: ExtractedOffer): "high" | "medium" | "low" {
+function getConfidence(offers: ExtractedOffer | AggregatedOffer): "high" | "medium" | "low" {
   const mechanicCount =
     (offers.discounts.length > 0 ? 1 : 0) +
     (offers.shippingThreshold ? 1 : 0) +
@@ -129,7 +130,7 @@ export function getScoreInterpretation(score: number): string {
   return "Minimal promotional activity detected on public pages";
 }
 
-export function getMechanicCount(offers: ExtractedOffer): number {
+export function getMechanicCount(offers: ExtractedOffer | AggregatedOffer): number {
   let count = 0;
   if (offers.discounts.length > 0) count++;
   if (offers.shippingThreshold) count++;
