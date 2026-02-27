@@ -48,7 +48,8 @@ export function filterRelevantUrls(
       if (homepage) {
         // Remove homepage from its current position and add to top
         const filtered = scoredUrls.filter((u) => u.url !== homepage.url);
-        scoredUrls.splice(0, 0, homepage);
+        scoredUrls.length = 0;
+        scoredUrls.push(homepage, ...filtered);
       }
     }
   }
