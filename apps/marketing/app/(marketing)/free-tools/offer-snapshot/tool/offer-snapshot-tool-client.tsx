@@ -142,7 +142,8 @@ export function OfferSnapshotToolClient({
   // Show SEOptimer-style report if we have results
   if (result && offerScore) {
     const offers = result.offers as AggregatedOffer;
-    const domain = result.domain || new URL(result.url).hostname;
+    // domain is always provided by the API via extractDomain() function, which handles parsing safely
+    const domain = result.domain;
     const screenshotUrl = result.screenshotUrl;
     const pagesAnalyzed = result.pagesAnalyzed || [];
     const stats = result.stats;
