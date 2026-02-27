@@ -86,7 +86,7 @@ The API is organized by domain in `apps/app/src/server/trpc/routers/`:
 
 ### Database Schema
 Core entities in `apps/app/src/server/db/schema.ts`:
-- **Auth**: `users`, `sessions`, `accounts`, `verificationTokens` (Better-auth)
+- **Auth**: `user`, `session`, `account`, `verification` (Better-auth)
 - **Multi-tenant**: `workspaces`, `workspaceMembers`
 - **Monitoring**: `competitors`, `monitorSettings`, `snapshots`
 - **Intelligence**: `changeEvents`, `recommendations`, `recommendationChecklistItems`

@@ -1,7 +1,7 @@
 import { router, protectedProcedure, workspaceProcedure } from "../trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { workspaceMembers, users } from "../../db/schema";
+import { workspaceMembers, user } from "../../db/schema";
 import { eq, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
@@ -50,15 +50,15 @@ export const usersRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       // Check if user already exists
-      let user = await ctx.db.query.users.findFirst({
-        where: eq(users.email, input.email),
+      let invitedUser = await ctx.db.query.user.findFirst({
+        where: eq(user.email, input.email),
       });
 
       // If user doesn't exist, create a placeholder
       // In production, you'd send an invitation email instead
-      if (!user) {
-        [user] = await ctx.db
-          .insert(users)
+      if (!invitedUser) {
+        [invitedUser] = await ctx.db
+          .insert(user)
           .values({
             id: `user_${nanoid()}`,
             email: input.email,
@@ -71,7 +71,7 @@ export const usersRouter = router({
       const existing = await ctx.db.query.workspaceMembers.findFirst({
         where: and(
           eq(workspaceMembers.workspaceId, input.workspaceId),
-          eq(workspaceMembers.userId, user.id)
+          eq(workspaceMembers.userId, invitedUser.id)
         ),
       });
 
@@ -88,15 +88,15 @@ export const usersRouter = router({
         .values({
           id: `wm_${nanoid()}`,
           workspaceId: input.workspaceId,
-          userId: user.id,
+          userId: invitedUser.id,
           role: input.role,
         })
         .returning();
 
       return {
-        id: user.id,
-        name: user.name,
-        email: user.email,
+        id: invitedUser.id,
+        name: invitedUser.name,
+        email: invitedUser.email,
         role: membership.role,
         membershipId: membership.id,
         createdAt: membership.createdAt,

@@ -24,10 +24,10 @@ This document summarizes the complete backend implementation for the OfferPulse 
 #### 1.2 Comprehensive Database Schema
 Implemented 15 tables with full relations:
 
-1. **users** - User accounts (Better-auth compatible)
-2. **sessions** - User sessions
-3. **accounts** - OAuth provider accounts
-4. **verificationTokens** - Email verification
+1. **user** - User accounts (Better-auth compatible)
+2. **session** - User sessions
+3. **account** - OAuth provider accounts
+4. **verification** - Email verification
 5. **workspaces** - Tenant isolation for multi-user support
 6. **workspaceMembers** - User-workspace relationships
 7. **competitors** - Tracked competitor stores

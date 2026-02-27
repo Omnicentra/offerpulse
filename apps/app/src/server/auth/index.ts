@@ -1,28 +1,30 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../db";
+import { eq } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { workspaces, workspaceMembers } from "../db/schema";
 import { nanoid } from "nanoid";
 import { env } from "@/env";
 import { sendWelcomeEmail } from "../notifications";
+import { customSession } from "better-auth/plugins";
 
-const googleProvider =
-  env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
-    ? {
-        clientId: env.GOOGLE_CLIENT_ID,
-        clientSecret: env.GOOGLE_CLIENT_SECRET,
-      }
-    : undefined;
+export async function getDefaultWorkspaceId(userId: string) {
+  const [membership] = await db.select().from(workspaceMembers).where(eq(workspaceMembers.userId, userId)).limit(1);
+  if (!membership) {
+    throw new Error("User is not a member of any workspace");
+  }
+  return membership.workspaceId;
+}
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
-      user: schema.users,
-      session: schema.sessions,
-      account: schema.accounts,
-      verification: schema.verificationTokens,
+      user: schema.user,
+      session: schema.session,
+      account: schema.account,
+      verification: schema.verification,
     },
   }),
   secret: env.BETTER_AUTH_SECRET,
@@ -31,11 +33,13 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: false, // Set to true in production with email service
   },
-  ...(googleProvider && {
-    socialProviders: {
-      google: googleProvider,
+
+  socialProviders: {
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
     },
-  }),
+  },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 1 day (update session if older than 1 day)
@@ -76,6 +80,18 @@ export const auth = betterAuth({
       },
     },
   },
+  plugins: [
+    customSession(async ({user, session}) => {
+      const workspaceId = await getDefaultWorkspaceId(user.id);
+      return {
+        ...session,
+        user: {
+          ...user,
+          workspaceId,
+        },
+      };
+    }),
+  ],
 });
 
 export type Session = typeof auth.$Infer.Session;

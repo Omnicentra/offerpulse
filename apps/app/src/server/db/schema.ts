@@ -47,11 +47,11 @@ export const jobStatusEnum = pgEnum("job_status", [
 // AUTH TABLES (Better-auth)
 // ============================================================================
 
-export const users = pgTable("users", {
+export const user = pgTable("user", {
   id: text("id").primaryKey(),
+  name: text("name"),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false),
-  name: text("name"),
   image: text("image"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
@@ -60,13 +60,13 @@ export const users = pgTable("users", {
     .$onUpdate(() => new Date()),
 });
 
-export const sessions = pgTable("sessions", {
+export const session = pgTable("session", {
   id: text("id").primaryKey(),
   userId: text("user_id")
     .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  expiresAt: timestamp("expires_at").notNull(),
+    .references(() => user.id, { onDelete: "cascade" }),
   token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -76,17 +76,20 @@ export const sessions = pgTable("sessions", {
     .$onUpdate(() => new Date()),
 });
 
-export const accounts = pgTable("accounts", {
+export const account = pgTable("account", {
   id: text("id").primaryKey(),
   userId: text("user_id")
     .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
+    .references(() => user.id, { onDelete: "cascade" }),
   accountId: text("account_id").notNull(),
   providerId: text("provider_id").notNull(),
   accessToken: text("access_token"),
   refreshToken: text("refresh_token"),
-  expiresAt: timestamp("expires_at"),
-  password: text("password"), // For email/password auth
+  accessTokenExpiresAt: timestamp("access_token_expires_at"),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+  scope: text("scope"),
+  idToken: text("id_token"),
+  password: text("password"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -94,12 +97,16 @@ export const accounts = pgTable("accounts", {
     .$onUpdate(() => new Date()),
 });
 
-export const verificationTokens = pgTable("verification_tokens", {
+export const verification = pgTable("verification", {
   id: text("id").primaryKey(),
   identifier: text("identifier").notNull(),
-  token: text("token").notNull().unique(),
-  expires: timestamp("expires").notNull(),
+  value: text("value").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
 });
 
 // ============================================================================
@@ -126,7 +133,7 @@ export const workspaceMembers = pgTable(
       .references(() => workspaces.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     role: roleEnum("role").notNull().default("member"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
@@ -438,23 +445,23 @@ export const scrapeJobs = pgTable(
 // RELATIONS
 // ============================================================================
 
-export const usersRelations = relations(users, ({ many }) => ({
-  sessions: many(sessions),
-  accounts: many(accounts),
+export const userRelations = relations(user, ({ many }) => ({
+  sessions: many(session),
+  accounts: many(account),
   workspaceMembers: many(workspaceMembers),
 }));
 
-export const sessionsRelations = relations(sessions, ({ one }) => ({
-  user: one(users, {
-    fields: [sessions.userId],
-    references: [users.id],
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, {
+    fields: [session.userId],
+    references: [user.id],
   }),
 }));
 
-export const accountsRelations = relations(accounts, ({ one }) => ({
-  user: one(users, {
-    fields: [accounts.userId],
-    references: [users.id],
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(user, {
+    fields: [account.userId],
+    references: [user.id],
   }),
 }));
 
@@ -473,9 +480,9 @@ export const workspaceMembersRelations = relations(
       fields: [workspaceMembers.workspaceId],
       references: [workspaces.id],
     }),
-    user: one(users, {
+    user: one(user, {
       fields: [workspaceMembers.userId],
-      references: [users.id],
+      references: [user.id],
     }),
   })
 );

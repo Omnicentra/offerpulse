@@ -10,8 +10,8 @@
 
 import { db } from "./index";
 import {
-  users,
-  accounts,
+  user,
+  account,
   workspaces,
   workspaceMembers,
   competitors,
@@ -86,20 +86,20 @@ async function seedUsers(): Promise<void> {
   console.log("Phase: users — creating demo user and credential account...");
   const hashedPassword = await bcrypt.hash(DEMO_PASSWORD, 10);
 
-  await db.insert(users).values({
+  await db.insert(user).values({
     id: DEMO_USER_ID,
     name: DEMO_USER_NAME,
     email: DEMO_USER_EMAIL,
     emailVerified: true,
-  }).onConflictDoNothing({ target: users.id });
+  }).onConflictDoNothing({ target: user.id });
 
-  await db.insert(accounts).values({
+  await db.insert(account).values({
     id: "account_demo_credential",
     userId: DEMO_USER_ID,
     accountId: DEMO_USER_ID,
     providerId: "credential",
     password: hashedPassword,
-  }).onConflictDoNothing({ target: accounts.id });
+  }).onConflictDoNothing({ target: account.id });
 
   console.log(`✓ Demo user: ${DEMO_USER_EMAIL} (password: ${DEMO_PASSWORD})`);
 }
