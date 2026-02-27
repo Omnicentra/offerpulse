@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { track } from "@/lib/analytics"
+import { buildAppSignupUrl, getStoredCompetitorUrl } from "@offerpulse/lib/routing"
 
 interface CtaSectionProps {
   title?: string
@@ -17,24 +18,37 @@ export function CtaSection({
   title = "Ready to stay ahead?",
   description = "Join Shopify sellers who track competitors on autopilot.",
   primaryText = "Start your free trial",
-  primaryHref = "/snapshot",
+  primaryHref,
   secondaryText = "View pricing",
   secondaryHref = "/pricing",
 }: CtaSectionProps) {
+  const isSignupCta = primaryHref === "/snapshot" || primaryHref == null
+
   const handlePrimaryCtaClick = () => {
     track("cta_signup_clicked", { source: "cta_section" })
-
-    // Track CTA click in PostHog with consistent event name
-    track("landing_cta_clicked", {
-      source: "cta_section",
-      action: "primary_cta",
-      cta_text: primaryText,
-      destination: primaryHref,
-    })
+    if (isSignupCta) {
+      const signupUrl = buildAppSignupUrl({
+        competitorUrl: getStoredCompetitorUrl() ?? undefined,
+        source: "cta_section",
+      })
+      track("landing_cta_clicked", {
+        source: "cta_section",
+        action: "primary_cta",
+        cta_text: primaryText,
+        destination: signupUrl,
+      })
+      window.location.href = signupUrl
+    } else {
+      track("landing_cta_clicked", {
+        source: "cta_section",
+        action: "primary_cta",
+        cta_text: primaryText,
+        destination: primaryHref,
+      })
+    }
   }
 
   const handleSecondaryCtaClick = () => {
-    // Track secondary CTA click
     track("landing_cta_clicked", {
       source: "cta_section",
       action: "secondary_cta",
@@ -61,11 +75,17 @@ export function CtaSection({
           {description}
         </p>
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Button asChild size="lg" onClick={handlePrimaryCtaClick}>
-            <Link href={primaryHref}>
+          {isSignupCta ? (
+            <Button size="lg" onClick={handlePrimaryCtaClick}>
               {primaryText}
-            </Link>
-          </Button>
+            </Button>
+          ) : (
+            <Button asChild size="lg" onClick={handlePrimaryCtaClick}>
+              <Link href={primaryHref!}>
+                {primaryText}
+              </Link>
+            </Button>
+          )}
           {secondaryText && secondaryHref && (
             <Button asChild variant="outline" size="lg" onClick={handleSecondaryCtaClick}>
               <Link href={secondaryHref}>{secondaryText}</Link>

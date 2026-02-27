@@ -19,13 +19,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ExtractedOffer } from "@/lib/tools/extractor";
-import type { OfferSnapshotResponse, PageResult } from "@/app/api/tools/offer-snapshot/route";
+import type {
+  OfferSnapshotResponse,
+  PageResult,
+} from "@/app/api/tools/offer-snapshot/route";
 import type { AggregatedOffer } from "@/lib/tools/aggregator";
 import {
   calculateOfferScore,
   getScoreInterpretation,
 } from "@/lib/tools/scoring";
 import { normalizeUrl, validateUrl } from "@/lib/url-helpers";
+import { buildAppSignupUrl } from "@offerpulse/lib/routing";
 import {
   AlertCircle,
   ArrowRight,
@@ -49,7 +53,9 @@ interface OfferSnapshotToolClientProps {
   urlParam: string | null;
 }
 
-export function OfferSnapshotToolClient({ urlParam }: OfferSnapshotToolClientProps) {
+export function OfferSnapshotToolClient({
+  urlParam,
+}: OfferSnapshotToolClientProps) {
   const hasAutoRun = useRef(false);
 
   const [url, setUrl] = useState(urlParam || "");
@@ -92,7 +98,10 @@ export function OfferSnapshotToolClient({ urlParam }: OfferSnapshotToolClientPro
       const data: OfferSnapshotResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error((data as unknown as { error?: string }).error || "Failed to analyse store");
+        throw new Error(
+          (data as unknown as { error?: string }).error ||
+            "Failed to analyse store",
+        );
       }
 
       setResult(data);
@@ -137,6 +146,10 @@ export function OfferSnapshotToolClient({ urlParam }: OfferSnapshotToolClientPro
     const screenshotUrl = result.screenshotUrl;
     const pagesAnalyzed = result.pagesAnalyzed || [];
     const stats = result.stats;
+    const reportSignupUrl = buildAppSignupUrl({
+      competitorUrl: result.url,
+      source: "offer_snapshot_report",
+    });
 
     // Build metrics
     const metrics = {
@@ -206,12 +219,25 @@ export function OfferSnapshotToolClient({ urlParam }: OfferSnapshotToolClientPro
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
           {/* Score Summary Section */}
           <div className="mb-16">
-            <h2 className="mb-2 text-3xl font-bold text-slate-900">
-              Your Competitor Offer Report
-            </h2>
-            <p className="mb-8 text-slate-600">
-              Comprehensive analysis of promotional mechanics
-            </p>
+            <header className="flex items-start justify-between">
+              <div>
+                <h2 className="mb-2 text-3xl font-bold text-slate-900">
+                  Your Competitor Offer Report
+                </h2>
+                <p className="mb-8 text-slate-600">
+                  Comprehensive analysis of promotional mechanics
+                </p>
+              </div>
+              <Button
+                size="lg"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={() => {
+                  window.location.href = reportSignupUrl;
+                }}
+              >
+                Start monitoring
+              </Button>
+            </header>
             <ScoreSummary
               score={offerScore}
               interpretation={scoreInterpretation}
@@ -270,7 +296,8 @@ export function OfferSnapshotToolClient({ urlParam }: OfferSnapshotToolClientPro
                 Pages Analyzed
               </h3>
               <p className="mb-6 text-slate-600">
-                Scanned {stats?.successfulPages || pagesAnalyzed.length} pages across shipping, FAQ, products, and policy pages
+                Scanned {stats?.successfulPages || pagesAnalyzed.length} pages
+                across shipping, FAQ, products, and policy pages
               </p>
               <Card>
                 <CardContent className="p-6">
@@ -385,9 +412,10 @@ export function OfferSnapshotToolClient({ urlParam }: OfferSnapshotToolClientPro
               <OfferStackCard
                 category="Urgency Signals"
                 items={offers.announcements.map((a: any) => ({
-                  text: typeof a === 'string' ? a : a.text,
+                  text: typeof a === "string" ? a : a.text,
                   location: "Announcement bar",
-                  sourcePages: typeof a === 'object' && a.sourcePages ? a.sourcePages : [],
+                  sourcePages:
+                    typeof a === "object" && a.sourcePages ? a.sourcePages : [],
                 }))}
                 icon={Clock}
               />
@@ -399,7 +427,7 @@ export function OfferSnapshotToolClient({ urlParam }: OfferSnapshotToolClientPro
             <RecommendationsCard
               visibleRecommendations={recommendations.visible}
               lockedCount={recommendations.locked}
-              signupUrl="/snapshot"
+              signupUrl={reportSignupUrl}
             />
           </div>
 
@@ -414,8 +442,14 @@ export function OfferSnapshotToolClient({ urlParam }: OfferSnapshotToolClientPro
                 Get instant alerts when they change offers, shipping thresholds,
                 bundles, or cart incentives
               </p>
-              <Button asChild size="lg" className="mt-6">
-                <Link href="/snapshot">Start monitoring this competitor</Link>
+              <Button
+                size="lg"
+                className="mt-6"
+                onClick={() => {
+                  window.location.href = reportSignupUrl;
+                }}
+              >
+                Start monitoring this competitor
               </Button>
               <p className="mt-4 text-sm text-slate-600">
                 From £19/mo • 14-day free trial • No credit card required
@@ -523,7 +557,10 @@ export function OfferSnapshotToolClient({ urlParam }: OfferSnapshotToolClientPro
             Free tools
           </Link>
           <span>/</span>
-          <Link href="/free-tools/offer-snapshot" className="hover:text-slate-900">
+          <Link
+            href="/free-tools/offer-snapshot"
+            className="hover:text-slate-900"
+          >
             Competitor Offer Snapshot
           </Link>
           <span>/</span>
@@ -711,7 +748,11 @@ export function OfferSnapshotToolClient({ urlParam }: OfferSnapshotToolClientPro
   );
 }
 
-function OfferResults({ offers }: { offers: ExtractedOffer | AggregatedOffer }) {
+function OfferResults({
+  offers,
+}: {
+  offers: ExtractedOffer | AggregatedOffer;
+}) {
   const hasAnyOffers =
     offers.shippingThreshold ||
     offers.discounts.length > 0 ||
@@ -752,12 +793,17 @@ function OfferResults({ offers }: { offers: ExtractedOffer | AggregatedOffer }) 
               <Badge variant="outline" className="flex-shrink-0">
                 {offers.shippingThreshold.locationHint}
               </Badge>
-              {(offers.shippingThreshold as any).sourcePages && (offers.shippingThreshold as any).sourcePages.length > 0 && (
-                <Badge className="bg-blue-100 text-blue-800 text-xs">
-                  Found on: {(offers.shippingThreshold as any).sourcePages.slice(0, 2).join(", ")}
-                  {(offers.shippingThreshold as any).sourcePages.length > 2 && ` +${(offers.shippingThreshold as any).sourcePages.length - 2}`}
-                </Badge>
-              )}
+              {(offers.shippingThreshold as any).sourcePages &&
+                (offers.shippingThreshold as any).sourcePages.length > 0 && (
+                  <Badge className="bg-blue-100 text-blue-800 text-xs">
+                    Found on:{" "}
+                    {(offers.shippingThreshold as any).sourcePages
+                      .slice(0, 2)
+                      .join(", ")}
+                    {(offers.shippingThreshold as any).sourcePages.length > 2 &&
+                      ` +${(offers.shippingThreshold as any).sourcePages.length - 2}`}
+                  </Badge>
+                )}
             </div>
           </div>
         </div>
@@ -788,12 +834,14 @@ function OfferResults({ offers }: { offers: ExtractedOffer | AggregatedOffer }) 
                   <Badge variant="outline" className="text-xs flex-shrink-0">
                     {discount.locationHint}
                   </Badge>
-                  {(discount as any).sourcePages && (discount as any).sourcePages.length > 0 && (
-                    <Badge className="bg-purple-100 text-purple-800 text-xs">
-                      {(discount as any).sourcePages.slice(0, 2).join(", ")}
-                      {(discount as any).sourcePages.length > 2 && ` +${(discount as any).sourcePages.length - 2}`}
-                    </Badge>
-                  )}
+                  {(discount as any).sourcePages &&
+                    (discount as any).sourcePages.length > 0 && (
+                      <Badge className="bg-purple-100 text-purple-800 text-xs">
+                        {(discount as any).sourcePages.slice(0, 2).join(", ")}
+                        {(discount as any).sourcePages.length > 2 &&
+                          ` +${(discount as any).sourcePages.length - 2}`}
+                      </Badge>
+                    )}
                 </div>
               </div>
             ))}
@@ -817,12 +865,14 @@ function OfferResults({ offers }: { offers: ExtractedOffer | AggregatedOffer }) 
                   <Badge variant="outline" className="text-xs">
                     {bundle.locationHint}
                   </Badge>
-                  {(bundle as any).sourcePages && (bundle as any).sourcePages.length > 0 && (
-                    <Badge className="bg-orange-100 text-orange-800 text-xs">
-                      {(bundle as any).sourcePages.slice(0, 2).join(", ")}
-                      {(bundle as any).sourcePages.length > 2 && ` +${(bundle as any).sourcePages.length - 2}`}
-                    </Badge>
-                  )}
+                  {(bundle as any).sourcePages &&
+                    (bundle as any).sourcePages.length > 0 && (
+                      <Badge className="bg-orange-100 text-orange-800 text-xs">
+                        {(bundle as any).sourcePages.slice(0, 2).join(", ")}
+                        {(bundle as any).sourcePages.length > 2 &&
+                          ` +${(bundle as any).sourcePages.length - 2}`}
+                      </Badge>
+                    )}
                 </div>
               </div>
             ))}
@@ -846,12 +896,14 @@ function OfferResults({ offers }: { offers: ExtractedOffer | AggregatedOffer }) 
                   <Badge variant="outline" className="text-xs">
                     {gift.locationHint}
                   </Badge>
-                  {(gift as any).sourcePages && (gift as any).sourcePages.length > 0 && (
-                    <Badge className="bg-green-100 text-green-800 text-xs">
-                      {(gift as any).sourcePages.slice(0, 2).join(", ")}
-                      {(gift as any).sourcePages.length > 2 && ` +${(gift as any).sourcePages.length - 2}`}
-                    </Badge>
-                  )}
+                  {(gift as any).sourcePages &&
+                    (gift as any).sourcePages.length > 0 && (
+                      <Badge className="bg-green-100 text-green-800 text-xs">
+                        {(gift as any).sourcePages.slice(0, 2).join(", ")}
+                        {(gift as any).sourcePages.length > 2 &&
+                          ` +${(gift as any).sourcePages.length - 2}`}
+                      </Badge>
+                    )}
                 </div>
               </div>
             ))}
@@ -875,12 +927,14 @@ function OfferResults({ offers }: { offers: ExtractedOffer | AggregatedOffer }) 
                   <Badge variant="outline" className="text-xs">
                     {incentive.locationHint}
                   </Badge>
-                  {(incentive as any).sourcePages && (incentive as any).sourcePages.length > 0 && (
-                    <Badge className="bg-indigo-100 text-indigo-800 text-xs">
-                      {(incentive as any).sourcePages.slice(0, 2).join(", ")}
-                      {(incentive as any).sourcePages.length > 2 && ` +${(incentive as any).sourcePages.length - 2}`}
-                    </Badge>
-                  )}
+                  {(incentive as any).sourcePages &&
+                    (incentive as any).sourcePages.length > 0 && (
+                      <Badge className="bg-indigo-100 text-indigo-800 text-xs">
+                        {(incentive as any).sourcePages.slice(0, 2).join(", ")}
+                        {(incentive as any).sourcePages.length > 2 &&
+                          ` +${(incentive as any).sourcePages.length - 2}`}
+                      </Badge>
+                    )}
                 </div>
               </div>
             ))}
@@ -895,8 +949,11 @@ function OfferResults({ offers }: { offers: ExtractedOffer | AggregatedOffer }) 
             Announcement Bar
           </p>
           {offers.announcements.map((ann, idx) => {
-            const annText = typeof ann === 'string' ? ann : (ann as any).text;
-            const annSourcePages = typeof ann === 'object' && (ann as any).sourcePages ? (ann as any).sourcePages : [];
+            const annText = typeof ann === "string" ? ann : (ann as any).text;
+            const annSourcePages =
+              typeof ann === "object" && (ann as any).sourcePages
+                ? (ann as any).sourcePages
+                : [];
             return (
               <div key={idx} className="mt-2">
                 <p className="text-sm text-slate-700 break-words">
@@ -905,7 +962,8 @@ function OfferResults({ offers }: { offers: ExtractedOffer | AggregatedOffer }) 
                 {annSourcePages.length > 0 && (
                   <Badge className="bg-slate-100 text-slate-700 text-xs mt-1">
                     {annSourcePages.slice(0, 2).join(", ")}
-                    {annSourcePages.length > 2 && ` +${annSourcePages.length - 2}`}
+                    {annSourcePages.length > 2 &&
+                      ` +${annSourcePages.length - 2}`}
                   </Badge>
                 )}
               </div>

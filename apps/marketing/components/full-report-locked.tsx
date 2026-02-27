@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Lock, Clock, Camera, Bell, BarChart3 } from "lucide-react"
 import { track } from "@/lib/analytics"
+import { buildAppSignupUrl } from "@offerpulse/lib/routing"
 
 interface FullReportLockedProps {
   competitorUrl: string
@@ -34,7 +35,10 @@ const lockedFeatures = [
 ]
 
 export function FullReportLocked({ competitorUrl }: FullReportLockedProps) {
-  const encodedUrl = encodeURIComponent(competitorUrl)
+  const signupUrl = buildAppSignupUrl({
+    competitorUrl,
+    source: "full_report_locked",
+  })
 
   const handleUnlockClick = () => {
     track("cta_signup_clicked", { source: "full_report_locked" })
@@ -75,7 +79,7 @@ export function FullReportLocked({ competitorUrl }: FullReportLockedProps) {
             </p>
             <div className="mt-6 flex flex-col gap-3">
               <Button asChild size="lg" onClick={handleUnlockClick}>
-                <Link href="/snapshot">
+                <Link href={signupUrl}>
                   Create free account to unlock
                 </Link>
               </Button>

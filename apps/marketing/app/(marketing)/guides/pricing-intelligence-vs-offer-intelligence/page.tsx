@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Container } from "@/components/container";
 import { Button } from "@/components/ui/button";
+import { SignupCtaButton } from "@/components/signup-cta-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -433,9 +434,9 @@ export default function GuidePage() {
                 Get instant alerts when competitors change their discounts, bundles, shipping, or cart incentives—with suggested strategic responses.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                <Button asChild size="lg">
-                  <Link href="/snapshot">Start free trial</Link>
-                </Button>
+                <SignupCtaButton size="lg" source="guides_pricing_vs_offer">
+                  Start free trial
+                </SignupCtaButton>
                 <Button asChild variant="outline" size="lg">
                   <Link href="/free-tools">Try free tools</Link>
                 </Button>
