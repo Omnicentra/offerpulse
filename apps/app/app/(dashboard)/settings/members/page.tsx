@@ -212,7 +212,7 @@ export default function MembersPage() {
           <DialogHeader>
             <DialogTitle>Invite Team Member</DialogTitle>
             <DialogDescription>
-              Add a new member to your workspace. They'll receive access immediately in demo mode.
+              Add a new member to your workspace. They'll receive access immediately.
             </DialogDescription>
           </DialogHeader>
 

@@ -250,7 +250,7 @@ export default function ShopifyOnboardingPage() {
               <div className="flex gap-3">
                 <AlertCircle className="h-5 w-5 flex-shrink-0 text-yellow-600" />
                 <div>
-                  <p className="text-sm font-medium text-yellow-900">Demo Mode</p>
+                  <p className="text-sm font-medium text-yellow-900">Simulated connection</p>
                   <p className="mt-1 text-xs text-yellow-800">
                     In production, this would initiate Shopify OAuth. For now, we'll simulate the connection.
                   </p>

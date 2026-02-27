@@ -91,14 +91,6 @@ export function Sidebar({ isOpen = true, onClose, isMobile = false }: SidebarPro
           );
         })}
       </nav>
-
-      {/* Footer */}
-      <div className="border-t border-slate-200 p-4">
-        <div className="rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
-          <p className="text-xs font-medium text-slate-900">Demo Mode</p>
-          <p className="mt-1 text-xs text-slate-600">All data is stored locally</p>
-        </div>
-      </div>
     </div>
   );
 

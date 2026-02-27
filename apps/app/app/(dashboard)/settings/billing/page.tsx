@@ -55,9 +55,8 @@ export default function BillingPage() {
           <div>
             <Badge className="mb-3">Current Plan</Badge>
             <h2 className="text-3xl font-bold text-slate-900">Trial</h2>
-            <p className="mt-2 text-lg text-slate-700">Free Demo Mode</p>
             <p className="mt-1 text-sm text-slate-600">
-              Unlimited access to all features in demo mode
+              Unlimited access to all features
             </p>
           </div>
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600">
@@ -168,15 +167,6 @@ export default function BillingPage() {
             </Button>
           </div>
         </div>
-      </div>
-
-      {/* Demo Notice */}
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
-        <h3 className="text-sm font-semibold text-slate-900">Demo Mode</h3>
-        <p className="mt-2 text-sm text-slate-600">
-          You're currently using OfferPulse in demo mode with full access to all features. In a production
-          environment, billing would be handled through Stripe or a similar payment processor.
-        </p>
       </div>
     </div>
   );
