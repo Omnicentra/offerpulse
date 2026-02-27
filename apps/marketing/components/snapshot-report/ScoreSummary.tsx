@@ -1,13 +1,22 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { OfferScore } from "@/lib/tools/scoring";
+
+interface ScoreSummaryMetrics {
+  discounts: number;
+  shippingIncentives: number;
+  bundles: number;
+  gifts: number;
+  cartIncentives: number;
+  urgencyWidgets: number;
+}
 
 interface ScoreSummaryProps {
   score: OfferScore;
   interpretation: string;
+  metrics: ScoreSummaryMetrics;
 }
 
-export function ScoreSummary({ score, interpretation }: ScoreSummaryProps) {
+export function ScoreSummary({ score, interpretation, metrics }: ScoreSummaryProps) {
   const getGradeColor = (grade: string) => {
     if (grade.startsWith("A")) return "from-green-500 to-emerald-600";
     if (grade.startsWith("B")) return "from-blue-500 to-indigo-600";
@@ -15,10 +24,32 @@ export function ScoreSummary({ score, interpretation }: ScoreSummaryProps) {
     return "from-slate-400 to-slate-500";
   };
 
-  const getConfidenceColor = (confidence: string) => {
-    if (confidence === "high") return "bg-green-100 text-green-800";
-    if (confidence === "medium") return "bg-yellow-100 text-yellow-800";
-    return "bg-slate-100 text-slate-800";
+  const getIntensityBadge = (totalScore: number) => {
+    if (totalScore >= 80) {
+      return {
+        label: "Very high",
+        className: "bg-green-100 text-green-800",
+      };
+    }
+
+    if (totalScore >= 50) {
+      return {
+        label: "High",
+        className: "bg-emerald-50 text-emerald-800",
+      };
+    }
+
+    if (totalScore >= 30) {
+      return {
+        label: "Moderate",
+        className: "bg-yellow-50 text-yellow-800",
+      };
+    }
+
+    return {
+      label: "Low",
+      className: "bg-slate-100 text-slate-800",
+    };
   };
 
   return (
@@ -68,27 +99,39 @@ export function ScoreSummary({ score, interpretation }: ScoreSummaryProps) {
         </div>
       </div>
 
-      {/* Summary Text + Confidence */}
+      {/* Summary Text + Promo Intensity */}
       <div className="flex flex-col justify-center space-y-6">
         <div>
-          <Badge className={getConfidenceColor(score.confidence)}>
-            {score.confidence.charAt(0).toUpperCase() + score.confidence.slice(1)} Confidence
-          </Badge>
+          {(() => {
+            const intensity = getIntensityBadge(score.total);
+            return (
+              <Badge className={intensity.className}>
+                {intensity.label} promo intensity
+              </Badge>
+            );
+          })()}
           <p className="mt-4 text-xl text-slate-700 leading-relaxed">
             {interpretation}
           </p>
         </div>
 
-        {/* Score Breakdown */}
+        {/* Score Breakdown - real offer mechanics */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {Object.entries(score.breakdown).map(([key, value]) => (
-            value > 0 && (
-              <div key={key} className="rounded-lg bg-slate-50 p-3">
-                <div className="text-2xl font-bold text-slate-900">{value}</div>
-                <div className="text-xs text-slate-600 capitalize">{key.replace(/([A-Z])/g, " $1").trim()}</div>
+          {[
+            { key: "discounts", label: "Discounts", value: metrics.discounts },
+            { key: "shippingIncentives", label: "Shipping", value: metrics.shippingIncentives },
+            { key: "bundles", label: "Bundles", value: metrics.bundles },
+            { key: "gifts", label: "Gifts", value: metrics.gifts },
+            { key: "cartIncentives", label: "Cart incentives", value: metrics.cartIncentives },
+            { key: "urgencyWidgets", label: "Urgency", value: metrics.urgencyWidgets },
+          ]
+            .filter((item) => item.value > 0)
+            .map((item) => (
+              <div key={item.key} className="rounded-lg bg-slate-50 p-3">
+                <div className="text-2xl font-bold text-slate-900">{item.value}</div>
+                <div className="text-xs text-slate-600">{item.label}</div>
               </div>
-            )
-          ))}
+            ))}
         </div>
       </div>
     </div>

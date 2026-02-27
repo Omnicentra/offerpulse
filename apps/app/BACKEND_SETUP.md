@@ -197,7 +197,7 @@ src/
 │   ├── trpc/               # tRPC client setup
 │   ├── logger.ts           # Centralized logging
 │   ├── errors.ts           # Custom error classes
-│   env.ts                  # Environment validation (@t3-oss/env-nextjs, project root)
+├── env.ts                  # Environment validation (@t3-oss/env-nextjs, project root)
 └── providers/
     ├── trpc-provider.tsx   # tRPC React provider
     └── workspace-provider.tsx
@@ -361,7 +361,7 @@ Vercel will automatically:
 
 2. Run migrations:
    ```bash
-   pnpm db:migrate:prod
+   pnpm db:migrate:prod  # Use db:migrate:prod for production deployments
    ```
 
 3. Start the server:

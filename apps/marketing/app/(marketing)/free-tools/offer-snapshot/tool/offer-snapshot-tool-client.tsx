@@ -215,6 +215,7 @@ export function OfferSnapshotToolClient({ urlParam }: OfferSnapshotToolClientPro
             <ScoreSummary
               score={offerScore}
               interpretation={scoreInterpretation}
+              metrics={metrics}
             />
           </div>
 
