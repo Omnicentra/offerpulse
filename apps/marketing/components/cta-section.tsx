@@ -22,7 +22,7 @@ export function CtaSection({
   secondaryText = "View pricing",
   secondaryHref = "/pricing",
 }: CtaSectionProps) {
-  const isSignupCta = primaryHref === "/snapshot" || primaryHref == null
+  const isSignupCta = primaryHref === "/snapshot" || primaryHref === undefined
 
   const handlePrimaryCtaClick = () => {
     track("cta_signup_clicked", { source: "cta_section" })
