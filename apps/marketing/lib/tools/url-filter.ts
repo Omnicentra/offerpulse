@@ -242,6 +242,37 @@ function isHomepage(url: string): boolean {
   }
 }
 
+const PRODUCT_PATH_PATTERNS = [
+  /\/products?\//,
+  /\/product\//,
+  /\/p\//,
+  /\/shop\/.+\/.+/,
+  /\/collections?\/.+\/.+/,
+  /\/item\//,
+  /\/dp\//,
+  /\/catalogue\/.+\/.+/,
+];
+
+const EXCLUDE_FROM_PRODUCT = [
+  /\/(cart|basket|checkout|bag|login|signin|register|account|search)/,
+  /\/(collections?|products?)\/?$/,
+];
+
+/**
+ * Pick the first product-like URL from a scored list.
+ * Used by the checkout flow to find a page with an "Add to cart" button.
+ * Returns undefined if no suitable product URL is found.
+ */
+export function pickProductUrl(urls: ScoredUrl[]): ScoredUrl | undefined {
+  for (const url of urls) {
+    const path = new URL(url.url).pathname.toLowerCase();
+    const isProduct = PRODUCT_PATH_PATTERNS.some((re) => re.test(path));
+    const isExcluded = EXCLUDE_FROM_PRODUCT.some((re) => re.test(path));
+    if (isProduct && !isExcluded) return url;
+  }
+  return undefined;
+}
+
 /**
  * Group URLs by category for reporting
  */

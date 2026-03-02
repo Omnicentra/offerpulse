@@ -1,5 +1,8 @@
 "use client";
 
+import type {
+  OfferSnapshotResponse
+} from "@/app/api/tools/offer-snapshot/route";
 import { Container } from "@/components/container";
 import { MetricsRow } from "@/components/snapshot-report/MetricsRow";
 import { OfferStackCard } from "@/components/snapshot-report/OfferStackCard";
@@ -18,12 +21,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { ExtractedOffer } from "@/lib/tools/extractor";
-import type {
-  OfferSnapshotResponse,
-  PageResult,
-} from "@/app/api/tools/offer-snapshot/route";
 import type { AggregatedOffer } from "@/lib/tools/aggregator";
+import type { ExtractedOffer } from "@/lib/tools/extractor";
 import {
   calculateOfferScore,
   getScoreInterpretation,
@@ -92,7 +91,7 @@ export function OfferSnapshotToolClient({
       const response = await fetch("/api/tools/offer-snapshot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: normalizedUrl }),
+        body: JSON.stringify({ url: normalizedUrl, flows: ["checkout"] }),
       });
 
       const data: OfferSnapshotResponse = await response.json();
