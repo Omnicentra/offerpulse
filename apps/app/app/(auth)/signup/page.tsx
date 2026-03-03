@@ -98,6 +98,8 @@ function SignupForm() {
       const userId = signUpData?.user?.id;
       if (userId) {
         posthog.identify(userId, {
+          email: data.email,
+          name: data.name,
           signed_up_at: new Date().toISOString(),
         });
       }

@@ -5,12 +5,27 @@ import { Topbar } from "@/components/layout/topbar";
 import { SubscriptionGuard } from "@/components/subscription-guard";
 import { WorkspaceProvider } from "@/src/providers/workspace-provider";
 import { SubscriptionProvider } from "@/src/providers/subscription-provider";
+import { posthog } from "posthog-js";
+import { useEffect } from "react";
+import { useSession } from "@/src/server/auth/client";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { data: session } = useSession();
+  const user = session?.user ?? null;
+
+  // Single identify for all auth methods (email/password + OAuth). Uses non-PII user id only.
+  useEffect(() => {
+    if (!user) return;
+    posthog.identify(user.id, {
+      email: user.email,
+      name: user.name,
+    });
+  }, [user]);
+  
   return (
     <WorkspaceProvider>
       <SubscriptionProvider>

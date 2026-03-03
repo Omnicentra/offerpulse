@@ -86,6 +86,7 @@ function LoginForm() {
       const userId = signInData?.user?.id;
       if (userId) {
         posthog.identify(userId, {
+          email: data.email,
           last_signed_in_at: new Date().toISOString(),
         });
       }
