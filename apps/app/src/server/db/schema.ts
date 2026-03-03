@@ -7,7 +7,8 @@ import {
   pgEnum,
   pgTable,
   text,
-  timestamp
+  timestamp,
+  unique
 } from "drizzle-orm/pg-core";
 
 // ============================================================================
