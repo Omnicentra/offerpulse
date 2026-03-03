@@ -79,7 +79,7 @@ function SignupForm() {
     posthog.capture("signup_form_submitted", { has_name: !!data.name });
 
     try {
-      const { error } = await signUp.email({
+      const { data: signUpData, error } = await signUp.email({
         name: data.name,
         email: data.email,
         password: data.password,
@@ -95,12 +95,13 @@ function SignupForm() {
         return;
       }
 
-      posthog.identify(data.email, {
-        email: data.email,
-        name: data.name,
-        signed_up_at: new Date().toISOString(),
-      });
-      posthog.capture("signup_completed", { email: data.email, source: "dashboard_app" });
+      const userId = signUpData?.user?.id;
+      if (userId) {
+        posthog.identify(userId, {
+          signed_up_at: new Date().toISOString(),
+        });
+      }
+      posthog.capture("signup_completed", { source: "dashboard_app" });
 
       setStep("plan");
     } catch (error) {

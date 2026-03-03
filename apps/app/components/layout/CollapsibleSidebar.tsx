@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { authApi } from "@/src/mock/api";
+import { signOut } from "@/src/server/auth/client";
 import { useToast } from "@/hooks/use-toast";
 import {
   LayoutDashboard,
@@ -23,6 +23,8 @@ import {
   X,
   LogOut,
 } from "lucide-react";
+import { posthog } from "posthog-js";
+import { useSession } from "@/src/server/auth/client";
 
 interface CollapsibleSidebarProps {
   isOpen?: boolean;
@@ -47,7 +49,8 @@ export function CollapsibleSidebar({ isOpen = true, onClose, isMobile = false }:
   const router = useRouter();
   const { toast } = useToast();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const user = authApi.getCurrentUser();
+  const { data: session } = useSession();
+  const user = session?.user ?? null;
 
   // Load collapsed state from localStorage
   useEffect(() => {
@@ -66,7 +69,8 @@ export function CollapsibleSidebar({ isOpen = true, onClose, isMobile = false }:
   };
 
   const handleLogout = async () => {
-    await authApi.logout();
+    await signOut();
+    posthog.reset();
     toast({
       title: "Logged out",
       description: "You've been successfully logged out.",

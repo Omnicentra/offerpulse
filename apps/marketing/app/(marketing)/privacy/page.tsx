@@ -84,6 +84,13 @@ export default function PrivacyPage() {
                 <strong>Log Data:</strong> IP address, access times, and pages
                 viewed.
               </li>
+              <li>
+                <strong>Analytics:</strong> We use analytics tools (e.g.
+                PostHog) to improve our product and user experience. With your
+                consent or where otherwise permitted, this may include your
+                email address in association with usage events (e.g. sign-up
+                completion) for analysis and support.
+              </li>
             </ul>
 
             <h3 className="mt-6 text-lg font-medium text-foreground">
