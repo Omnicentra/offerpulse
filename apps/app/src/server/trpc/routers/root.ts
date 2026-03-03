@@ -1,6 +1,7 @@
 import type { inferRouterOutputs } from "@trpc/server";
 import { router } from "../trpc";
 import { authRouter } from "./auth";
+import { billingRouter } from "./billing";
 import { competitorsRouter } from "./competitors";
 import { monitorSettingsRouter } from "./monitor-settings";
 import { snapshotsRouter } from "./snapshots";
@@ -13,6 +14,7 @@ import { workspaceSettingsRouter } from "./workspace-settings";
 
 export const appRouter = router({
   auth: authRouter,
+  billing: billingRouter,
   competitors: competitorsRouter,
   monitorSettings: monitorSettingsRouter,
   snapshots: snapshotsRouter,

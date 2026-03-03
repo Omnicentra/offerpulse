@@ -4,40 +4,40 @@ overview: Integrate Stripe subscriptions with per-user billing, workspace limits
 todos:
   - id: schema
     content: Add subscriptions table to database schema with indexes and relations
-    status: pending
+    status: completed
   - id: env
     content: Configure Stripe environment variables in apps/app and packages/lib
-    status: pending
+    status: completed
   - id: pricing
     content: Update pricing config with lookup keys and workspace limits
-    status: pending
+    status: completed
   - id: billing-router
     content: Create billing tRPC router with checkout, portal, and subscription management
-    status: pending
+    status: completed
   - id: webhook
     content: Implement Stripe webhook handler for subscription lifecycle events
-    status: pending
+    status: completed
   - id: procedures
     content: Create subscribedProcedure and enhance workspaceProcedure with subscription checks
-    status: pending
+    status: completed
   - id: signup
     content: Enhance signup page with plan selection and Stripe checkout integration
-    status: pending
+    status: completed
   - id: billing-page
     content: Replace mock billing page with real Stripe integration and management features
-    status: pending
+    status: completed
   - id: workspace-limits
     content: Implement workspace creation limits based on subscription plan
-    status: pending
+    status: completed
   - id: subscription-provider
     content: Create subscription context provider for client-side access
-    status: pending
+    status: completed
   - id: route-protection
     content: Update all feature routers to use subscribedProcedure
-    status: pending
+    status: completed
   - id: error-handling
     content: Implement payment required dialogs and payment failure notifications
-    status: pending
+    status: completed
 isProject: false
 ---
 

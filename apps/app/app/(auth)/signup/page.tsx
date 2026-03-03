@@ -12,6 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useTRPC, useTRPCClient } from "@/src/lib/trpc/client";
+import {
+  PRICING_PLANS,
+  formatPrice,
+  type PricingPlan,
+} from "@offerpulse/lib/pricing";
+import { Check, Loader2 } from "lucide-react";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -21,13 +28,20 @@ const signupSchema = z.object({
 
 type SignupFormValues = z.infer<typeof signupSchema>;
 
+type Step = "register" | "plan";
+
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const [showPassword, setShowPassword] = useState(false);
+  const trpcClient = useTRPCClient();
+
+  const [step, setStep] = useState<Step>("register");
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PricingPlan>(PRICING_PLANS[0]);
+  const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("monthly");
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
 
   const {
     register,
@@ -37,35 +51,32 @@ function SignupForm() {
     resolver: zodResolver(signupSchema),
   });
 
-  // Track page view once on mount only
   useEffect(() => {
     posthog.capture("signup_page_viewed");
   }, []);
 
-  // Cross-domain tracking: run when searchParams (e.g. ph_device_id) is available or changes
   useEffect(() => {
     const marketingDeviceId = searchParams.get("ph_device_id");
-
     if (marketingDeviceId) {
       try {
         posthog.alias(marketingDeviceId);
-        posthog.capture("cross_domain_tracking_connected", {
-          marketing_device_id: marketingDeviceId,
-        });
       } catch (error) {
         console.error("Failed to alias PostHog device ID:", error);
       }
     }
-  }, [searchParams]);
+
+    if (searchParams.get("checkout") === "cancelled") {
+      toast({
+        title: "Checkout cancelled",
+        description: "You can select a plan whenever you're ready.",
+      });
+    }
+  }, [searchParams, toast]);
 
   const onSubmit = async (data: SignupFormValues) => {
     setIsLoading(true);
-    
-    // Track signup form submission
-    posthog.capture("signup_form_submitted", {
-      has_name: !!data.name,
-    });
-    
+    posthog.capture("signup_form_submitted", { has_name: !!data.name });
+
     try {
       const { error } = await signUp.email({
         name: data.name,
@@ -74,11 +85,7 @@ function SignupForm() {
       });
 
       if (error) {
-        // Track signup error
-        posthog.capture("signup_error", {
-          error_message: error.message,
-        });
-        
+        posthog.capture("signup_error", { error_message: error.message });
         toast({
           title: "Signup failed",
           description: error.message ?? "An error occurred. Please try again.",
@@ -87,34 +94,21 @@ function SignupForm() {
         return;
       }
 
-      // Identify user in PostHog
       posthog.identify(data.email, {
         email: data.email,
         name: data.name,
         signed_up_at: new Date().toISOString(),
       });
-      
-      // Track successful signup
-      posthog.capture("signup_completed", {
-        email: data.email,
-        source: "dashboard_app",
-      });
+      posthog.capture("signup_completed", { email: data.email, source: "dashboard_app" });
 
-      toast({
-        title: "Account created!",
-        description: "Welcome to OfferPulse.",
-      });
-
-      router.push("/overview");
+      setStep("plan");
     } catch (error) {
-      // Track unexpected error
       posthog.capture("signup_error", {
         error_message: error instanceof Error ? error.message : "Unknown error",
       });
-      
       toast({
         title: "Signup failed",
-        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        description: error instanceof Error ? error.message : "Something went wrong.",
         variant: "destructive",
       });
     } finally {
@@ -128,10 +122,9 @@ function SignupForm() {
     try {
       const { error } = await signIn.social({
         provider: "google",
-        callbackURL: "/overview",
+        callbackURL: "/signup?step=plan",
       });
       if (error) {
-        posthog.capture("signup_error", { error_message: error.message });
         toast({
           title: "Sign up failed",
           description: error.message ?? "Could not sign up with Google.",
@@ -139,9 +132,6 @@ function SignupForm() {
         });
       }
     } catch (err) {
-      posthog.capture("signup_error", {
-        error_message: err instanceof Error ? err.message : "Unknown error",
-      });
       toast({
         title: "Sign up failed",
         description: err instanceof Error ? err.message : "Something went wrong.",
@@ -151,6 +141,175 @@ function SignupForm() {
       setIsGoogleLoading(false);
     }
   };
+
+  const handleCheckout = async () => {
+    setIsCheckoutLoading(true);
+    const lookupKey =
+      billingInterval === "monthly"
+        ? selectedPlan.stripeLookupKeyMonthly
+        : selectedPlan.stripeLookupKeyYearly;
+
+    posthog.capture("checkout_started", {
+      plan: selectedPlan.id,
+      interval: billingInterval,
+      lookup_key: lookupKey,
+    });
+
+    try {
+      const result = await trpcClient.billing.createCheckoutSession.mutate({
+        lookupKey,
+      });
+      window.location.href = result.sessionUrl;
+    } catch (error) {
+      toast({
+        title: "Checkout failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Could not start checkout. Please try again.",
+        variant: "destructive",
+      });
+      setIsCheckoutLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (searchParams.get("step") === "plan") {
+      setStep("plan");
+    }
+  }, [searchParams]);
+
+  if (step === "plan") {
+    const price =
+      billingInterval === "monthly"
+        ? selectedPlan.monthlyPrice
+        : selectedPlan.yearlyPrice;
+
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-50 px-4 py-12">
+        <div className="w-full max-w-4xl">
+          <div className="mb-10 text-center">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+              Choose your plan
+            </h1>
+            <p className="mt-2 text-sm text-slate-600">
+              All plans include a 14-day free trial. Cancel anytime.
+            </p>
+          </div>
+
+          {/* Billing toggle */}
+          <div className="mb-8 flex justify-center">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
+              <button
+                onClick={() => setBillingInterval("monthly")}
+                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  billingInterval === "monthly"
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingInterval("yearly")}
+                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  billingInterval === "yearly"
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Yearly
+                <span className="ml-1.5 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                  2 months free
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Plan cards */}
+          <div className="grid gap-6 md:grid-cols-3">
+            {PRICING_PLANS.map((plan) => {
+              const isSelected = selectedPlan.id === plan.id;
+              const planPrice =
+                billingInterval === "monthly"
+                  ? plan.monthlyPrice
+                  : plan.yearlyPrice;
+
+              return (
+                <button
+                  key={plan.id}
+                  onClick={() => setSelectedPlan(plan)}
+                  className={`relative rounded-2xl border-2 p-6 text-left transition-all ${
+                    isSelected
+                      ? "border-blue-600 bg-blue-50/30 shadow-lg shadow-blue-100"
+                      : "border-slate-200 bg-white hover:border-slate-300"
+                  }`}
+                >
+                  {plan.popular && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-3 py-0.5 text-xs font-medium text-white">
+                      Popular
+                    </span>
+                  )}
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    {plan.name}
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-600">{plan.tagline}</p>
+                  <div className="mt-4">
+                    <span className="text-3xl font-bold text-slate-900">
+                      {formatPrice(planPrice)}
+                    </span>
+                    <span className="text-sm text-slate-600">
+                      /{billingInterval === "monthly" ? "mo" : "yr"}
+                    </span>
+                  </div>
+                  <ul className="mt-5 space-y-2">
+                    {plan.features
+                      .filter((f) => f.included)
+                      .slice(0, 5)
+                      .map((feature) => (
+                        <li
+                          key={feature.text}
+                          className="flex items-start gap-2 text-sm text-slate-700"
+                        >
+                          <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
+                          <span>{feature.text}</span>
+                        </li>
+                      ))}
+                  </ul>
+                  <p className="mt-4 text-xs text-slate-500">
+                    Max {plan.maxWorkspaces} workspace
+                    {plan.maxWorkspaces > 1 ? "s" : ""}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* CTA */}
+          <div className="mt-8 text-center">
+            <Button
+              size="lg"
+              className="h-12 px-8"
+              onClick={handleCheckout}
+              disabled={isCheckoutLoading}
+            >
+              {isCheckoutLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Redirecting to checkout...
+                </>
+              ) : (
+                `Start free trial — ${formatPrice(price)}/${billingInterval === "monthly" ? "mo" : "yr"} after`
+              )}
+            </Button>
+            <p className="mt-3 text-xs text-slate-500">
+              14-day free trial. You won&apos;t be charged today.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-50 px-4">
@@ -176,22 +335,10 @@ function SignupForm() {
             onClick={onGoogleSignUp}
           >
             <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" aria-hidden>
-              <path
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                fill="#4285F4"
-              />
-              <path
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                fill="#34A853"
-              />
-              <path
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                fill="#FBBC05"
-              />
-              <path
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                fill="#EA4335"
-              />
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
             </svg>
             {isGoogleLoading ? "Signing up..." : "Continue with Google"}
           </Button>
@@ -217,9 +364,7 @@ function SignupForm() {
                 aria-invalid={errors.name ? "true" : "false"}
               />
               {errors.name && (
-                <p className="text-sm text-red-600" role="alert">
-                  {errors.name.message}
-                </p>
+                <p className="text-sm text-red-600" role="alert">{errors.name.message}</p>
               )}
             </div>
 
@@ -234,45 +379,22 @@ function SignupForm() {
                 aria-invalid={errors.email ? "true" : "false"}
               />
               {errors.email && (
-                <p className="text-sm text-red-600" role="alert">
-                  {errors.email.message}
-                </p>
+                <p className="text-sm text-red-600" role="alert">{errors.email.message}</p>
               )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Create a password"
-                  {...register("password")}
-                  className="h-11 pr-10"
-                  aria-invalid={errors.password ? "true" : "false"}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                    </svg>
-                  ) : (
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  )}
-                </button>
-              </div>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Create a password"
+                {...register("password")}
+                className="h-11"
+                aria-invalid={errors.password ? "true" : "false"}
+              />
               {errors.password && (
-                <p className="text-sm text-red-600" role="alert">
-                  {errors.password.message}
-                </p>
+                <p className="text-sm text-red-600" role="alert">{errors.password.message}</p>
               )}
             </div>
 
@@ -310,12 +432,6 @@ function SignupFormFallback() {
             <div className="h-11 rounded-md bg-slate-100 animate-pulse" />
             <div className="h-11 rounded-md bg-slate-100 animate-pulse" />
             <div className="h-11 rounded-md bg-slate-200 animate-pulse" />
-          </div>
-          <div className="mt-6 text-center text-sm text-slate-600">
-            Already have an account?{" "}
-            <Link href="/login" className="font-medium text-blue-600 hover:text-blue-700">
-              Sign in
-            </Link>
           </div>
         </div>
       </div>

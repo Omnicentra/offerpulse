@@ -3,7 +3,7 @@ import { type FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import superjson from "superjson";
 import { db } from "../db";
 import { auth } from "../auth";
-import { workspaceMembers, workspaces } from "../db/schema";
+import { subscriptions, workspaceMembers } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 
 /** Context options: full opts from fetch handler, or minimal opts for server-side caller (no info) */
@@ -72,10 +72,44 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
 });
 
 /**
- * Workspace procedure - requires authentication and workspace membership
- * Adds the current workspace to the context
+ * Subscribed procedure - requires authentication and an active subscription
  */
-export const workspaceProcedure = protectedProcedure.use(
+export const subscribedProcedure = protectedProcedure.use(
+  async ({ ctx, next }) => {
+    const subscription = await ctx.db.query.subscriptions.findFirst({
+      where: eq(subscriptions.userId, ctx.user.id),
+    });
+
+    if (
+      !subscription ||
+      !["active", "trialing"].includes(subscription.status)
+    ) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "An active subscription is required to access this feature.",
+      });
+    }
+
+    if (subscription.currentPeriodEnd < new Date()) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Your subscription has expired. Please update your billing.",
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        subscription,
+      },
+    });
+  }
+);
+
+/**
+ * Workspace procedure - requires active subscription and workspace membership
+ */
+export const workspaceProcedure = subscribedProcedure.use(
   async ({ ctx, next, getRawInput }) => {
     const rawInput = await getRawInput();
     const input = rawInput as { workspaceId?: string };
@@ -87,7 +121,6 @@ export const workspaceProcedure = protectedProcedure.use(
       });
     }
 
-    // Check if user is a member of the workspace
     const membership = await ctx.db.query.workspaceMembers.findFirst({
       where: and(
         eq(workspaceMembers.workspaceId, input.workspaceId),
