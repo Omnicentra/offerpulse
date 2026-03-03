@@ -137,12 +137,54 @@ export const workspaceMembers = pgTable(
     role: roleEnum("role").notNull().default("member"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => ({
-    workspaceIdx: index("workspace_members_workspace_idx").on(
-      table.workspaceId
-    ),
-    userIdx: index("workspace_members_user_idx").on(table.userId),
-  })
+  (table) => [
+    index("workspace_members_workspace_idx").on(table.workspaceId),
+    index("workspace_members_user_idx").on(table.userId),
+  ]
+);
+
+// ============================================================================
+// SUBSCRIPTION TABLES
+// ============================================================================
+
+export const subscriptionStatusEnum = pgEnum("subscription_status", [
+  "active",
+  "trialing",
+  "past_due",
+  "canceled",
+  "incomplete",
+]);
+
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    stripeCustomerId: text("stripe_customer_id").notNull().unique(),
+    stripeSubscriptionId: text("stripe_subscription_id").notNull().unique(),
+    stripePriceId: text("stripe_price_id").notNull(),
+    planId: text("plan_id").notNull(),
+    interval: text("interval").notNull(),
+    status: subscriptionStatusEnum("status").notNull(),
+    cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+    currentPeriodStart: timestamp("current_period_start").notNull(),
+    currentPeriodEnd: timestamp("current_period_end").notNull(),
+    trialStart: timestamp("trial_start"),
+    trialEnd: timestamp("trial_end"),
+    canceledAt: timestamp("canceled_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index("subscriptions_user_idx").on(table.userId),
+    index("subscriptions_stripe_customer_idx").on(table.stripeCustomerId),
+    index("subscriptions_status_idx").on(table.status),
+  ]
 );
 
 // ============================================================================
@@ -169,10 +211,10 @@ export const competitors = pgTable(
       .notNull()
       .$onUpdate(() => new Date()),
   },
-  (table) => ({
-    workspaceIdx: index("competitors_workspace_idx").on(table.workspaceId),
-    isActiveIdx: index("competitors_is_active_idx").on(table.isActive),
-  })
+  (table) => [
+    index("competitors_workspace_idx").on(table.workspaceId),
+    index("competitors_is_active_idx").on(table.isActive),
+  ]
 );
 
 export const monitorSettings = pgTable("monitor_settings", {
@@ -226,10 +268,10 @@ export const snapshots = pgTable(
       .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => ({
-    competitorIdx: index("snapshots_competitor_idx").on(table.competitorId),
-    capturedAtIdx: index("snapshots_captured_at_idx").on(table.capturedAt),
-  })
+  (table) => [
+    index("snapshots_competitor_idx").on(table.competitorId),
+    index("snapshots_captured_at_idx").on(table.capturedAt),
+  ]
 );
 
 // ============================================================================
@@ -253,16 +295,12 @@ export const changeEvents = pgTable(
     snapshotAfterId: text("snapshot_after_id").references(() => snapshots.id),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => ({
-    competitorIdx: index("change_events_competitor_idx").on(
-      table.competitorId
-    ),
-    detectedAtIdx: index("change_events_detected_at_idx").on(
-      table.detectedAt
-    ),
-    typeIdx: index("change_events_type_idx").on(table.type),
-    confidenceIdx: index("change_events_confidence_idx").on(table.confidence),
-  })
+  (table) => [
+    index("change_events_competitor_idx").on(table.competitorId),
+    index("change_events_detected_at_idx").on(table.detectedAt),
+    index("change_events_type_idx").on(table.type),
+    index("change_events_confidence_idx").on(table.confidence),
+  ]
 );
 
 // ============================================================================
@@ -292,13 +330,11 @@ export const recommendations = pgTable(
       .notNull()
       .$onUpdate(() => new Date()),
   },
-  (table) => ({
-    competitorIdx: index("recommendations_competitor_idx").on(
-      table.competitorId
-    ),
-    statusIdx: index("recommendations_status_idx").on(table.status),
-    impactIdx: index("recommendations_impact_idx").on(table.impact),
-  })
+  (table) => [
+    index("recommendations_competitor_idx").on(table.competitorId),
+    index("recommendations_status_idx").on(table.status),
+    index("recommendations_impact_idx").on(table.impact),
+  ]
 );
 
 export const recommendationChecklistItems = pgTable(
@@ -317,11 +353,9 @@ export const recommendationChecklistItems = pgTable(
       .notNull()
       .$onUpdate(() => new Date()),
   },
-  (table) => ({
-    recommendationIdx: index("checklist_items_recommendation_idx").on(
-      table.recommendationId
-    ),
-  })
+  (table) => [
+    index("checklist_items_recommendation_idx").on(table.recommendationId),
+  ]
 );
 
 // ============================================================================
@@ -405,10 +439,10 @@ export const weeklyPulses = pgTable(
     recommendationIds: jsonb("recommendation_ids").$type<string[]>().default([]), // Reference to recommendations
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => ({
-    workspaceIdx: index("weekly_pulses_workspace_idx").on(table.workspaceId),
-    weekOfIdx: index("weekly_pulses_week_of_idx").on(table.weekOf),
-  })
+  (table) => [
+    index("weekly_pulses_workspace_idx").on(table.workspaceId),
+    index("weekly_pulses_week_of_idx").on(table.weekOf),
+  ]
 );
 
 // ============================================================================
@@ -434,11 +468,11 @@ export const scrapeJobs = pgTable(
       .notNull()
       .$onUpdate(() => new Date()),
   },
-  (table) => ({
-    competitorIdx: index("scrape_jobs_competitor_idx").on(table.competitorId),
-    statusIdx: index("scrape_jobs_status_idx").on(table.status),
-    createdAtIdx: index("scrape_jobs_created_at_idx").on(table.createdAt),
-  })
+  (table) => [
+    index("scrape_jobs_competitor_idx").on(table.competitorId),
+    index("scrape_jobs_status_idx").on(table.status),
+    index("scrape_jobs_created_at_idx").on(table.createdAt),
+  ]
 );
 
 // ============================================================================

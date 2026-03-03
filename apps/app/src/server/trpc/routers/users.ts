@@ -1,12 +1,12 @@
-import { router, protectedProcedure, workspaceProcedure } from "../trpc";
+import { router, protectedProcedure, subscribedProcedure, workspaceProcedure } from "../trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { workspaceMembers, user } from "../../db/schema";
+import { workspaceMembers, workspaces, user } from "../../db/schema";
 import { eq, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { getPlanById, type PlanId } from "@offerpulse/lib/pricing";
 
 export const usersRouter = router({
-  /** Get workspaces the current user is a member of (for workspace switcher / initial load) */
   getMyWorkspaces: protectedProcedure.query(async ({ ctx }) => {
     const memberships = await ctx.db.query.workspaceMembers.findMany({
       where: eq(workspaceMembers.userId, ctx.user.id),
@@ -19,6 +19,49 @@ export const usersRouter = router({
       role: m.role,
     }));
   }),
+
+  createWorkspace: subscribedProcedure
+    .input(z.object({ name: z.string().min(1).max(100), slug: z.string().min(1).max(100) }))
+    .mutation(async ({ ctx, input }) => {
+      const memberships = await ctx.db.query.workspaceMembers.findMany({
+        where: eq(workspaceMembers.userId, ctx.user.id),
+      });
+
+      const plan = getPlanById(ctx.subscription.planId as PlanId);
+      const maxWorkspaces = plan?.maxWorkspaces ?? 1;
+
+      if (memberships.length >= maxWorkspaces) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `Your ${plan?.name ?? "current"} plan allows ${maxWorkspaces} workspace${maxWorkspaces > 1 ? "s" : ""}. Upgrade to create more.`,
+        });
+      }
+
+      const existingSlug = await ctx.db.query.workspaces.findFirst({
+        where: eq(workspaces.slug, input.slug),
+      });
+      if (existingSlug) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "A workspace with that slug already exists.",
+        });
+      }
+
+      const workspaceId = `workspace_${nanoid()}`;
+      await ctx.db.insert(workspaces).values({
+        id: workspaceId,
+        name: input.name,
+        slug: input.slug,
+      });
+      await ctx.db.insert(workspaceMembers).values({
+        id: `wm_${nanoid()}`,
+        workspaceId,
+        userId: ctx.user.id,
+        role: "owner",
+      });
+
+      return { id: workspaceId, name: input.name, slug: input.slug };
+    }),
 
   list: workspaceProcedure
     .input(z.object({ workspaceId: z.string() }))

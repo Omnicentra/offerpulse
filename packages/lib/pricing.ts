@@ -9,14 +9,17 @@ export interface PlanFeature {
   comingSoon?: boolean;
 }
 
+export type PlanId = "starter" | "growth" | "agency";
+
 export interface PricingPlan {
-  id: "starter" | "growth" | "agency";
+  id: PlanId;
   name: string;
   tagline: string;
   monthlyPrice: number;
   yearlyPrice: number;
-  stripePriceIdMonthly?: string; // To be configured
-  stripePriceIdYearly?: string; // To be configured
+  stripeLookupKeyMonthly: string;
+  stripeLookupKeyYearly: string;
+  maxWorkspaces: number;
   popular?: boolean;
   features: PlanFeature[];
   limits: {
@@ -36,8 +39,9 @@ export const PRICING_PLANS: PricingPlan[] = [
     tagline: "For serious Shopify operators",
     monthlyPrice: 49,
     yearlyPrice: 490,
-    stripePriceIdMonthly: process.env.NEXT_PUBLIC_STRIPE_STARTER_MONTHLY,
-    stripePriceIdYearly: process.env.NEXT_PUBLIC_STRIPE_STARTER_YEARLY,
+    stripeLookupKeyMonthly: "starter_monthly",
+    stripeLookupKeyYearly: "starter_yearly",
+    maxWorkspaces: 1,
     popular: true,
     features: [
       { text: "Track 5 competitors", included: true },
@@ -64,8 +68,9 @@ export const PRICING_PLANS: PricingPlan[] = [
     tagline: "More coverage, faster monitoring",
     monthlyPrice: 99,
     yearlyPrice: 990,
-    stripePriceIdMonthly: process.env.NEXT_PUBLIC_STRIPE_GROWTH_MONTHLY,
-    stripePriceIdYearly: process.env.NEXT_PUBLIC_STRIPE_GROWTH_YEARLY,
+    stripeLookupKeyMonthly: "growth_monthly",
+    stripeLookupKeyYearly: "growth_yearly",
+    maxWorkspaces: 1,
     features: [
       { text: "Track 15 competitors", included: true },
       { text: "High-frequency monitoring (2-4 hours)", included: true },
@@ -91,8 +96,9 @@ export const PRICING_PLANS: PricingPlan[] = [
     tagline: "For agencies managing multiple client stores",
     monthlyPrice: 199,
     yearlyPrice: 1990,
-    stripePriceIdMonthly: process.env.NEXT_PUBLIC_STRIPE_AGENCY_MONTHLY,
-    stripePriceIdYearly: process.env.NEXT_PUBLIC_STRIPE_AGENCY_YEARLY,
+    stripeLookupKeyMonthly: "agency_monthly",
+    stripeLookupKeyYearly: "agency_yearly",
+    maxWorkspaces: 5,
     features: [
       { text: "5 client stores/workspaces", included: true, comingSoon: true },
       { text: "10 competitors per store", included: true },
@@ -114,9 +120,28 @@ export const PRICING_PLANS: PricingPlan[] = [
   },
 ];
 
-export function getPlanById(id: PricingPlan["id"]): PricingPlan | undefined {
+export function getPlanById(id: PlanId): PricingPlan | undefined {
   return PRICING_PLANS.find((plan) => plan.id === id);
 }
+
+export function getPlanByLookupKey(lookupKey: string): PricingPlan | undefined {
+  return PRICING_PLANS.find(
+    (plan) =>
+      plan.stripeLookupKeyMonthly === lookupKey ||
+      plan.stripeLookupKeyYearly === lookupKey
+  );
+}
+
+export function parseLookupKey(lookupKey: string): { planId: PlanId; interval: "month" | "year" } | null {
+  const match = lookupKey.match(/^(starter|growth|agency)_(monthly|yearly)$/);
+  if (!match) return null;
+  return {
+    planId: match[1] as PlanId,
+    interval: match[2] === "monthly" ? "month" : "year",
+  };
+}
+
+export const TRIAL_PERIOD_DAYS = 14;
 
 export function formatPrice(price: number): string {
   return `£${price}`;

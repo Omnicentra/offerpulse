@@ -25,8 +25,25 @@ export const env = createEnv({
     RESEND_API_KEY: z.string(),
     RESEND_FROM_EMAIL: z.email(),
     ALERT_EMAIL: z.email().optional(),
+    STRIPE_SECRET_KEY: z
+      .string()
+      .min(1, "STRIPE_SECRET_KEY is required")
+      .refine(
+        (val) => val.startsWith("sk_"),
+        "STRIPE_SECRET_KEY must start with sk_"
+      ),
+    STRIPE_WEBHOOK_SECRET: z
+      .string()
+      .startsWith("whsec_", "STRIPE_WEBHOOK_SECRET must start with whsec_"),
   },
   client: {
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z
+      .string()
+      .min(1, "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is required")
+      .refine(
+        (val) => val.startsWith("pk_"),
+        "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY must start with pk_"
+      ),
     NEXT_PUBLIC_POSTHOG_KEY: z
       .string()
       .min(1, "NEXT_PUBLIC_POSTHOG_KEY is required")
@@ -58,6 +75,9 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
     ALERT_EMAIL: process.env.ALERT_EMAIL,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     NEXT_PUBLIC_ENVIRONMENT: process.env.NEXT_PUBLIC_ENVIRONMENT,

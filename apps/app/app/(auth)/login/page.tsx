@@ -64,7 +64,7 @@ function LoginForm() {
     posthog.capture("signin_form_submitted");
     
     try {
-      const { error } = await signIn.email({
+      const { data: signInData, error } = await signIn.email({
         email: data.email,
         password: data.password,
       });
@@ -83,16 +83,14 @@ function LoginForm() {
         return;
       }
 
-      // Identify user in PostHog
-      posthog.identify(data.email, {
-        email: data.email,
-        last_signed_in_at: new Date().toISOString(),
-      });
-      
-      // Track successful signin
-      posthog.capture("signin_completed", {
-        email: data.email,
-      });
+      const userId = signInData?.user?.id;
+      if (userId) {
+        posthog.identify(userId, {
+          email: data.email,
+          last_signed_in_at: new Date().toISOString(),
+        });
+      }
+      posthog.capture("signin_completed", {});
 
       toast({
         title: "Welcome back!",

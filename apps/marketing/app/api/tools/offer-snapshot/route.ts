@@ -13,14 +13,22 @@ import {
   generateScreenshotFilename,
 } from "@/lib/tools/screenshot-upload";
 import { logger } from "@/lib/logger";
-import { discoverDomainUrls, extractDomain } from "@/lib/tools/firecrawl";
-import { filterRelevantUrls } from "@/lib/tools/url-filter";
+import {
+  discoverDomainUrls,
+  extractDomain,
+  scrapeWithFirecrawl,
+  buildScrollActions,
+  buildCheckoutFlowActions,
+} from "@/lib/tools/firecrawl";
+import { filterRelevantUrls, pickProductUrl } from "@/lib/tools/url-filter";
 import {
   aggregateOffers,
   getAggregationStats,
   type PageOffers,
   type AggregatedOffer,
 } from "@/lib/tools/aggregator";
+
+export type AdvancedFlow = "scroll" | "checkout";
 
 export interface PageResult {
   url: string;
@@ -64,14 +72,21 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { url } = body as { url?: string };
+    const { url, flows: rawFlows } = body as {
+      url?: string;
+      flows?: AdvancedFlow[];
+    };
 
     if (!url || typeof url !== "string") {
       logger.debug("[offer-snapshot] missing or invalid url in body");
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
     }
 
-    logger.debug("[offer-snapshot] target url", url);
+    const flows: AdvancedFlow[] = Array.isArray(rawFlows)
+      ? rawFlows.filter((f): f is AdvancedFlow => f === "scroll" || f === "checkout")
+      : [];
+
+    logger.debug("[offer-snapshot] target url", { url, flows });
 
     if (!isValidStoreUrl(url)) {
       logger.debug("[offer-snapshot] url failed validation");
@@ -79,7 +94,8 @@ export async function POST(request: Request) {
     }
 
     const domain = extractDomain(url);
-    const cacheKey = toolCache.getCacheKey(domain, "multi-page-extract");
+    const flowSuffix = flows.length > 0 ? `+${[...flows].sort().join("+")}` : "";
+    const cacheKey = toolCache.getCacheKey(domain, `multi-page-extract${flowSuffix}`);
     const cached = toolCache.get(cacheKey);
 
     if (cached) {
@@ -215,6 +231,119 @@ export async function POST(request: Request) {
       successfulPages: pageOffers.filter((p) => p.scrapedSuccessfully).length,
       scrapeMs: Date.now() - scrapeStart,
     });
+
+    // PHASE 3b: Advanced flows (Firecrawl with browser actions)
+    if (flows.length > 0) {
+      const advancedStart = Date.now();
+      logger.debug("[offer-snapshot] starting advanced flows", { flows });
+
+      const advancedPromises: Promise<PageOffers | null>[] = [];
+
+      // Scroll flow: re-scrape homepage with scroll actions to reveal lazy-loaded promos
+      if (flows.includes("scroll")) {
+        const homepageUrl = filteredUrls.find((u) => {
+          try { return new URL(u.url).pathname === "/"; } catch { return false; }
+        });
+        if (homepageUrl) {
+          advancedPromises.push(
+            (async (): Promise<PageOffers | null> => {
+              try {
+                const scrollResult = await scrapeWithFirecrawl(homepageUrl.url, {
+                  formats: ["html"],
+                  actions: buildScrollActions(),
+                  timeout: 60_000,
+                });
+                if (scrollResult.error || !scrollResult.html) {
+                  logger.error("[offer-snapshot] scroll flow failed", {
+                    url: homepageUrl.url,
+                    error: scrollResult.error,
+                  });
+                  return null;
+                }
+                const offers = extractOffers(scrollResult.html, homepageUrl.url);
+                return {
+                  url: homepageUrl.url,
+                  title: "Homepage (after scroll)",
+                  offers,
+                  scrapedSuccessfully: true,
+                };
+              } catch (err) {
+                logger.error("[offer-snapshot] scroll flow error", {
+                  url: homepageUrl.url,
+                  error: err instanceof Error ? err.message : "Unknown error",
+                });
+                return null;
+              }
+            })(),
+          );
+        }
+      }
+
+      // Checkout flow: add-to-cart → cart/checkout on a product page
+      if (flows.includes("checkout")) {
+        const productUrl = pickProductUrl(filteredUrls);
+        if (productUrl) {
+          advancedPromises.push(
+            (async (): Promise<PageOffers | null> => {
+              try {
+                const checkoutResult = await scrapeWithFirecrawl(productUrl.url, {
+                  formats: ["html"],
+                  actions: buildCheckoutFlowActions(),
+                  timeout: 120_000,
+                });
+
+                if (checkoutResult.error) {
+                  logger.error("[offer-snapshot] checkout flow failed", {
+                    url: productUrl.url,
+                    error: checkoutResult.error,
+                  });
+                  return null;
+                }
+
+                // Prefer the scrape action result (captures cart/checkout page)
+                const checkoutHtml =
+                  checkoutResult.actionScrapes?.[0]?.html ?? checkoutResult.html;
+                const checkoutUrl =
+                  checkoutResult.actionScrapes?.[0]?.url ?? productUrl.url;
+
+                if (!checkoutHtml) return null;
+
+                const offers = extractOffers(checkoutHtml, checkoutUrl);
+                return {
+                  url: checkoutUrl,
+                  title: "Checkout (via add-to-cart flow)",
+                  offers,
+                  scrapedSuccessfully: true,
+                };
+              } catch (err) {
+                logger.error("[offer-snapshot] checkout flow error", {
+                  url: productUrl.url,
+                  error: err instanceof Error ? err.message : "Unknown error",
+                });
+                return null;
+              }
+            })(),
+          );
+        } else {
+          logger.debug("[offer-snapshot] no product URL found for checkout flow");
+        }
+      }
+
+      const advancedResults = await Promise.allSettled(advancedPromises);
+      for (const result of advancedResults) {
+        if (result.status === "fulfilled" && result.value) {
+          pageOffers.push(result.value);
+        }
+      }
+
+      logger.debug("[offer-snapshot] advanced flows completed", {
+        flows,
+        additionalPages: advancedResults.filter(
+          (r) => r.status === "fulfilled" && r.value,
+        ).length,
+        advancedMs: Date.now() - advancedStart,
+      });
+    }
 
     // PHASE 4: Aggregate and deduplicate offers across all pages
     const aggregateStart = Date.now();

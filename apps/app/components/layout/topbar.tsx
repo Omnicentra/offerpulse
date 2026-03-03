@@ -29,8 +29,8 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
   const user = session?.user ?? null;
 
   const handleLogout = async () => {
-    posthog.reset();
     await signOut();
+    posthog.reset();
     toast({
       title: "Logged out",
       description: "You've been successfully logged out.",
