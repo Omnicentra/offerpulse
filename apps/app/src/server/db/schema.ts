@@ -123,7 +123,6 @@ export const workspaces = pgTable("workspaces", {
     .notNull()
     .$onUpdate(() => new Date()),
 });
-
 export const workspaceMembers = pgTable(
   "workspace_members",
   {
@@ -138,11 +137,16 @@ export const workspaceMembers = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
-    index("workspace_members_workspace_idx").on(table.workspaceId),
+    index("workspace_members_workspace_idx").on(
+      table.workspaceId
+    ),
     index("workspace_members_user_idx").on(table.userId),
+    unique("workspace_members_unique").on(
+      table.workspaceId,
+      table.userId
+    ),
   ]
 );
-
 // ============================================================================
 // SUBSCRIPTION TABLES
 // ============================================================================
