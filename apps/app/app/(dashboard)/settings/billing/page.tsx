@@ -221,29 +221,29 @@ export default function BillingPage() {
         </div>
       )}
 
-      {/* Usage */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-6 text-lg font-semibold text-slate-900">Usage</h3>
-        <div className="grid gap-6 sm:grid-cols-2">
-          <div>
-            <p className="text-sm font-medium text-slate-600">Workspaces</p>
-            <p className="mt-2 text-3xl font-bold text-slate-900">
-              {workspaces.length}
-              {subscription?.plan && (
+      {/* Usage — only show when subscribed to a plan */}
+      {subscription?.plan && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="mb-6 text-lg font-semibold text-slate-900">Usage</h3>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div>
+              <p className="text-sm font-medium text-slate-600">Workspaces</p>
+              <p className="mt-2 text-3xl font-bold text-slate-900">
+                {workspaces.length}
                 <span className="text-lg font-normal text-slate-500">
                   /{subscription.plan.maxWorkspaces}
                 </span>
-              )}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-slate-600">Plan</p>
-            <p className="mt-2 text-3xl font-bold text-slate-900">
-              {subscription?.plan?.name ?? "None"}
-            </p>
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-600">Plan</p>
+              <p className="mt-2 text-3xl font-bold text-slate-900">
+                {subscription.plan.name}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Available plans */}
       <div className="space-y-4">
