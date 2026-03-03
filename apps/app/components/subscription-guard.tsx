@@ -1,13 +1,26 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSubscription } from "@/src/providers/subscription-provider";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CreditCard, Loader2, Zap } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { AlertCircle, Loader2, Zap } from "lucide-react";
+
+const BILLING_PATH = "/settings/billing";
 
 export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const { subscription, isLoading, isActive, isPastDue } = useSubscription();
   const router = useRouter();
+
+  const isOnBillingPage = pathname === BILLING_PATH;
 
   if (isLoading) {
     return (
@@ -18,26 +31,49 @@ export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (!subscription || (!isActive && !isPastDue)) {
+    if (isOnBillingPage) {
+      return <>{children}</>;
+    }
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="max-w-md text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
-            <CreditCard className="h-8 w-8 text-blue-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-slate-900">
-            Subscription required
-          </h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Choose a plan to access all OfferPulse features. Start with a 14-day free trial.
-          </p>
-          <div className="mt-6 flex justify-center gap-3">
-            <Button onClick={() => router.push("/settings/billing")}>
-              <Zap className="mr-2 h-4 w-4" />
-              View plans
-            </Button>
-          </div>
-        </div>
-      </div>
+      <>
+        {children}
+        <Dialog open>
+          <DialogContent
+            showClose={false}
+            overlayClassName="bg-ink/60 backdrop-blur-md"
+            className="max-w-md border-0 bg-white p-0 shadow-2xl shadow-slate-900/20 ring-1 ring-slate-200/80 sm:rounded-3xl"
+          >
+            <div className="p-8 sm:p-10">
+              <DialogHeader className="space-y-6 text-center">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(243,95%,58%)] shadow-lg shadow-[hsl(var(--primary))]/25">
+                  <Zap className="h-8 w-8 text-white" strokeWidth={2.5} />
+                </div>
+                <div className="space-y-2">
+                  <DialogTitle className="text-2xl font-bold tracking-tight text-slate-900">
+                    Subscription required
+                  </DialogTitle>
+                  <DialogDescription className="text-base text-slate-600">
+                    Choose a plan to access all OfferPulse features. Start with a 14-day free trial—no charge until then.
+                  </DialogDescription>
+                </div>
+              </DialogHeader>
+              <DialogFooter className="mt-8 flex flex-col gap-3 sm:flex-col">
+                <Button
+                  size="lg"
+                  className="w-full bg-[hsl(var(--primary))] font-semibold hover:bg-[hsl(var(--primary-dark))]"
+                  onClick={() => router.push("/settings/billing")}
+                >
+                  <Zap className="mr-2 h-4 w-4" />
+                  View plans
+                </Button>
+                <p className="text-center text-xs text-slate-500">
+                  You’ll need an active plan to use the dashboard.
+                </p>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 

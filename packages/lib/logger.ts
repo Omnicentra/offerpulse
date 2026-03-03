@@ -1,5 +1,3 @@
-import { env } from "~/env";
-
 type LogLevel = "debug" | "info" | "warn" | "error" | "trpc";
 
 interface LogConfig {
@@ -80,7 +78,9 @@ export const logger = {
     console.log(formatMessage("trpc", message, ...args));
   },
   debug(message: string, ...args: unknown[]) {
-    if (env.NODE_ENV === "development") {
+    const dev = process.env.NODE_ENV === "development";
+    const debugEnabled = process.env.LOG_LEVEL === "debug";
+    if (dev || debugEnabled) {
       console.log(formatMessage("debug", message, ...args));
     }
   },
@@ -101,7 +101,7 @@ export const logger = {
    * Group related logs together
    */
   group(label: string, fn: () => void) {
-    if (env.NODE_ENV === "development") {
+    if (process.env.NODE_ENV === "development") {
       console.group(`📎 ${label}`);
       fn();
       console.groupEnd();
@@ -112,7 +112,7 @@ export const logger = {
    * Log performance measurements
    */
   time(label: string) {
-    if (env.NODE_ENV === "development") {
+    if (process.env.NODE_ENV === "development") {
       console.time(`⏱️ ${label}`);
       return () => console.timeEnd(`⏱️ ${label}`);
     }

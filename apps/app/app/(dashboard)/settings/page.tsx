@@ -20,6 +20,13 @@ export default async function SettingsPage() {
     redirect("/login");
   }
 
+  // Require active subscription before calling workspace procedures
+  const subscription = await caller.billing.getSubscription();
+  const isActive = ["active", "trialing"].includes(subscription?.status ?? "");
+  if (!subscription || !isActive) {
+    redirect("/settings/billing");
+  }
+
   const initialSettings = await caller.workspaceSettings.get({ workspaceId });
 
   return (
