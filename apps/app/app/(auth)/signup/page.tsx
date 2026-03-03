@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import posthog from "posthog-js";
-import { signIn, signUp } from "@/src/server/auth/client";
+import { signIn, signUp, useSession } from "@/src/server/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +33,7 @@ type Step = "register" | "plan";
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, isPending: isSessionPending } = useSession();
   const { toast } = useToast();
   const trpcClient = useTRPCClient();
 
@@ -174,10 +175,13 @@ function SignupForm() {
   };
 
   useEffect(() => {
-    if (searchParams.get("step") === "plan") {
+    if (searchParams.get("step") !== "plan") return;
+    if (session?.user) {
       setStep("plan");
+    } else if (!isSessionPending) {
+      setStep("register");
     }
-  }, [searchParams]);
+  }, [searchParams, session?.user, isSessionPending]);
 
   if (step === "plan") {
     const price =

@@ -1,11 +1,6 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -14,12 +9,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { resetApi } from "@/src/mock/api";
-import { Users, CreditCard, RefreshCw, ChevronRight } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
 import { useTRPC } from "@/src/lib/trpc/client";
+import { resetApi } from "@/src/mock/api";
 import type { RouterOutputs } from "@/src/server/trpc/routers/root";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronRight, CreditCard, RefreshCw, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 type WorkspaceSettingsRow = RouterOutputs["workspaceSettings"]["get"];
 
@@ -71,6 +70,7 @@ export function SettingsClient({
     ...trpc.workspaceSettings.get.queryOptions({ workspaceId }),
     initialData: initialSettings,
     enabled: !!workspaceId,
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
@@ -97,7 +97,6 @@ export function SettingsClient({
       },
     })
   );
-
   const resetMutation = useMutation({
     mutationFn: resetApi.resetDemoData,
     onSuccess: () => {
@@ -107,6 +106,13 @@ export function SettingsClient({
         description: "All data has been reset to initial state.",
       });
       setResetDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message ?? "Failed to reset demo data",
+        variant: "destructive",
+      });
     },
   });
 
@@ -127,14 +133,6 @@ export function SettingsClient({
     resetMutation.mutate();
   };
 
-  if (!localSettings) {
-    return (
-      <div>
-        <PageHeader title="Settings" />
-        <Skeleton className="h-96 rounded-2xl" />
-      </div>
-    );
-  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
