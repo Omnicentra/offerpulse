@@ -7,7 +7,6 @@ import {
   scrapeWithChangeTracking,
   extractSignalsFromFirecrawl,
 } from "../../scraping";
-import { uploadScreenshot } from "../../scraping/screenshot";
 import { logger } from "@offerpulse/lib";
 
 export const captureSnapshotJob = inngest.createFunction(
@@ -19,9 +18,15 @@ export const captureSnapshotJob = inngest.createFunction(
   { event: "competitor/capture" },
   async ({ event, step }) => {
     const { competitorId, workspaceId } = event.data;
+    const jobId = `job_${nanoid()}`;
+
+    logger.debug("[capture-snapshot] Job started", {
+      jobId,
+      competitorId,
+      workspaceId,
+    });
 
     // Create job record
-    const jobId = `job_${nanoid()}`;
     await step.run("create-job-record", async () => {
       await db.insert(scrapeJobs).values({
         id: jobId,
@@ -30,6 +35,7 @@ export const captureSnapshotJob = inngest.createFunction(
         startedAt: new Date(),
       });
     });
+    logger.debug("[capture-snapshot] Job record created", { jobId });
 
     // Get competitor with monitor settings
     const competitor = await step.run("get-competitor", async () => {
@@ -40,6 +46,7 @@ export const captureSnapshotJob = inngest.createFunction(
     });
 
     if (!competitor) {
+      logger.debug("[capture-snapshot] Competitor not found", { competitorId, jobId });
       await db
         .update(scrapeJobs)
         .set({
@@ -52,6 +59,11 @@ export const captureSnapshotJob = inngest.createFunction(
     }
 
     const frequency = competitor.monitorSettings?.frequency ?? "daily";
+    logger.debug("[capture-snapshot] Competitor loaded", {
+      competitorId,
+      baseUrl: competitor.baseUrl,
+      frequency,
+    });
 
     // Scrape with Firecrawl change tracking
     const scrapeResult = await step.run("scrape-website", async () => {
@@ -60,6 +72,15 @@ export const captureSnapshotJob = inngest.createFunction(
         competitorId,
         frequency,
       });
+    });
+
+    logger.debug("[capture-snapshot] Scrape completed", {
+      competitorId,
+      success: scrapeResult.success,
+      error: scrapeResult.error ?? undefined,
+      changeStatus: scrapeResult.changeTracking?.changeStatus,
+      hasScreenshot: Boolean(scrapeResult.screenshot),
+      markdownLength: scrapeResult.markdown?.length ?? 0,
     });
 
     if (!scrapeResult.success) {
@@ -74,20 +95,13 @@ export const captureSnapshotJob = inngest.createFunction(
       throw new Error(scrapeResult.error || "Scraping failed");
     }
 
-    // Upload screenshot if Firecrawl returned one (base64)
-    let screenshotUrl: string | undefined;
-    if (scrapeResult.screenshot) {
-      try {
-        const buffer = Buffer.from(scrapeResult.screenshot, "base64");
-        const hostname = new URL(competitor.baseUrl).hostname.replace(/\./g, "-");
-        const filename = `${hostname}-${Date.now()}.png`;
-        screenshotUrl = await uploadScreenshot(buffer, filename);
-      } catch (screenshotError) {
-        logger.error("[capture-snapshot] Screenshot upload failed", {
-          competitorId,
-          error: screenshotError instanceof Error ? screenshotError.message : String(screenshotError),
-        });
-      }
+    // Firecrawl returns a signed screenshot URL (valid 7 days); use it directly
+    const screenshotUrl = scrapeResult.screenshot;
+    if (screenshotUrl) {
+      logger.debug("[capture-snapshot] Using Firecrawl screenshot URL", {
+        competitorId,
+        screenshotUrl,
+      });
     }
 
     const changeTracking = scrapeResult.changeTracking;
@@ -96,6 +110,13 @@ export const captureSnapshotJob = inngest.createFunction(
 
     // Store snapshot with Firecrawl data
     const snapshotId = `snap_${nanoid()}`;
+    logger.debug("[capture-snapshot] Storing snapshot", {
+      snapshotId,
+      competitorId,
+      firecrawlTag,
+      changeStatus: changeTracking?.changeStatus,
+      previousScrapeAt: changeTracking?.previousScrapeAt ?? undefined,
+    });
     const snapshot = await step.run("store-snapshot", async () => {
       const [newSnapshot] = await db
         .insert(snapshots)
@@ -118,6 +139,10 @@ export const captureSnapshotJob = inngest.createFunction(
         .returning();
 
       return newSnapshot;
+    });
+    logger.debug("[capture-snapshot] Snapshot stored", {
+      snapshotId,
+      capturedAt: snapshot.capturedAt,
     });
 
     // Update competitor's lastSnapshotAt
@@ -142,6 +167,11 @@ export const captureSnapshotJob = inngest.createFunction(
 
     // Trigger change detection only when Firecrawl reports content changed
     if (changeTracking?.changeStatus === "changed") {
+      logger.debug("[capture-snapshot] Triggering change detection", {
+        competitorId,
+        snapshotId,
+        workspaceId,
+      });
       await step.sendEvent("trigger-change-detection", {
         name: "change/detected",
         data: {
@@ -151,8 +181,18 @@ export const captureSnapshotJob = inngest.createFunction(
           changeData: changeTracking.json,
         },
       });
+    } else {
+      logger.debug("[capture-snapshot] Skipping change detection (no change)", {
+        competitorId,
+        changeStatus: changeTracking?.changeStatus ?? "none",
+      });
     }
 
+    logger.debug("[capture-snapshot] Job completed", {
+      jobId,
+      snapshotId,
+      competitorId,
+    });
     return { snapshotId, competitorId };
   }
 );

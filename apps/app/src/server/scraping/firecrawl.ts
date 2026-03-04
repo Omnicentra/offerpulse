@@ -110,6 +110,10 @@ export async function scrapeWithChangeTracking({
         type: "screenshot" as const,
         fullPage: true,
         quality: 80,
+        viewport: {
+          width: 1280,
+          height: 720,
+        }
       },
       {
         type: "changeTracking" as const,
@@ -340,6 +344,10 @@ export async function batchScrapeCompetitors(
             type: "screenshot" as const,
             fullPage: true,
             quality: 80,
+            viewport: {
+              width: 1280,
+              height: 720,
+            },
           },
           {
             type: "changeTracking" as const,
