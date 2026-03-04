@@ -111,7 +111,7 @@ export default function SnapshotsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
-                        {formatTime(snapshot.capturedAt)}
+                        {formatTime(snapshot.capturedAt.toISOString())}
                       </td>
                       <td className="px-6 py-4">
                         <ConfidenceBadge confidence={confidence} />
