@@ -110,4 +110,8 @@ alwaysApply: false
   - Declare all server-side env vars from env.ts in turbo.json globalEnv (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_LOOKUP_KEY, RESEND_API_KEY, AIRTABLE_API_KEY, AIRTABLE_BASE_ID, etc.).
   - This ensures Turborepo includes them in the build environment and cache key, preventing missing-env build failures on Vercel.
   - Configure the same vars in Vercel project settings for each app (marketing, app).
+
+  Linear Issue Tracking
+  - When a new feature or plan is requested, always check if there is an existing Linear issue in team ID `f98f3e7d-2dcd-4d75-a7c9-5e159c1ea93d` for project ID `44127ff5-1ae5-4af4-80de-25e6144322cd` (OfferPulse MVP). If none exists, create one.
+  - For plans that involve multiple todos: create a parent issue first, then create sub-issues for each todo and assign them as children of the parent (e.g. via `parentId` when creating sub-issues).
   

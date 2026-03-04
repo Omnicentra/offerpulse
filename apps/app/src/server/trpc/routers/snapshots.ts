@@ -1,9 +1,11 @@
 import { router, workspaceProcedure } from "../trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { snapshots, competitors } from "../../db/schema";
+import { snapshots, competitors, scrapeJobs } from "../../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { inngest } from "../../jobs/client";
+import { logger } from "@offerpulse/lib";
 
 export const snapshotsRouter = router({
   list: workspaceProcedure
@@ -118,36 +120,68 @@ export const snapshotsRouter = router({
         });
       }
 
-      // TODO: This will be replaced with actual scraping logic in Phase 3
-      // For now, create a mock snapshot with random data
-      const mockSignals = {
-        confidence: ["low", "medium", "high"][
-          Math.floor(Math.random() * 3)
-        ] as "low" | "medium" | "high",
-        promoText: Math.random() > 0.5 ? "20% OFF SITEWIDE" : undefined,
-        discountPercent: Math.random() > 0.5 ? 20 : undefined,
-        discountCode: Math.random() > 0.5 ? "SAVE20" : undefined,
-        shippingThreshold: Math.random() > 0.6 ? 50 : undefined,
-        shippingText:
-          Math.random() > 0.6 ? "Free shipping on orders over $50" : undefined,
-      };
+      // Create scrape job record to track capture progress
+      const jobId = `job_${nanoid()}`;
+      await ctx.db.insert(scrapeJobs).values({
+        id: jobId,
+        competitorId: input.competitorId,
+        status: "pending",
+      });
 
-      const [newSnapshot] = await ctx.db
-        .insert(snapshots)
-        .values({
-          id: `snap_${nanoid()}`,
+      logger.debug("[snapshots] Manual capture triggered", {
+        competitorId: input.competitorId,
+        workspaceId: input.workspaceId,
+        jobId,
+      });
+
+      // Trigger Inngest job for async scraping
+      await inngest.send({
+        name: "competitor/capture",
+        data: {
           competitorId: input.competitorId,
-          extractedSignals: mockSignals,
-          screenshotUrl: undefined, // Will be set by scraping service
-        })
-        .returning();
+          workspaceId: input.workspaceId,
+        },
+      });
 
-      // Update competitor's lastSnapshotAt
-      await ctx.db
-        .update(competitors)
-        .set({ lastSnapshotAt: newSnapshot.capturedAt })
-        .where(eq(competitors.id, input.competitorId));
+      // Return job ID so frontend can track progress
+      return {
+        jobId,
+        message: "Capture queued - snapshot will appear shortly",
+      };
+    }),
 
-      return newSnapshot;
+  captureStatus: workspaceProcedure
+    .input(z.object({ workspaceId: z.string(), jobId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const job = await ctx.db.query.scrapeJobs.findFirst({
+        where: eq(scrapeJobs.id, input.jobId),
+        with: {
+          competitor: true,
+          snapshot: true,
+        },
+      });
+
+      if (!job) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Scrape job not found",
+        });
+      }
+
+      // Verify competitor belongs to workspace
+      if (job.competitor.workspaceId !== input.workspaceId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Access denied",
+        });
+      }
+
+      return {
+        status: job.status,
+        snapshotId: job.snapshotId,
+        error: job.error,
+        startedAt: job.startedAt,
+        completedAt: job.completedAt,
+      };
     }),
 });

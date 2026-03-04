@@ -99,23 +99,35 @@ export function CompetitorDetailClient({
 
   const captureMutation = useMutation(
     trpc.snapshots.capture.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries(
-          trpc.snapshots.list.queryFilter({ workspaceId, competitorId })
-        );
-        void queryClient.invalidateQueries(
-          trpc.changeEvents.list.queryFilter({ workspaceId, competitorId })
-        );
-        void queryClient.invalidateQueries(
-          trpc.recommendations.list.queryFilter({ workspaceId, competitorId })
-        );
-        void queryClient.invalidateQueries(
-          trpc.competitors.get.queryFilter({ workspaceId, id: competitorId })
-        );
+      onSuccess: (result) => {
         toast({
-          title: "Snapshot Captured",
-          description: "Snapshot captured successfully",
+          title: "Capture Started",
+          description: "Capturing competitor snapshot - this may take 30-60 seconds",
         });
+
+        // Poll for job completion
+        const pollInterval = setInterval(() => {
+          void queryClient.invalidateQueries(
+            trpc.snapshots.list.queryFilter({ workspaceId, competitorId })
+          );
+        }, 5000);
+
+        // Stop polling after 2 minutes
+        setTimeout(() => {
+          clearInterval(pollInterval);
+          void queryClient.invalidateQueries(
+            trpc.snapshots.list.queryFilter({ workspaceId, competitorId })
+          );
+          void queryClient.invalidateQueries(
+            trpc.changeEvents.list.queryFilter({ workspaceId, competitorId })
+          );
+          void queryClient.invalidateQueries(
+            trpc.recommendations.list.queryFilter({ workspaceId, competitorId })
+          );
+          void queryClient.invalidateQueries(
+            trpc.competitors.get.queryFilter({ workspaceId, id: competitorId })
+          );
+        }, 120000);
       },
       onError: (error) => {
         toast({

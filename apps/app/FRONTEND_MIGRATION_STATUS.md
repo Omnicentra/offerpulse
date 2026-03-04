@@ -62,8 +62,8 @@ All remaining pages follow the exact same pattern demonstrated in the completed 
   - Migrated to tRPC (`trpc.changeEvents.list`, `trpc.competitors.list`)
   - Fixed `useSearchParams()` Suspense boundary for static generation
   
-- [ ] **app/(dashboard)/snapshots/page.tsx** - Snapshots list (5 min)
-  - `snapshotsApi.list()` → `trpc.snapshots.list.useQuery({ workspaceId })`
+- [x] **app/(dashboard)/snapshots/page.tsx** - Snapshots list ✅
+  - Migrated to tRPC (`trpc.snapshots.list`)
   
 - [ ] **app/(dashboard)/snapshots/[id]/page.tsx** - Snapshot detail (5 min)
   - `snapshotsApi.get(id)` → `trpc.snapshots.get.useQuery({ id })`
