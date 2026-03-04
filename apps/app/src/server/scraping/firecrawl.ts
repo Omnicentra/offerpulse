@@ -107,6 +107,11 @@ export async function scrapeWithChangeTracking({
     formats: [
       "markdown" as const,
       {
+        type: "screenshot" as const,
+        fullPage: true,
+        quality: 80,
+      },
+      {
         type: "changeTracking" as const,
         modes: ["json" as const] as const,
         tag,
@@ -331,6 +336,11 @@ export async function batchScrapeCompetitors(
       options: {
         formats: [
           "markdown" as const,
+          {
+            type: "screenshot" as const,
+            fullPage: true,
+            quality: 80,
+          },
           {
             type: "changeTracking" as const,
             modes: ["json" as const] as const,

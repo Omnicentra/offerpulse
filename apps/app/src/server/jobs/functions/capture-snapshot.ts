@@ -8,6 +8,7 @@ import {
   extractSignalsFromFirecrawl,
 } from "../../scraping";
 import { uploadScreenshot } from "../../scraping/screenshot";
+import { logger } from "@offerpulse/lib";
 
 export const captureSnapshotJob = inngest.createFunction(
   {
@@ -82,7 +83,10 @@ export const captureSnapshotJob = inngest.createFunction(
         const filename = `${hostname}-${Date.now()}.png`;
         screenshotUrl = await uploadScreenshot(buffer, filename);
       } catch (screenshotError) {
-        console.error("Screenshot upload failed:", screenshotError);
+        logger.error("[capture-snapshot] Screenshot upload failed", {
+          competitorId,
+          error: screenshotError instanceof Error ? screenshotError.message : String(screenshotError),
+        });
       }
     }
 
