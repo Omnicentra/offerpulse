@@ -3,6 +3,12 @@ import { captureScreenshot, uploadScreenshot } from "./screenshot";
 import { extractOfferSignals, ExtractedSignals } from "./extractor";
 import { Page } from "playwright";
 
+export {
+  scrapeWithChangeTracking,
+  batchScrapeCompetitors,
+  extractSignalsFromFirecrawl,
+} from "./firecrawl";
+
 export interface ScrapeResult {
   url: string;
   success: boolean;

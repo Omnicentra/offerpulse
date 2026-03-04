@@ -3,7 +3,11 @@ import { db } from "../../db";
 import { snapshots, competitors, scrapeJobs } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { scrapeCompetitor } from "../../scraping";
+import {
+  scrapeWithChangeTracking,
+  extractSignalsFromFirecrawl,
+} from "../../scraping";
+import { uploadScreenshot } from "../../scraping/screenshot";
 
 export const captureSnapshotJob = inngest.createFunction(
   {
@@ -26,10 +30,11 @@ export const captureSnapshotJob = inngest.createFunction(
       });
     });
 
-    // Get competitor details
+    // Get competitor with monitor settings
     const competitor = await step.run("get-competitor", async () => {
       return await db.query.competitors.findFirst({
         where: eq(competitors.id, competitorId),
+        with: { monitorSettings: true },
       });
     });
 
@@ -45,12 +50,14 @@ export const captureSnapshotJob = inngest.createFunction(
       throw new Error("Competitor not found");
     }
 
-    // Scrape the competitor's website
+    const frequency = competitor.monitorSettings?.frequency ?? "daily";
+
+    // Scrape with Firecrawl change tracking
     const scrapeResult = await step.run("scrape-website", async () => {
-      return await scrapeCompetitor({
+      return await scrapeWithChangeTracking({
         url: competitor.baseUrl,
-        captureScreenshot: true,
-        timeout: 45000,
+        competitorId,
+        frequency,
       });
     });
 
@@ -66,7 +73,24 @@ export const captureSnapshotJob = inngest.createFunction(
       throw new Error(scrapeResult.error || "Scraping failed");
     }
 
-    // Store snapshot with extracted signals
+    // Upload screenshot if Firecrawl returned one (base64)
+    let screenshotUrl: string | undefined;
+    if (scrapeResult.screenshot) {
+      try {
+        const buffer = Buffer.from(scrapeResult.screenshot, "base64");
+        const hostname = new URL(competitor.baseUrl).hostname.replace(/\./g, "-");
+        const filename = `${hostname}-${Date.now()}.png`;
+        screenshotUrl = await uploadScreenshot(buffer, filename);
+      } catch (screenshotError) {
+        console.error("Screenshot upload failed:", screenshotError);
+      }
+    }
+
+    const changeTracking = scrapeResult.changeTracking;
+    const firecrawlTag =
+      frequency === "1h" ? "high-frequency" : frequency === "6h" ? "twice-daily" : "daily";
+
+    // Store snapshot with Firecrawl data
     const snapshotId = `snap_${nanoid()}`;
     const snapshot = await step.run("store-snapshot", async () => {
       const [newSnapshot] = await db
@@ -74,8 +98,18 @@ export const captureSnapshotJob = inngest.createFunction(
         .values({
           id: snapshotId,
           competitorId,
-          extractedSignals: scrapeResult.signals,
-          screenshotUrl: scrapeResult.screenshotUrl,
+          extractedSignals: extractSignalsFromFirecrawl(
+            changeTracking?.json
+          ),
+          screenshotUrl,
+          markdown: scrapeResult.markdown,
+          firecrawlChangeStatus: changeTracking?.changeStatus,
+          firecrawlPreviousScrapeAt: changeTracking?.previousScrapeAt
+            ? new Date(changeTracking.previousScrapeAt)
+            : null,
+          firecrawlVisibility: changeTracking?.visibility,
+          firecrawlTag,
+          firecrawlJson: changeTracking?.json ?? undefined,
         })
         .returning();
 
@@ -102,15 +136,18 @@ export const captureSnapshotJob = inngest.createFunction(
         .where(eq(scrapeJobs.id, jobId));
     });
 
-    // Trigger change detection
-    await step.sendEvent("trigger-change-detection", {
-      name: "change/detected",
-      data: {
-        changeEventId: "", // Will be created by change detector
-        competitorId,
-        workspaceId,
-      },
-    });
+    // Trigger change detection only when Firecrawl reports content changed
+    if (changeTracking?.changeStatus === "changed") {
+      await step.sendEvent("trigger-change-detection", {
+        name: "change/detected",
+        data: {
+          competitorId,
+          workspaceId,
+          snapshotId,
+          changeData: changeTracking.json,
+        },
+      });
+    }
 
     return { snapshotId, competitorId };
   }

@@ -1,6 +1,6 @@
 import { inngest } from "../client";
 import { db } from "../../db";
-import { competitors, monitorSettings } from "../../db/schema";
+import { competitors } from "../../db/schema";
 import { eq } from "drizzle-orm";
 
 export const scheduleCapturesJob = inngest.createFunction(
@@ -10,55 +10,54 @@ export const scheduleCapturesJob = inngest.createFunction(
   },
   { cron: "0 * * * *" }, // Run every hour
   async ({ step }) => {
-    // Get all active competitors with their monitor settings
+    // Get unique workspaces with active competitors
     const activeCompetitors = await step.run("get-active-competitors", async () => {
       return await db.query.competitors.findMany({
         where: eq(competitors.isActive, true),
-        with: {
-          monitorSettings: true,
-        },
+        with: { monitorSettings: true },
       });
     });
 
     const now = new Date();
-    const capturePromises: Promise<any>[] = [];
+    const batchEvents: Array<{ name: string; data: { workspaceId: string; frequency: "1h" | "6h" | "daily" } }> = [];
+
+    // Group by workspace + frequency and trigger batch jobs
+    const workspaceFrequencies = new Set<string>();
 
     for (const competitor of activeCompetitors) {
       const settings = competitor.monitorSettings;
-
       if (!settings) continue;
 
       let shouldCapture = false;
-
-      // Determine if we should capture based on frequency
       if (settings.frequency === "1h") {
-        shouldCapture = true; // Capture every hour
+        shouldCapture = true;
       } else if (settings.frequency === "6h") {
-        // Capture every 6 hours (at 0, 6, 12, 18)
         shouldCapture = now.getHours() % 6 === 0;
       } else if (settings.frequency === "daily") {
-        // Capture once per day at 9 AM UTC
         shouldCapture = now.getHours() === 9;
       }
 
       if (shouldCapture) {
-        capturePromises.push(
-          step.sendEvent(`capture-${competitor.id}`, {
-            name: "competitor/capture",
-            data: {
-              competitorId: competitor.id,
-              workspaceId: competitor.workspaceId,
-            },
-          })
-        );
+        workspaceFrequencies.add(`${competitor.workspaceId}:${settings.frequency}`);
       }
     }
 
-    // Send all capture events
-    await Promise.all(capturePromises);
+    for (const key of workspaceFrequencies) {
+      const [workspaceId, frequency] = key.split(":") as [string, "1h" | "6h" | "daily"];
+      batchEvents.push({
+        name: "snapshot/batch-capture",
+        data: { workspaceId, frequency },
+      });
+    }
+
+    await Promise.all(
+      batchEvents.map((evt) =>
+        step.sendEvent(`batch-${evt.data.workspaceId}-${evt.data.frequency}`, evt)
+      )
+    );
 
     return {
-      scheduled: capturePromises.length,
+      scheduled: batchEvents.length,
       total: activeCompetitors.length,
     };
   }

@@ -17,7 +17,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, Plus } from "lucide-react";
 
 const competitorSchema = z.object({
-  url: z.string().url("Please enter a valid URL"),
+  url: z.url("Please enter a valid URL"),
   name: z.string().min(2, "Name must be at least 2 characters"),
   tags: z.array(z.string()).optional(),
   frequency: z.enum(["daily", "6h", "1h"]),

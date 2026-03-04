@@ -43,6 +43,17 @@ export const jobStatusEnum = pgEnum("job_status", [
   "completed",
   "failed",
 ]);
+export const firecrawlChangeStatusEnum = pgEnum("firecrawl_change_status", [
+  "new",
+  "same",
+  "changed",
+  "removed",
+]);
+export const firecrawlVisibilityEnum = pgEnum("firecrawl_visibility", [
+  "visible",
+  "hidden",
+]);
+export const diffTypeEnum = pgEnum("diff_type", ["git-diff", "json", "manual"]);
 
 // ============================================================================
 // AUTH TABLES (Better-auth)
@@ -256,7 +267,7 @@ export const snapshots = pgTable(
       .references(() => competitors.id, { onDelete: "cascade" }),
     capturedAt: timestamp("captured_at").defaultNow().notNull(),
     screenshotUrl: text("screenshot_url"),
-    // Extracted signals stored as JSONB
+    // Extracted signals stored as JSONB (legacy + derived from Firecrawl)
     extractedSignals: jsonb("extracted_signals")
       .$type<{
         promoText?: string;
@@ -271,6 +282,16 @@ export const snapshots = pgTable(
         confidence: "low" | "medium" | "high";
       }>()
       .notNull(),
+    // Firecrawl change tracking fields
+    markdown: text("markdown"),
+    firecrawlChangeStatus: firecrawlChangeStatusEnum("firecrawl_change_status"),
+    firecrawlPreviousScrapeAt: timestamp("firecrawl_previous_scrape_at"),
+    firecrawlVisibility: firecrawlVisibilityEnum("firecrawl_visibility"),
+    firecrawlTag: text("firecrawl_tag"),
+    firecrawlDiff: jsonb("firecrawl_diff").$type<Record<string, unknown>>(),
+    firecrawlJson: jsonb("firecrawl_json").$type<
+      Record<string, { previous?: unknown; current?: unknown }>
+    >(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
@@ -298,6 +319,8 @@ export const changeEvents = pgTable(
     after: jsonb("after").$type<Record<string, any>>(),
     snapshotBeforeId: text("snapshot_before_id").references(() => snapshots.id),
     snapshotAfterId: text("snapshot_after_id").references(() => snapshots.id),
+    diffType: diffTypeEnum("diff_type"),
+    fieldsChanged: text("fields_changed").array(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [

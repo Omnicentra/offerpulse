@@ -1,13 +1,14 @@
+import { env } from "@/env";
 import { Inngest } from "inngest";
 
-if (!process.env.INNGEST_EVENT_KEY) {
+if (!env.INNGEST_EVENT_KEY) {
   console.warn("INNGEST_EVENT_KEY is not set. Background jobs will not work in production.");
 }
 
 // Create Inngest client
 export const inngest = new Inngest({
   id: "offerpulse",
-  eventKey: process.env.INNGEST_EVENT_KEY,
+  eventKey: env.INNGEST_EVENT_KEY,
 });
 
 // Export event types for type safety
@@ -15,9 +16,15 @@ export const events = {
   "competitor/capture": {} as { competitorId: string; workspaceId: string },
   "competitor/schedule": {} as Record<string, never>,
   "change/detected": {} as {
-    changeEventId: string;
+    changeEventId?: string;
     competitorId: string;
     workspaceId: string;
+    snapshotId?: string;
+    changeData?: Record<string, { previous?: unknown; current?: unknown }>;
+  },
+  "snapshot/batch-capture": {} as {
+    workspaceId: string;
+    frequency: "1h" | "6h" | "daily";
   },
   "recommendation/generated": {} as {
     recommendationId: string;

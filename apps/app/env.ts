@@ -35,6 +35,10 @@ export const env = createEnv({
     STRIPE_WEBHOOK_SECRET: z
       .string()
       .startsWith("whsec_", "STRIPE_WEBHOOK_SECRET must start with whsec_"),
+    FIRECRAWL_API_KEY: z
+      .string()
+      .min(1, "FIRECRAWL_API_KEY is required for competitor monitoring")
+      .startsWith("fc-", "FIRECRAWL_API_KEY must start with fc-"),
   },
   client: {
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z
@@ -77,6 +81,7 @@ export const env = createEnv({
     ALERT_EMAIL: process.env.ALERT_EMAIL,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,

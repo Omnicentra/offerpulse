@@ -6,6 +6,27 @@ import { nanoid } from "nanoid";
 import { generateRecommendation, getAvailableProvider } from "../../ai";
 import { detectChanges } from "../../change-detection";
 import type { ExtractedSignals } from "../../scraping/extractor";
+import type { ChangeDetectionResult } from "../../change-detection";
+
+function buildDetectionResultFromFirecrawl(
+  changeEvent: { summary: string; before?: Record<string, unknown> | null; after?: Record<string, unknown> | null; fieldsChanged?: string[] | null }
+): ChangeDetectionResult {
+  const fieldsChanged = changeEvent.fieldsChanged ?? [];
+  const changes = fieldsChanged.map((field) => ({
+    field,
+    before: (changeEvent.before as Record<string, unknown>)?.[field],
+    after: (changeEvent.after as Record<string, unknown>)?.[field],
+    significance: "major" as const,
+    description: `${field}: ${(changeEvent.before as Record<string, unknown>)?.[field] ?? "none"} → ${(changeEvent.after as Record<string, unknown>)?.[field] ?? "none"}`,
+  }));
+  return {
+    hasChange: true,
+    changeType: undefined,
+    confidence: "medium",
+    changes,
+    summary: changeEvent.summary,
+  };
+}
 
 export const generateRecommendationsJob = inngest.createFunction(
   {
@@ -34,10 +55,22 @@ export const generateRecommendationsJob = inngest.createFunction(
     const aiRecommendation = await step.run("generate-ai-recommendation", async () => {
       const provider = getAvailableProvider();
 
-      // Re-run change detection to get detailed changes (guard null JSONB)
-      const beforeSignals = (changeEvent.before ?? { confidence: "low" }) as ExtractedSignals;
-      const afterSignals = (changeEvent.after ?? { confidence: "low" }) as ExtractedSignals;
-      const detectionResult = detectChanges(beforeSignals, afterSignals);
+      // Firecrawl change events have diffType 'json' and fieldsChanged
+      const isFirecrawlChange = changeEvent.diffType === "json" && (changeEvent.fieldsChanged?.length ?? 0) > 0;
+
+      let detectionResult: ChangeDetectionResult;
+      let beforeSignals: ExtractedSignals | Record<string, unknown>;
+      let afterSignals: ExtractedSignals | Record<string, unknown>;
+
+      if (isFirecrawlChange) {
+        detectionResult = buildDetectionResultFromFirecrawl(changeEvent);
+        beforeSignals = (changeEvent.before ?? {}) as Record<string, unknown>;
+        afterSignals = (changeEvent.after ?? {}) as Record<string, unknown>;
+      } else {
+        beforeSignals = (changeEvent.before ?? { confidence: "low" }) as ExtractedSignals;
+        afterSignals = (changeEvent.after ?? { confidence: "low" }) as ExtractedSignals;
+        detectionResult = detectChanges(beforeSignals, afterSignals);
+      }
 
       const result = await generateRecommendation(
         {

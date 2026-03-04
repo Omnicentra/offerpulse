@@ -86,6 +86,17 @@ alwaysApply: false
   
   Follow Next.js docs for Data Fetching, Rendering, and Routing.
 
+  Logging
+  - Always use `@offerpulse/lib` logger (`import { logger } from "@offerpulse/lib"`) instead of `console.log`, `console.warn`, or `console.error`.
+  - Use `logger.debug` for development/troubleshooting, `logger.info` for notable events, `logger.warn` for recoverable issues, `logger.error` for failures.
+  - In backend API routes, webhooks, and server functions, include sufficient debug logs for observability:
+    - Log at entry: e.g. `logger.debug("Handler received", { key: value })` with request/event identifiers.
+    - Log key decisions and branches: e.g. when skipping or short-circuiting, log the reason and relevant IDs.
+    - Log before/after important operations: DB writes, external API calls, state changes.
+    - Log success outcomes: e.g. `logger.info("Operation completed", { id, status })`.
+    - Log errors with context: `logger.error("Operation failed", error)` including the error object.
+  - Prefer structured context objects (e.g. `{ type, id, userId }`) over string concatenation for easier filtering and debugging.
+
   Environment Variables (apps/marketing/env.ts)
   - Use @t3-oss/env-core for type-safe, validated env vars. Define schema in apps/marketing/env.ts.
   - Split into server (API keys, secrets) and client (NEXT_PUBLIC_*). Never expose server vars to client.
