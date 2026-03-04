@@ -1,5 +1,6 @@
 import { Page } from "playwright";
 import { browserPool } from "./browser-pool";
+import { env } from "@/env";
 
 export interface ScreenshotOptions {
   url: string;
@@ -70,7 +71,6 @@ export async function uploadScreenshot(
   filename: string
 ): Promise<string> {
   const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
-  const { env } = await import("@/env");
 
   const accountId = env.R2_ACCOUNT_ID;
   const endpoint = `https://${accountId}.r2.cloudflarestorage.com`;
@@ -85,7 +85,7 @@ export async function uploadScreenshot(
   });
 
   const bucket = env.R2_BUCKET_NAME;
-  const key = `screenshots/${filename}`;
+  const key = `${env.DOPPLER_ENVIRONMENT}/screenshots/${filename}`;
 
   try {
     const command = new PutObjectCommand({
