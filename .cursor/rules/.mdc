@@ -81,6 +81,7 @@ alwaysApply: false
   - Use SQL helpers (sql template tag) sparingly and only when necessary for complex queries.
   - Keep schema definitions in a centralized schema file with clear organization.
   - Use timestamps helper functions for created_at and updated_at columns when applicable.
+  - For schema changes never manually create/update the sql migration files, rather update the schema.ts and run db:generate script 
 
   Ensure that pnpm is the default package manager for install dependencies
   

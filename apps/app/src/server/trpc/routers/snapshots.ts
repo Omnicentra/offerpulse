@@ -16,13 +16,6 @@ export const snapshotsRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      let query = ctx.db.query.snapshots.findMany({
-        orderBy: [desc(snapshots.capturedAt)],
-        with: {
-          competitor: true,
-        },
-      });
-
       if (input.competitorId) {
         // Verify competitor belongs to workspace
         const competitor = await ctx.db.query.competitors.findFirst({

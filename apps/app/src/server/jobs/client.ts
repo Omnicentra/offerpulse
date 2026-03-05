@@ -1,8 +1,9 @@
 import { env } from "@/env";
 import { Inngest } from "inngest";
+import { logger } from "@offerpulse/lib";
 
 if (!env.INNGEST_EVENT_KEY) {
-  console.warn("INNGEST_EVENT_KEY is not set. Background jobs will not work in production.");
+  logger.warn("INNGEST_EVENT_KEY is not set. Background jobs will not work in production.");
 }
 
 // Create Inngest client

@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -8,7 +8,8 @@ import {
   pgTable,
   text,
   timestamp,
-  unique
+  unique,
+  uniqueIndex
 } from "drizzle-orm/pg-core";
 
 // ============================================================================
@@ -200,6 +201,9 @@ export const subscriptions = pgTable(
     index("subscriptions_user_idx").on(table.userId),
     index("subscriptions_stripe_customer_idx").on(table.stripeCustomerId),
     index("subscriptions_status_idx").on(table.status),
+    uniqueIndex("subscriptions_one_active_per_user")
+      .on(table.userId)
+      .where(sql`"status" in ('active', 'trialing')`),
   ]
 );
 

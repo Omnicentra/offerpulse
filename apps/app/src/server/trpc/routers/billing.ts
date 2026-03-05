@@ -3,7 +3,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { router, protectedProcedure, subscribedProcedure } from "../trpc";
-import { subscriptions } from "../../db/schema";
+import { subscriptions, user } from "../../db/schema";
 import { env } from "@/env";
 import { getPlanById, TRIAL_PERIOD_DAYS } from "@offerpulse/lib/pricing";
 
@@ -34,57 +34,66 @@ export const billingRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const existing = await ctx.db.query.subscriptions.findFirst({
-        where: eq(subscriptions.userId, ctx.user.id),
-      });
+      return await ctx.db.transaction(async (tx) => {
+        // Lock user row so concurrent requests cannot both pass the subscription check
+        await tx
+          .select()
+          .from(user)
+          .where(eq(user.id, ctx.user.id))
+          .for("update");
 
-      if (existing && ["active", "trialing"].includes(existing.status)) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "You already have an active subscription.",
+        const existing = await tx.query.subscriptions.findFirst({
+          where: eq(subscriptions.userId, ctx.user.id),
         });
-      }
 
-      const prices = await stripe.prices.list({
-        lookup_keys: [input.lookupKey],
-        limit: 1,
-      });
+        if (existing && ["active", "trialing"].includes(existing.status)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "You already have an active subscription.",
+          });
+        }
 
-      const price = prices.data[0];
-      if (!price) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `No price found for lookup key: ${input.lookupKey}`,
+        const prices = await stripe.prices.list({
+          lookup_keys: [input.lookupKey],
+          limit: 1,
         });
-      }
 
-      const baseUrl = env.BETTER_AUTH_URL.replace(/\/$/, "");
+        const price = prices.data[0];
+        if (!price) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `No price found for lookup key: ${input.lookupKey}`,
+          });
+        }
 
-      const session = await stripe.checkout.sessions.create({
-        mode: "subscription",
-        payment_method_types: ["card"],
-        line_items: [{ price: price.id, quantity: 1 }],
-        subscription_data: {
-          trial_period_days: TRIAL_PERIOD_DAYS,
+        const baseUrl = env.BETTER_AUTH_URL.replace(/\/$/, "");
+
+        const session = await stripe.checkout.sessions.create({
+          mode: "subscription",
+          payment_method_types: ["card"],
+          line_items: [{ price: price.id, quantity: 1 }],
+          subscription_data: {
+            trial_period_days: TRIAL_PERIOD_DAYS,
+            metadata: { userId: ctx.user.id, lookupKey: input.lookupKey },
+          },
+          customer_email: ctx.user.email,
           metadata: { userId: ctx.user.id, lookupKey: input.lookupKey },
-        },
-        customer_email: ctx.user.email,
-        metadata: { userId: ctx.user.id, lookupKey: input.lookupKey },
-        success_url:
-          input.successUrl ?? `${baseUrl}/overview?checkout=success`,
-        cancel_url:
-          input.cancelUrl ?? `${baseUrl}/signup?checkout=cancelled`,
-        allow_promotion_codes: true,
-      });
-
-      if (!session.url) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create checkout session.",
+          success_url:
+            input.successUrl ?? `${baseUrl}/overview?checkout=success`,
+          cancel_url:
+            input.cancelUrl ?? `${baseUrl}/signup?checkout=cancelled`,
+          allow_promotion_codes: true,
         });
-      }
 
-      return { sessionUrl: session.url };
+        if (!session.url) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create checkout session.",
+          });
+        }
+
+        return { sessionUrl: session.url };
+      });
     }),
 
   createPortalSession: subscribedProcedure

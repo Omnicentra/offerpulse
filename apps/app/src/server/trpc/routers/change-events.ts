@@ -22,10 +22,6 @@ export const changeEventsRouter = router({
       const workspaceCompetitors = await ctx.db.query.competitors.findMany({
         where: eq(competitors.workspaceId, input.workspaceId),
       });
-      logger.debug("[change-events] list", {
-        workspaceId: input.workspaceId,
-        competitors: workspaceCompetitors.map((c) => ({ id: c.id, name: c.name })),
-      });
 
       const competitorIds = workspaceCompetitors.map((c) => c.id);
 
