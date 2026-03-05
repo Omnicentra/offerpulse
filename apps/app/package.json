@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
+    "dev:tls": "BETTER_AUTH_URL=https://localhost:3001 NEXT_PUBLIC_DASHBOARD_APP_URL=https://localhost:3001 next dev --experimental-https -p 3001",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",

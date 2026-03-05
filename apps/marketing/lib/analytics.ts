@@ -47,13 +47,12 @@ const isDevelopment = process.env.NODE_ENV === "development"
  */
 export function track(event: AnalyticsEvent, properties?: EventProperties): void {
   if (isDevelopment) {
-    logger.debug("[Analytics]", event, properties || {})
+    console.log("[Analytics]", event, properties || {})
+    return
   }
 
-  logger.info(typeof window !== "undefined" ? "PostHog" : "Console", event, properties || {})
-
   // Send to PostHog
-  if (typeof window !== "undefined") {
+  if (typeof window !== "undefined" && posthog.__loaded) {
     posthog.capture(event, properties)
   }
 }
