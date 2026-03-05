@@ -318,11 +318,15 @@ export function SnapshotDetailClient({
           <h3 className="mb-4 text-lg font-semibold text-slate-900">
             Screenshot
           </h3>
-          <img
-            src={snapshot.screenshotUrl}
-            alt="Snapshot screenshot"
-            className="rounded-xl"
-          />
+          <div className="relative h-[420px] overflow-y-auto overflow-x-hidden rounded-xl border border-slate-200 bg-slate-100">
+            <div className="relative w-full min-h-full">
+              <img
+                src={snapshot.screenshotUrl}
+                alt="Snapshot screenshot"
+                className="w-full min-w-full object-top object-contain rounded-xl"
+              />
+            </div>
+          </div>
         </div>
       ) : (
         <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-12 text-center">
