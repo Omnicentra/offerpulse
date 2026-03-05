@@ -5,6 +5,7 @@ import { WelcomeEmail } from "./emails/welcome-email";
 import { ChangeAlertEmail } from "./emails/change-alert-email";
 import { WeeklyPulseEmail } from "./emails/weekly-pulse-email";
 import { CaptureCompleteEmail } from "./emails/capture-complete-email";
+import { logger } from "@offerpulse/lib";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
@@ -32,7 +33,7 @@ export async function sendWelcomeEmail(
   try {
     const dashboardUrl =
       options.dashboardUrl ?? env.NEXT_PUBLIC_DASHBOARD_APP_URL ?? "https://app.offerpulse.com";
-    const logoUrl = `${env.NEXT_PUBLIC_MARKETING_APP_URL ?? "https://offerpulse.io"}/favicon.svg`;
+    const logoUrl = `${env.NEXT_PUBLIC_MARKETING_APP_URL}/favicon.svg`;
     const html = await render(
       WelcomeEmail({
         userName: options.userName ?? null,
@@ -67,7 +68,8 @@ export async function sendChangeAlertEmail(
   data: EmailAlertData
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    const logoUrl = `${env.NEXT_PUBLIC_MARKETING_APP_URL ?? "https://offerpulse.io"}/favicon.svg`;
+    const logoUrl = `${env.NEXT_PUBLIC_MARKETING_APP_URL}/favicon.svg`;
+    logger.info(`Sending change alert email to ${to} with logo URL ${logoUrl}`);
     const html = await render(
       ChangeAlertEmail({
         ...data,
@@ -110,7 +112,8 @@ export async function sendWeeklyPulseEmail(
   }
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    const logoUrl = `${env.NEXT_PUBLIC_MARKETING_APP_URL ?? "https://offerpulse.io"}/favicon.svg`;
+    const logoUrl = `${env.NEXT_PUBLIC_MARKETING_APP_URL}/favicon.svg`;
+    logger.info(`Sending weekly pulse email to ${to} with logo URL ${logoUrl}`);
     const html = await render(
       WeeklyPulseEmail({
         ...data,
@@ -166,7 +169,8 @@ export async function sendCaptureCompleteEmail(
           : "Failed";
     const statusEmoji = statusConfig[data.status];
 
-    const logoUrl = `${env.NEXT_PUBLIC_MARKETING_APP_URL ?? "https://offerpulse.io"}/favicon.svg`;
+    const logoUrl = `${env.NEXT_PUBLIC_MARKETING_APP_URL}/favicon.svg`;
+    logger.info(`Sending capture complete email to ${to} with logo URL ${logoUrl}`);
     const html = await render(
       CaptureCompleteEmail({
         ...data,
