@@ -38,6 +38,9 @@ export const env = createEnv({
     STRIPE_WEBHOOK_SECRET: z
       .string()
       .startsWith("whsec_", "STRIPE_WEBHOOK_SECRET must start with whsec_"),
+    SLACK_CLIENT_ID: z.string().min(1, "SLACK_CLIENT_ID is required"),
+    SLACK_CLIENT_SECRET: z.string().min(1, "SLACK_CLIENT_SECRET is required"),
+    SLACK_SIGNING_SECRET: z.string().min(1, "SLACK_SIGNING_SECRET is required"),
     FIRECRAWL_API_KEY: z
       .string()
       .min(1, "FIRECRAWL_API_KEY is required for competitor monitoring")
@@ -87,6 +90,9 @@ export const env = createEnv({
     ALERT_EMAIL: process.env.ALERT_EMAIL,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    SLACK_CLIENT_ID: process.env.SLACK_CLIENT_ID,
+    SLACK_CLIENT_SECRET: process.env.SLACK_CLIENT_SECRET,
+    SLACK_SIGNING_SECRET: process.env.SLACK_SIGNING_SECRET,
     FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,

@@ -5,7 +5,10 @@ import { alertSettings } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { sendChangeAlertEmail } from "../../notifications/email";
-import { sendSlackAlert } from "../../notifications/slack";
+import {
+  sendSlackAlert,
+  listSlackChannels as listSlackChannelsFromSlack,
+} from "../../notifications/slack";
 import { env } from "@/env";
 
 export const alertsRouter = router({
@@ -40,6 +43,25 @@ export const alertsRouter = router({
       return settings;
     }),
 
+  disconnectSlack: workspaceProcedure
+    .input(z.object({ workspaceId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const [updated] = await ctx.db
+        .update(alertSettings)
+        .set({
+          slackAccessToken: null,
+          slackTeamId: null,
+          slackTeamName: null,
+          slackBotUserId: null,
+          slackChannel: null,
+          slackChannelName: null,
+          slackEnabled: false,
+        })
+        .where(eq(alertSettings.workspaceId, input.workspaceId))
+        .returning();
+      return updated;
+    }),
+
   update: workspaceProcedure
     .input(
       z.object({
@@ -47,6 +69,9 @@ export const alertsRouter = router({
         emailEnabled: z.boolean().optional(),
         slackEnabled: z.boolean().optional(),
         slackWebhookUrl: z.string().optional(),
+        slackChannel: z.string().optional(),
+        slackChannelName: z.string().optional(),
+        captureNotificationsEnabled: z.boolean().optional(),
         eventTypes: z.array(z.string()).optional(),
         minConfidence: z.enum(["low", "medium", "high"]).optional(),
       })
@@ -62,7 +87,11 @@ export const alertsRouter = router({
       if (existing) {
         const [updated] = await ctx.db
           .update(alertSettings)
-          .set(data)
+          .set({
+            ...data,
+            slackChannel: data.slackChannel,
+            slackChannelName: data.slackChannelName,
+          })
           .where(eq(alertSettings.workspaceId, workspaceId))
           .returning();
 
@@ -77,6 +106,9 @@ export const alertsRouter = router({
             emailEnabled: data.emailEnabled ?? true,
             slackEnabled: data.slackEnabled ?? false,
             slackWebhookUrl: data.slackWebhookUrl,
+            slackChannel: data.slackChannel,
+            slackChannelName: data.slackChannelName,
+            captureNotificationsEnabled: data.captureNotificationsEnabled ?? false,
             eventTypes: data.eventTypes ?? [
               "PROMO",
               "SHIPPING",
@@ -90,6 +122,23 @@ export const alertsRouter = router({
 
         return created;
       }
+    }),
+
+  listChannels: workspaceProcedure
+    .input(z.object({ workspaceId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const settings = await ctx.db.query.alertSettings.findFirst({
+        where: eq(alertSettings.workspaceId, input.workspaceId),
+      });
+
+      if (!settings?.slackAccessToken) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Slack not connected. Connect your workspace first.",
+        });
+      }
+
+      return await listSlackChannelsFromSlack(settings.slackAccessToken);
     }),
 
   test: workspaceProcedure
@@ -137,15 +186,26 @@ export const alertsRouter = router({
         errors.push("Email: No email address for current user");
       }
 
-      if (settings.slackEnabled && settings.slackWebhookUrl) {
-        const slackResult = await sendSlackAlert(
-          settings.slackWebhookUrl,
-          testAlertData
-        );
-        if (slackResult.success) {
-          sent.push("Slack");
-        } else {
-          errors.push(`Slack: ${slackResult.error ?? "Unknown error"}`);
+      if (settings.slackEnabled) {
+        let slackTarget:
+          | { accessToken: string; channel: string }
+          | { webhookUrl: string }
+          | null = null;
+        if (settings.slackAccessToken && settings.slackChannel) {
+          slackTarget = {
+            accessToken: settings.slackAccessToken,
+            channel: settings.slackChannel,
+          };
+        } else if (settings.slackWebhookUrl) {
+          slackTarget = { webhookUrl: settings.slackWebhookUrl };
+        }
+        if (slackTarget) {
+          const slackResult = await sendSlackAlert(slackTarget, testAlertData);
+          if (slackResult.success) {
+            sent.push("Slack");
+          } else {
+            errors.push(`Slack: ${slackResult.error ?? "Unknown error"}`);
+          }
         }
       }
 

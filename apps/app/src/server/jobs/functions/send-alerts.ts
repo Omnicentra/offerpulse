@@ -98,20 +98,47 @@ export const sendAlertsJob = inngest.createFunction(
       });
     }
 
-    // Send Slack alert
-    if (settings.slackEnabled && settings.slackWebhookUrl) {
-      await step.run("send-slack", async () => {
-        const result = await sendSlackAlert(settings.slackWebhookUrl!, alertData);
+    // Send Slack alert (Web API or webhook fallback)
+    if (settings.slackEnabled) {
+      const slackTarget =
+        settings.slackAccessToken && settings.slackChannel
+          ? { accessToken: settings.slackAccessToken, channel: settings.slackChannel }
+          : settings.slackWebhookUrl
+            ? { webhookUrl: settings.slackWebhookUrl }
+            : null;
 
-        if (result.success) {
-          results.push("slack");
-          console.log("💬 Slack alert sent");
-        } else {
-          errors.push(`Slack: ${result.error}`);
-          console.error("💬 Slack alert failed:", result.error);
-        }
-      });
+      if (slackTarget) {
+        await step.run("send-slack", async () => {
+          const result = await sendSlackAlert(slackTarget, alertData);
+
+          if (result.success) {
+            results.push("slack");
+            console.log("💬 Slack alert sent");
+          } else {
+            errors.push(`Slack: ${result.error}`);
+            console.error("💬 Slack alert failed:", result.error);
+          }
+        });
+      }
     }
+
+    const alertStatus =
+      results.length > 0
+        ? "sent"
+        : errors.length > 0
+          ? "failed"
+          : "filtered";
+
+    await step.run("update-alert-status", async () => {
+      await db
+        .update(changeEvents)
+        .set({
+          alertSentAt: new Date(),
+          alertStatus,
+          alertChannels: results.length > 0 ? results : null,
+        })
+        .where(eq(changeEvents.id, changeEventId));
+    });
 
     return {
       sent: results.length > 0,

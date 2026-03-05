@@ -283,6 +283,21 @@ export function ChangesPageClient({
                               AI
                             </Badge>
                           )}
+                          {"alertStatus" in change && change.alertStatus === "sent" && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                              Alert via {Array.isArray(change.alertChannels) ? change.alertChannels.join(", ") : "—"}
+                            </Badge>
+                          )}
+                          {"alertStatus" in change && change.alertStatus === "filtered" && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                              Alert filtered
+                            </Badge>
+                          )}
+                          {"alertStatus" in change && change.alertStatus === "failed" && (
+                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                              Alert failed
+                            </Badge>
+                          )}
                         </div>
                         <p className="mt-1 text-sm text-slate-700">{change.summary}</p>
                         <p className="mt-1 text-xs text-slate-500">{formatTime(change.detectedAt)}</p>
@@ -309,7 +324,7 @@ export function ChangesPageClient({
               </SheetHeader>
 
               <div className="mt-6 space-y-6">
-                {/* Badges: type, confidence, detection method */}
+                {/* Badges: type, confidence, detection method, alert status */}
                 <div className="flex flex-wrap gap-2">
                   <ChangeTypeBadge type={selectedChangeData.type} />
                   <ConfidenceBadge confidence={selectedChangeData.confidence} />
@@ -324,6 +339,23 @@ export function ChangesPageClient({
                         ? "Git diff"
                         : "Manual"}
                   </Badge>
+                  {"alertStatus" in selectedChangeData &&
+                    selectedChangeData.alertStatus === "sent" && (
+                      <Badge variant="secondary">
+                        Alert sent via{" "}
+                        {Array.isArray(selectedChangeData.alertChannels)
+                          ? selectedChangeData.alertChannels.join(", ")
+                          : "—"}
+                      </Badge>
+                    )}
+                  {"alertStatus" in selectedChangeData &&
+                    selectedChangeData.alertStatus === "filtered" && (
+                      <Badge variant="outline">Alert filtered</Badge>
+                    )}
+                  {"alertStatus" in selectedChangeData &&
+                    selectedChangeData.alertStatus === "failed" && (
+                      <Badge variant="destructive">Alert failed</Badge>
+                    )}
                 </div>
 
                 {/* Firecrawl status indicator */}

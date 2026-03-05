@@ -1,12 +1,34 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send } from "lucide-react";
+import { Send, Unlink } from "lucide-react";
+
+function SlackLogo({ className }: { className?: string }) {
+  return (
+    <img
+      src="/slack-new-logo.svg"
+      alt=""
+      className={className}
+      aria-hidden
+    />
+  );
+}
 import { useToast } from "@/hooks/use-toast";
 import { useTRPC } from "@/src/lib/trpc/client";
 import { useWorkspace } from "@/src/providers/workspace-provider";
@@ -25,6 +47,7 @@ export default function AlertsPage() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
+  const searchParams = useSearchParams();
   const { data: settings, isLoading } = useQuery(
     trpc.alerts.get.queryOptions(
       { workspaceId: workspaceId! },
@@ -32,7 +55,55 @@ export default function AlertsPage() {
     )
   );
 
+  const { data: channels = [], isLoading: channelsLoading } = useQuery(
+    trpc.alerts.listChannels.queryOptions(
+      { workspaceId: workspaceId! },
+      {
+        enabled:
+          !!workspaceId &&
+          !!settings?.slackAccessToken &&
+          !!settings?.slackTeamName,
+      }
+    )
+  );
+
+  const publicChannels = channels.filter((ch) => !ch.is_private);
+  const privateChannels = channels.filter((ch) => ch.is_private);
+
   const [localSettings, setLocalSettings] = useState(settings);
+
+  const disconnectMutation = useMutation(
+    trpc.alerts.disconnectSlack.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.alerts.get.queryFilter());
+        setLocalSettings((prev) =>
+          prev
+            ? {
+                ...prev,
+                slackTeamId: null,
+                slackTeamName: null,
+                slackAccessToken: null,
+                slackBotUserId: null,
+                slackChannel: null,
+                slackChannelName: null,
+                slackEnabled: false,
+              }
+            : prev
+        );
+        toast({
+          title: "Slack disconnected",
+          description: "Your workspace is no longer connected to Slack.",
+        });
+      },
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to disconnect Slack",
+          variant: "destructive",
+        });
+      },
+    })
+  );
 
   // Update local settings when data loads
   useEffect(() => {
@@ -40,6 +111,26 @@ export default function AlertsPage() {
       setLocalSettings(settings);
     }
   }, [settings]);
+
+  // Toast for OAuth callback result
+  useEffect(() => {
+    const slackConnected = searchParams.get("slack_connected");
+    const error = searchParams.get("error");
+    if (slackConnected === "true") {
+      toast({
+        title: "Slack connected",
+        description: "Your workspace is now connected to Slack. Choose a channel below.",
+      });
+      window.history.replaceState({}, "", "/alerts");
+    } else if (error === "oauth_failed") {
+      toast({
+        title: "Slack connection failed",
+        description: "Could not connect to Slack. Please try again.",
+        variant: "destructive",
+      });
+      window.history.replaceState({}, "", "/alerts");
+    }
+  }, [searchParams, toast]);
 
   const updateMutation = useMutation(
     trpc.alerts.update.mutationOptions({
@@ -85,9 +176,17 @@ export default function AlertsPage() {
       emailEnabled: localSettings.emailEnabled,
       slackEnabled: localSettings.slackEnabled,
       slackWebhookUrl: localSettings.slackWebhookUrl ?? undefined,
+      slackChannel: localSettings.slackChannel ?? undefined,
+      slackChannelName: localSettings.slackChannelName ?? undefined,
+      captureNotificationsEnabled: localSettings.captureNotificationsEnabled,
       eventTypes: localSettings.eventTypes ?? undefined,
       minConfidence: localSettings.minConfidence,
     });
+  };
+
+  const handleDisconnectSlack = () => {
+    if (!workspaceId) return;
+    disconnectMutation.mutate({ workspaceId });
   };
 
   const handleTestNotification = () => {
@@ -156,7 +255,7 @@ export default function AlertsPage() {
           <div className="flex-1">
             <h2 className="text-lg font-semibold text-slate-900">Slack Notifications</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Send alerts to a Slack channel via webhook
+              Send alerts to a Slack channel via OAuth or webhook
             </p>
           </div>
           <label className="relative inline-flex cursor-pointer items-center">
@@ -174,31 +273,94 @@ export default function AlertsPage() {
 
         {localSettings.slackEnabled && (
           <div className="mt-4 space-y-3">
-            <div>
-              <Label htmlFor="slackWebhook">Webhook URL</Label>
-              <Input
-                id="slackWebhook"
-                type="url"
-                placeholder="https://hooks.slack.com/services/..."
-                value={localSettings.slackWebhookUrl || ""}
-                onChange={(e) =>
-                  setLocalSettings({ ...localSettings, slackWebhookUrl: e.target.value })
-                }
-                className="mt-2"
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Create an{" "}
-                <a
-                  href="https://api.slack.com/messaging/webhooks"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
+            {!localSettings.slackTeamName ? (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => {
+                    if (!workspaceId) return;
+                    window.location.href = `/api/slack/install?workspace_id=${workspaceId}`;
+                  }}
                 >
-                  Incoming Webhook
-                </a>{" "}
-                in your Slack workspace
-              </p>
-            </div>
+                  <SlackLogo className="h-4 w-4" />
+                  Connect to Slack
+                </Button>
+              </>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">
+                      Connected to {localSettings.slackTeamName}
+                    </p>
+                    {localSettings.slackChannelName && (
+                      <p className="mt-0.5 text-xs text-slate-600">
+                        Channel: #{localSettings.slackChannelName}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDisconnectSlack}
+                    disabled={disconnectMutation.isPending}
+                    className="gap-1.5"
+                  >
+                    <Unlink className="h-3.5 w-3.5" />
+                    {disconnectMutation.isPending ? "Disconnecting..." : "Disconnect"}
+                  </Button>
+                </div>
+                <div>
+                  <Label htmlFor="slack-channel">Notification Channel</Label>
+                  <Select
+                    value={localSettings.slackChannel ?? ""}
+                    onValueChange={(channelId) => {
+                      const ch = channels.find((c) => c.id === channelId);
+                      setLocalSettings({
+                        ...localSettings,
+                        slackChannel: channelId || null,
+                        slackChannelName: ch?.name ?? null,
+                      });
+                    }}
+                    disabled={channelsLoading}
+                  >
+                    <SelectTrigger id="slack-channel" className="mt-2">
+                      <SelectValue placeholder="Select a channel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Public Channels</SelectLabel>
+                        {publicChannels.map((ch) => (
+                          <SelectItem key={ch.id} value={ch.id}>
+                            #{ch.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      {privateChannels.length > 0 && (
+                        <>
+                          <SelectSeparator />
+                          <SelectGroup>
+                            <SelectLabel>Private Channels</SelectLabel>
+                            {privateChannels.map((ch) => (
+                              <SelectItem key={ch.id} value={ch.id}>
+                                🔒 {ch.name}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Notifications will be sent to this channel. Invite the app to
+                    private channels if needed.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -274,6 +436,38 @@ export default function AlertsPage() {
               </span>
             </label>
           ))}
+        </div>
+      </div>
+
+      {/* Capture Notifications */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold text-slate-900">
+              Capture Notifications
+            </h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Get notified after every scheduled scan, even if no changes are
+              detected
+            </p>
+            <p className="mt-2 text-xs text-amber-600">
+              Note: This may result in frequent notifications
+            </p>
+          </div>
+          <label className="relative inline-flex cursor-pointer items-center">
+            <input
+              type="checkbox"
+              checked={localSettings.captureNotificationsEnabled ?? false}
+              onChange={(e) =>
+                setLocalSettings({
+                  ...localSettings,
+                  captureNotificationsEnabled: e.target.checked,
+                })
+              }
+              className="peer sr-only"
+            />
+            <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:ring-2 peer-focus:ring-blue-600"></div>
+          </label>
         </div>
       </div>
 

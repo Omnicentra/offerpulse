@@ -1,0 +1,1 @@
+ALTER TABLE "alert_settings" ADD COLUMN "capture_notifications_enabled" boolean DEFAULT false NOT NULL;

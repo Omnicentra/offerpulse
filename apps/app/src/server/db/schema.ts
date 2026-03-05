@@ -325,6 +325,9 @@ export const changeEvents = pgTable(
     snapshotAfterId: text("snapshot_after_id").references(() => snapshots.id),
     diffType: diffTypeEnum("diff_type"),
     fieldsChanged: text("fields_changed").array(),
+    alertSentAt: timestamp("alert_sent_at"),
+    alertStatus: text("alert_status"), // 'pending' | 'sent' | 'failed' | 'filtered'
+    alertChannels: jsonb("alert_channels").$type<string[]>(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
@@ -403,6 +406,15 @@ export const alertSettings = pgTable("alert_settings", {
   emailEnabled: boolean("email_enabled").notNull().default(true),
   slackEnabled: boolean("slack_enabled").notNull().default(false),
   slackWebhookUrl: text("slack_webhook_url"),
+  slackTeamId: text("slack_team_id"),
+  slackTeamName: text("slack_team_name"),
+  slackAccessToken: text("slack_access_token"),
+  slackBotUserId: text("slack_bot_user_id"),
+  slackChannel: text("slack_channel"),
+  slackChannelName: text("slack_channel_name"),
+  captureNotificationsEnabled: boolean("capture_notifications_enabled")
+    .notNull()
+    .default(false),
   eventTypes: jsonb("event_types")
     .$type<string[]>()
     .default(["PROMO", "SHIPPING", "BUNDLE", "CART_INCENTIVE", "DELIVERY_RETURNS"]),
