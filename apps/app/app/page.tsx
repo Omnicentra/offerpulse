@@ -2,19 +2,20 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "@/src/server/auth/client";
 
 export default function HomePage() {
   const router = useRouter();
+  const { data: session, isPending } = useSession();
 
   useEffect(() => {
-    // Check if authenticated
-    const token = localStorage.getItem("offerpulse_auth_token");
-    if (token) {
+    if (isPending) return;
+    if (session?.user) {
       router.replace("/overview");
     } else {
       router.replace("/login");
     }
-  }, [router]);
+  }, [session?.user, isPending, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">

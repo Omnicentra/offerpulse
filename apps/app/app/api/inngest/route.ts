@@ -2,6 +2,7 @@ import { serve } from "inngest/next";
 import { inngest } from "@/src/server/jobs/client";
 import {
   captureSnapshotJob,
+  batchCaptureSnapshotsJob,
   scheduleCapturesJob,
   detectChangesJob,
   generateRecommendationsJob,
@@ -14,6 +15,7 @@ export const { GET, POST, PUT } = serve({
   client: inngest,
   functions: [
     captureSnapshotJob,
+    batchCaptureSnapshotsJob,
     scheduleCapturesJob,
     detectChangesJob,
     generateRecommendationsJob,

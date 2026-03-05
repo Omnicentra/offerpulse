@@ -34,3 +34,6 @@ lerna-debug.log*
 # Old backups
 _old_*
 *_backup
+
+tsconfig.tsbuildinfo*
+next-env.d.ts

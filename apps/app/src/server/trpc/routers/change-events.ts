@@ -3,6 +3,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { changeEvents, competitors } from "../../db/schema";
 import { eq, and, desc, inArray, gte, lte } from "drizzle-orm";
+import { logger } from "@offerpulse/lib";
 
 export const changeEventsRouter = router({
   list: workspaceProcedure
@@ -29,7 +30,7 @@ export const changeEventsRouter = router({
       }
 
       // Build query filters
-      let whereConditions: any[] = [];
+      const whereConditions: any[] = [];
 
       if (input.competitorId) {
         // Verify competitor belongs to workspace
@@ -63,6 +64,10 @@ export const changeEventsRouter = router({
           snapshotBefore: true,
           snapshotAfter: true,
         },
+      });
+
+      logger.debug("[change-events] list results", {
+        events: events.map((e) => ({ id: e.id, competitorId: e.competitorId, detectedAt: e.detectedAt, competitor: e.competitor?.name })),
       });
 
       // Filter by workspace competitors
@@ -121,6 +126,10 @@ export const changeEventsRouter = router({
           message: "Access denied",
         });
       }
+
+      logger.debug("[change-events] get", {
+        event: { id: event.id, competitorId: event.competitorId, detectedAt: event.detectedAt, competitor: event.competitor?.name },
+      });
 
       return event;
     }),

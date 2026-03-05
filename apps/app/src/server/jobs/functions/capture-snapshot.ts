@@ -3,7 +3,11 @@ import { db } from "../../db";
 import { snapshots, competitors, scrapeJobs } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { scrapeCompetitor } from "../../scraping";
+import {
+  scrapeWithChangeTracking,
+  extractSignalsFromFirecrawl,
+} from "../../scraping";
+import { logger } from "@offerpulse/lib";
 
 export const captureSnapshotJob = inngest.createFunction(
   {
@@ -14,9 +18,15 @@ export const captureSnapshotJob = inngest.createFunction(
   { event: "competitor/capture" },
   async ({ event, step }) => {
     const { competitorId, workspaceId } = event.data;
+    const jobId = `job_${nanoid()}`;
+
+    logger.debug("[capture-snapshot] Job started", {
+      jobId,
+      competitorId,
+      workspaceId,
+    });
 
     // Create job record
-    const jobId = `job_${nanoid()}`;
     await step.run("create-job-record", async () => {
       await db.insert(scrapeJobs).values({
         id: jobId,
@@ -25,15 +35,18 @@ export const captureSnapshotJob = inngest.createFunction(
         startedAt: new Date(),
       });
     });
+    logger.debug("[capture-snapshot] Job record created", { jobId });
 
-    // Get competitor details
+    // Get competitor with monitor settings
     const competitor = await step.run("get-competitor", async () => {
       return await db.query.competitors.findFirst({
         where: eq(competitors.id, competitorId),
+        with: { monitorSettings: true },
       });
     });
 
     if (!competitor) {
+      logger.debug("[capture-snapshot] Competitor not found", { competitorId, jobId });
       await db
         .update(scrapeJobs)
         .set({
@@ -45,13 +58,29 @@ export const captureSnapshotJob = inngest.createFunction(
       throw new Error("Competitor not found");
     }
 
-    // Scrape the competitor's website
+    const frequency = competitor.monitorSettings?.frequency ?? "daily";
+    logger.debug("[capture-snapshot] Competitor loaded", {
+      competitorId,
+      baseUrl: competitor.baseUrl,
+      frequency,
+    });
+
+    // Scrape with Firecrawl change tracking
     const scrapeResult = await step.run("scrape-website", async () => {
-      return await scrapeCompetitor({
+      return await scrapeWithChangeTracking({
         url: competitor.baseUrl,
-        captureScreenshot: true,
-        timeout: 45000,
+        competitorId,
+        frequency,
       });
+    });
+
+    logger.debug("[capture-snapshot] Scrape completed", {
+      competitorId,
+      success: scrapeResult.success,
+      error: scrapeResult.error ?? undefined,
+      changeStatus: scrapeResult.changeTracking?.changeStatus,
+      hasScreenshot: Boolean(scrapeResult.screenshot),
+      markdownLength: scrapeResult.markdown?.length ?? 0,
     });
 
     if (!scrapeResult.success) {
@@ -66,20 +95,54 @@ export const captureSnapshotJob = inngest.createFunction(
       throw new Error(scrapeResult.error || "Scraping failed");
     }
 
-    // Store snapshot with extracted signals
+    // Firecrawl returns a signed screenshot URL (valid 7 days); use it directly
+    const screenshotUrl = scrapeResult.screenshot;
+    if (screenshotUrl) {
+      logger.debug("[capture-snapshot] Using Firecrawl screenshot URL", {
+        competitorId,
+        screenshotUrl,
+      });
+    }
+
+    const changeTracking = scrapeResult.changeTracking;
+    const firecrawlTag =
+      frequency === "1h" ? "high-frequency" : frequency === "6h" ? "twice-daily" : "daily";
+
+    // Store snapshot with Firecrawl data
     const snapshotId = `snap_${nanoid()}`;
+    logger.debug("[capture-snapshot] Storing snapshot", {
+      snapshotId,
+      competitorId,
+      firecrawlTag,
+      changeStatus: changeTracking?.changeStatus,
+      previousScrapeAt: changeTracking?.previousScrapeAt ?? undefined,
+    });
     const snapshot = await step.run("store-snapshot", async () => {
       const [newSnapshot] = await db
         .insert(snapshots)
         .values({
           id: snapshotId,
           competitorId,
-          extractedSignals: scrapeResult.signals,
-          screenshotUrl: scrapeResult.screenshotUrl,
+          extractedSignals: extractSignalsFromFirecrawl(
+            changeTracking?.json
+          ),
+          screenshotUrl,
+          markdown: scrapeResult.markdown,
+          firecrawlChangeStatus: changeTracking?.changeStatus,
+          firecrawlPreviousScrapeAt: changeTracking?.previousScrapeAt
+            ? new Date(changeTracking.previousScrapeAt)
+            : null,
+          firecrawlVisibility: changeTracking?.visibility,
+          firecrawlTag,
+          firecrawlJson: changeTracking?.json ?? undefined,
         })
         .returning();
 
       return newSnapshot;
+    });
+    logger.debug("[capture-snapshot] Snapshot stored", {
+      snapshotId,
+      capturedAt: snapshot.capturedAt,
     });
 
     // Update competitor's lastSnapshotAt
@@ -102,16 +165,34 @@ export const captureSnapshotJob = inngest.createFunction(
         .where(eq(scrapeJobs.id, jobId));
     });
 
-    // Trigger change detection
-    await step.sendEvent("trigger-change-detection", {
-      name: "change/detected",
-      data: {
-        changeEventId: "", // Will be created by change detector
+    // Trigger change detection only when Firecrawl reports content changed
+    if (changeTracking?.changeStatus === "changed") {
+      logger.debug("[capture-snapshot] Triggering change detection", {
         competitorId,
+        snapshotId,
         workspaceId,
-      },
-    });
+      });
+      await step.sendEvent("trigger-change-detection", {
+        name: "change/detected",
+        data: {
+          competitorId,
+          workspaceId,
+          snapshotId,
+          changeData: changeTracking.json,
+        },
+      });
+    } else {
+      logger.debug("[capture-snapshot] Skipping change detection (no change)", {
+        competitorId,
+        changeStatus: changeTracking?.changeStatus ?? "none",
+      });
+    }
 
+    logger.debug("[capture-snapshot] Job completed", {
+      jobId,
+      snapshotId,
+      competitorId,
+    });
     return { snapshotId, competitorId };
   }
 );

@@ -37,13 +37,13 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
 });
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
+  const { data: session, isPending: isSessionPending } = useSession();
   const trpc = useTRPC();
 
-  const { data: subscription, isLoading } = useQuery(
+  const { data: subscription, isLoading: isSubscriptionLoading } = useQuery(
     trpc.billing.getSubscription.queryOptions(undefined, {
       enabled: !!session?.user,
-      staleTime: 60_000,
+      staleTime: 60 * 1000,
     })
   );
 
@@ -55,11 +55,16 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const isTrialing = subscription?.status === "trialing";
   const isPastDue = subscription?.status === "past_due";
 
+  // Treat as loading until we know the session and (if logged in) subscription state.
+  // Avoids flashing the "subscription required" dialog on refresh while data is still loading.
+  const isLoading =
+    isSessionPending || (!!session?.user && isSubscriptionLoading);
+
   return (
     <SubscriptionContext.Provider
       value={{
         subscription: subscription ?? null,
-        isLoading: !!session?.user && isLoading,
+        isLoading,
         isActive,
         isTrialing,
         isPastDue,

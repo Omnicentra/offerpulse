@@ -1,4 +1,4 @@
-CREATE TYPE "public"."subscription_status" AS ENUM('active', 'trialing', 'past_due', 'canceled', 'incomplete');--> statement-breakpoint
+CREATE TYPE "public"."subscription_status" AS ENUM('active', 'trialing', 'past_due', 'canceled', 'incomplete', 'incomplete_expired', 'paused', 'unpaid');--> statement-breakpoint
 CREATE TABLE "subscriptions" (
 	"id" text PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,

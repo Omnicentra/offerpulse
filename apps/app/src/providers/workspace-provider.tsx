@@ -34,6 +34,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   // Set default workspace to first one when workspaces load
   useEffect(() => {
+    console.debug("[workspace-provider] useEffect", {
+      user: session?.user,
+      workspaces: workspaces.map((w) => ({ id: w.id, name: w.name })),
+      workspaceId,
+    });
     if (session?.user && workspaces.length > 0 && !workspaceId) {
       setWorkspaceId(workspaces[0].id);
     }

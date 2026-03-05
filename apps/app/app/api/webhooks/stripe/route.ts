@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { env } from "@/env";
 import { db } from "@/src/server/db";
@@ -13,7 +13,6 @@ const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
 
 const RELEVANT_EVENTS = new Set([
   "checkout.session.completed",
-  "customer.subscription.created",
   "customer.subscription.updated",
   "customer.subscription.deleted",
   "invoice.payment_succeeded",
@@ -85,20 +84,6 @@ export async function POST(req: Request) {
         logger.debug("checkout.session.completed upserting subscription", { userId, subId: stripeSubscription.id });
         await upsertSubscription(userId, stripeSubscription);
         logger.info("checkout.session.completed processed", { userId, subscriptionId: stripeSubscription.id });
-        break;
-      }
-
-      case "customer.subscription.created": {
-        const sub = event.data.object as Stripe.Subscription;
-        const userId = sub.metadata?.userId;
-        logger.debug("customer.subscription.created", { subId: sub.id, userId: userId ?? null });
-        if (!userId) {
-          logger.debug("customer.subscription.created skipped: no userId in metadata");
-          break;
-        }
-
-        await upsertSubscription(userId, sub);
-        logger.info("customer.subscription.created processed", { userId, subscriptionId: sub.id });
         break;
       }
 
@@ -356,11 +341,6 @@ async function upsertSubscription(
 
   const period = await getSubscriptionPeriod(sub);
 
-  const existing = await db.query.subscriptions.findFirst({
-    where: eq(subscriptions.userId, userId),
-  });
-  logger.debug("upsertSubscription existing", { existingId: existing?.id ?? null });
-
   const values = {
     userId,
     stripeCustomerId: customerId,
@@ -377,18 +357,19 @@ async function upsertSubscription(
     canceledAt: sub.canceled_at ? new Date(sub.canceled_at * 1000) : null,
   };
 
-  if (existing) {
-    await db
-      .update(subscriptions)
-      .set(values)
-      .where(eq(subscriptions.id, existing.id));
-    logger.debug("upsertSubscription updated", { subscriptionId: existing.id });
-  } else {
-    const id = `sub_${nanoid()}`;
-    await db.insert(subscriptions).values({
+  const id = `sub_${nanoid()}`;
+
+  await db
+    .insert(subscriptions)
+    .values({
       id,
       ...values,
+    })
+    .onConflictDoUpdate({
+      target: [subscriptions.userId],
+      targetWhere: sql`"status" in ('active', 'trialing')`,
+      set: values,
     });
-    logger.debug("upsertSubscription inserted", { subscriptionId: id });
-  }
+
+  logger.debug("upsertSubscription upserted", { userId, subId: sub.id });
 }

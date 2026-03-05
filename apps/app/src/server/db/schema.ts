@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -7,7 +7,9 @@ import {
   pgEnum,
   pgTable,
   text,
-  timestamp
+  timestamp,
+  unique,
+  uniqueIndex
 } from "drizzle-orm/pg-core";
 
 // ============================================================================
@@ -42,6 +44,17 @@ export const jobStatusEnum = pgEnum("job_status", [
   "completed",
   "failed",
 ]);
+export const firecrawlChangeStatusEnum = pgEnum("firecrawl_change_status", [
+  "new",
+  "same",
+  "changed",
+  "removed",
+]);
+export const firecrawlVisibilityEnum = pgEnum("firecrawl_visibility", [
+  "visible",
+  "hidden",
+]);
+export const diffTypeEnum = pgEnum("diff_type", ["git-diff", "json", "manual"]);
 
 // ============================================================================
 // AUTH TABLES (Better-auth)
@@ -123,7 +136,6 @@ export const workspaces = pgTable("workspaces", {
     .notNull()
     .$onUpdate(() => new Date()),
 });
-
 export const workspaceMembers = pgTable(
   "workspace_members",
   {
@@ -138,11 +150,16 @@ export const workspaceMembers = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
-    index("workspace_members_workspace_idx").on(table.workspaceId),
+    index("workspace_members_workspace_idx").on(
+      table.workspaceId
+    ),
     index("workspace_members_user_idx").on(table.userId),
+    unique("workspace_members_unique").on(
+      table.workspaceId,
+      table.userId
+    ),
   ]
 );
-
 // ============================================================================
 // SUBSCRIPTION TABLES
 // ============================================================================
@@ -184,6 +201,9 @@ export const subscriptions = pgTable(
     index("subscriptions_user_idx").on(table.userId),
     index("subscriptions_stripe_customer_idx").on(table.stripeCustomerId),
     index("subscriptions_status_idx").on(table.status),
+    uniqueIndex("subscriptions_one_active_per_user")
+      .on(table.userId)
+      .where(sql`"status" in ('active', 'trialing')`),
   ]
 );
 
@@ -251,7 +271,7 @@ export const snapshots = pgTable(
       .references(() => competitors.id, { onDelete: "cascade" }),
     capturedAt: timestamp("captured_at").defaultNow().notNull(),
     screenshotUrl: text("screenshot_url"),
-    // Extracted signals stored as JSONB
+    // Extracted signals stored as JSONB (legacy + derived from Firecrawl)
     extractedSignals: jsonb("extracted_signals")
       .$type<{
         promoText?: string;
@@ -266,6 +286,16 @@ export const snapshots = pgTable(
         confidence: "low" | "medium" | "high";
       }>()
       .notNull(),
+    // Firecrawl change tracking fields
+    markdown: text("markdown"),
+    firecrawlChangeStatus: firecrawlChangeStatusEnum("firecrawl_change_status"),
+    firecrawlPreviousScrapeAt: timestamp("firecrawl_previous_scrape_at"),
+    firecrawlVisibility: firecrawlVisibilityEnum("firecrawl_visibility"),
+    firecrawlTag: text("firecrawl_tag"),
+    firecrawlDiff: jsonb("firecrawl_diff").$type<Record<string, unknown>>(),
+    firecrawlJson: jsonb("firecrawl_json").$type<
+      Record<string, { previous?: unknown; current?: unknown }>
+    >(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
@@ -293,6 +323,8 @@ export const changeEvents = pgTable(
     after: jsonb("after").$type<Record<string, any>>(),
     snapshotBeforeId: text("snapshot_before_id").references(() => snapshots.id),
     snapshotAfterId: text("snapshot_after_id").references(() => snapshots.id),
+    diffType: diffTypeEnum("diff_type"),
+    fieldsChanged: text("fields_changed").array(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [

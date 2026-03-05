@@ -7,21 +7,21 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfidenceBadge } from "@/components/ui/confidence-badge";
 import { Button } from "@/components/ui/button";
-import { snapshotsApi, competitorsApi } from "@/src/mock/api";
+import { useTRPC } from "@/src/lib/trpc/client";
+import { useWorkspace } from "@/src/providers/workspace-provider";
 import { Camera } from "lucide-react";
 
 export default function SnapshotsPage() {
   const router = useRouter();
+  const { workspaceId } = useWorkspace();
+  const trpc = useTRPC();
 
-  const { data: snapshots, isLoading } = useQuery({
-    queryKey: ["snapshots"],
-    queryFn: () => snapshotsApi.list(),
-  });
-
-  const { data: competitors } = useQuery({
-    queryKey: ["competitors"],
-    queryFn: () => competitorsApi.list(),
-  });
+  const { data: snapshots, isLoading } = useQuery(
+    trpc.snapshots.list.queryOptions(
+      { workspaceId: workspaceId! },
+      { enabled: !!workspaceId }
+    )
+  );
 
   const formatTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleString("en-US", {
@@ -88,10 +88,11 @@ export default function SnapshotsPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {snapshots?.map((snapshot) => {
-                  const competitor = competitors?.find((c) => c.id === snapshot.competitorId);
-                  const signals = snapshot.extractedSignals;
+                  const competitor = snapshot.competitor;
+                  const signals = snapshot.extractedSignals ?? {};
                   const keySignal =
                     signals.promoText || signals.shippingText || signals.bundleText || "No key signals";
+                  const confidence = signals.confidence ?? "low";
 
                   return (
                     <tr
@@ -110,10 +111,10 @@ export default function SnapshotsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
-                        {formatTime(snapshot.capturedAt)}
+                        {formatTime(snapshot.capturedAt.toISOString())}
                       </td>
                       <td className="px-6 py-4">
-                        <ConfidenceBadge confidence={signals.confidence} />
+                        <ConfidenceBadge confidence={confidence} />
                       </td>
                       <td className="px-6 py-4">
                         <p className="max-w-md truncate text-sm text-slate-700">{keySignal}</p>
