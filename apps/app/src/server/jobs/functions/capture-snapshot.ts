@@ -188,6 +188,21 @@ export const captureSnapshotJob = inngest.createFunction(
       });
     }
 
+    // Send capture notification (job checks if captureNotificationsEnabled)
+    await step.sendEvent("trigger-capture-notification", {
+      name: "alert/capture-complete",
+      data: {
+        snapshotId,
+        competitorId,
+        workspaceId,
+        status: scrapeResult.success
+          ? changeTracking?.changeStatus === "changed"
+            ? "changes_detected"
+            : "success"
+          : "failed",
+      },
+    });
+
     logger.debug("[capture-snapshot] Job completed", {
       jobId,
       snapshotId,

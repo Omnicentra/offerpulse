@@ -26,7 +26,7 @@ export function WelcomeEmail({ userName, dashboardUrl, logoUrl }: WelcomeEmailPr
   return (
     <Html>
       <Head />
-      <Preview>You're in — here's how to get the most out of OfferPulse</Preview>
+      <Preview>You&apos;re in — here&apos;s how to get the most out of OfferPulse</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={header}>
@@ -46,14 +46,14 @@ export function WelcomeEmail({ userName, dashboardUrl, logoUrl }: WelcomeEmailPr
               Welcome, {firstName}
             </Heading>
             <Text style={paragraph}>
-              You're all set. OfferPulse will track your competitors' offers, detect
+              You&apos;re all set. OfferPulse will track your competitors&apos; offers, detect
               changes, and suggest actions so you can stay ahead.
             </Text>
 
             <Text style={subheading}>Get the most out of OfferPulse</Text>
             <Text style={paragraph}>
               <strong>Add your first competitor</strong> — Enter their product or
-              promo page URL. We'll capture their current offer and start monitoring
+              promo page URL. We&apos;ll capture their current offer and start monitoring
               for changes. The sooner you add competitors, the sooner you get
               actionable alerts and recommendations.
             </Text>
@@ -65,7 +65,7 @@ export function WelcomeEmail({ userName, dashboardUrl, logoUrl }: WelcomeEmailPr
             </Section>
 
             <Text style={paragraph}>
-              After that, we'll run periodic snapshots, highlight what changed, and
+              After that, we&apos;ll run periodic snapshots, highlight what changed, and
               surface AI-powered recommendations. You can tune alert frequency and
               channels in your dashboard anytime.
             </Text>

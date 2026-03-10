@@ -4,8 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "turbo run dev",
+    "dev:tls": "turbo run dev:tls",
     "dev:marketing": "turbo run dev --filter=marketing",
     "dev:app": "turbo run dev --filter=app",
+    "dev:tls:marketing": "turbo run dev:tls --filter=marketing",
+    "dev:tls:app": "turbo run dev:tls --filter=app",
     "build": "turbo run build",
     "build:marketing": "turbo run build --filter=marketing",
     "build:app": "turbo run build --filter=app",

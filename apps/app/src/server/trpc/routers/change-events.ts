@@ -66,10 +66,6 @@ export const changeEventsRouter = router({
         },
       });
 
-      logger.debug("[change-events] list results", {
-        events: events.map((e) => ({ id: e.id, competitorId: e.competitorId, detectedAt: e.detectedAt, competitor: e.competitor?.name })),
-      });
-
       // Filter by workspace competitors
       events = events.filter((e) => competitorIds.includes(e.competitorId));
 

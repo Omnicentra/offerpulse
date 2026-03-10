@@ -7,6 +7,7 @@ import {
   detectChangesJob,
   generateRecommendationsJob,
   sendAlertsJob,
+  sendCaptureNotificationJob,
   generateWeeklyPulseJob,
 } from "@/src/server/jobs/functions";
 
@@ -20,6 +21,7 @@ export const { GET, POST, PUT } = serve({
     detectChangesJob,
     generateRecommendationsJob,
     sendAlertsJob,
+    sendCaptureNotificationJob,
     generateWeeklyPulseJob,
   ],
   servePath: "/api/inngest",

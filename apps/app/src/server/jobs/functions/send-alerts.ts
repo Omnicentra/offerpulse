@@ -1,9 +1,10 @@
 import { inngest } from "../client";
 import { db } from "../../db";
-import { alertSettings, changeEvents, recommendations, competitors } from "../../db/schema";
-import { eq } from "drizzle-orm";
+import { alertSettings, changeEvents, recommendations, competitors, workspaceMembers, user } from "../../db/schema";
+import { and, eq } from "drizzle-orm";
 import { sendChangeAlertEmail, sendSlackAlert } from "../../notifications";
 import { env } from "@/env";
+import { logger } from "@offerpulse/lib";
 
 export const sendAlertsJob = inngest.createFunction(
   {
@@ -22,6 +23,7 @@ export const sendAlertsJob = inngest.createFunction(
     });
 
     if (!settings) {
+      logger.error("No alert settings configured");
       return { sent: false, reason: "No alert settings configured" };
     }
 
@@ -76,42 +78,91 @@ export const sendAlertsJob = inngest.createFunction(
       confidence: changeEvent.confidence,
       recommendationTitle: recommendation?.title,
       recommendationStrategy: recommendation?.strategy,
-      dashboardUrl: `${env.NEXT_PUBLIC_DASHBOARD_APP_URL || "http://localhost:3001"}/changes/${changeEventId}`,
+      dashboardUrl: `${env.NEXT_PUBLIC_DASHBOARD_APP_URL}/changes/${changeEventId}`,
     };
 
     // Send email alert
     if (settings.emailEnabled) {
       await step.run("send-email", async () => {
-        // In production, get user email from workspace owner
-        // For now, use a placeholder
-        const recipientEmail = env.ALERT_EMAIL || "alerts@example.com";
+        
+        const [workspaceOwner] = await db
+          .select({
+            id: workspaceMembers.id,
+            workspaceId: workspaceMembers.workspaceId,
+            userId: workspaceMembers.userId,
+            email: user.email,
+          })
+          .from(workspaceMembers)
+          .innerJoin(user, eq(user.id, workspaceMembers.userId))
+          .where(
+            and(
+              eq(workspaceMembers.workspaceId, workspaceId),
+              eq(workspaceMembers.role, "owner")
+            )
+          )
+          .limit(1)
+
+        const recipientEmail = workspaceOwner?.email;
+        logger.info(`Sending email alert to ${recipientEmail}`);
+
+        if (!recipientEmail) {
+          logger.error("No workspace owner email found");
+          return { sent: false, reason: "No workspace owner email found" };
+        }
 
         const result = await sendChangeAlertEmail(recipientEmail, alertData);
 
         if (result.success) {
           results.push("email");
-          console.log("📧 Email alert sent:", result.messageId);
+          logger.info("📧 Email alert sent:", result.messageId);
         } else {
           errors.push(`Email: ${result.error}`);
-          console.error("📧 Email alert failed:", result.error);
+          logger.error("📧 Email alert failed:", result.error);
         }
       });
     }
 
-    // Send Slack alert
-    if (settings.slackEnabled && settings.slackWebhookUrl) {
-      await step.run("send-slack", async () => {
-        const result = await sendSlackAlert(settings.slackWebhookUrl!, alertData);
+    // Send Slack alert (Web API or webhook fallback)
+    if (settings.slackEnabled) {
+      const slackTarget =
+        settings.slackAccessToken && settings.slackChannel
+          ? { accessToken: settings.slackAccessToken, channel: settings.slackChannel }
+          : settings.slackWebhookUrl
+            ? { webhookUrl: settings.slackWebhookUrl }
+            : null;
 
-        if (result.success) {
-          results.push("slack");
-          console.log("💬 Slack alert sent");
-        } else {
-          errors.push(`Slack: ${result.error}`);
-          console.error("💬 Slack alert failed:", result.error);
-        }
-      });
+      if (slackTarget) {
+        await step.run("send-slack", async () => {
+          const result = await sendSlackAlert(slackTarget, alertData);
+
+          if (result.success) {
+            results.push("slack");
+            logger.info("💬 Slack alert sent");
+          } else {
+            errors.push(`Slack: ${result.error}`);
+            logger.error("💬 Slack alert failed:", result.error);
+          }
+        });
+      }
     }
+
+    const alertStatus =
+      results.length > 0
+        ? "sent"
+        : errors.length > 0
+          ? "failed"
+          : "filtered";
+
+    await step.run("update-alert-status", async () => {
+      await db
+        .update(changeEvents)
+        .set({
+          alertSentAt: new Date(),
+          alertStatus,
+          alertChannels: results.length > 0 ? results : null,
+        })
+        .where(eq(changeEvents.id, changeEventId));
+    });
 
     return {
       sent: results.length > 0,
