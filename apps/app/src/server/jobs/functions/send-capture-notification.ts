@@ -1,10 +1,11 @@
 import { inngest } from "../client";
 import { db } from "../../db";
-import { alertSettings, competitors } from "../../db/schema";
-import { eq } from "drizzle-orm";
+import { alertSettings, competitors, user, workspaceMembers } from "../../db/schema";
+import { eq, and } from "drizzle-orm";
 import { sendCaptureCompleteEmail } from "../../notifications/email";
 import { sendSlackCaptureComplete } from "../../notifications/slack";
 import { env } from "@/env";
+import { logger } from "@offerpulse/lib";
 
 export const sendCaptureNotificationJob = inngest.createFunction(
   {
@@ -36,7 +37,7 @@ export const sendCaptureNotificationJob = inngest.createFunction(
     }
 
     const dashboardUrl =
-      env.NEXT_PUBLIC_DASHBOARD_APP_URL ?? "http://localhost:3001";
+      env.NEXT_PUBLIC_DASHBOARD_APP_URL;
     const snapshotUrl = `${dashboardUrl}/snapshots/${snapshotId}`;
     const payload = {
       competitorName: competitor.name,
@@ -49,14 +50,38 @@ export const sendCaptureNotificationJob = inngest.createFunction(
     const results: string[] = [];
     const errors: string[] = [];
 
+    const [workspaceOwner] = await db
+      .select({
+        id: workspaceMembers.id,
+        workspaceId: workspaceMembers.workspaceId,
+        userId: workspaceMembers.userId,
+        email: user.email,
+      })
+      .from(workspaceMembers)
+      .innerJoin(user, eq(user.id, workspaceMembers.userId))
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, workspaceId),
+          eq(workspaceMembers.role, "owner")
+        )
+      )
+      .limit(1)
+
+    if (!workspaceOwner) {
+      logger.error("Workspace owner not found");
+      return { sent: false, reason: "Workspace owner not found" };
+    }
+
     if (settings.emailEnabled) {
       await step.run("send-email", async () => {
-        const to = env.ALERT_EMAIL ?? "alerts@example.com";
+        const to = workspaceOwner.email;
         const result = await sendCaptureCompleteEmail(to, payload);
         if (result.success) {
           results.push("email");
+          logger.info("Email capture complete notification sent");
         } else {
           errors.push(`Email: ${result.error}`);
+          logger.error("Email capture complete notification failed", { error: result.error });
         }
       });
     }
@@ -65,9 +90,9 @@ export const sendCaptureNotificationJob = inngest.createFunction(
       const slackTarget =
         settings.slackAccessToken && settings.slackChannel
           ? {
-              accessToken: settings.slackAccessToken,
-              channel: settings.slackChannel,
-            }
+            accessToken: settings.slackAccessToken,
+            channel: settings.slackChannel,
+          }
           : settings.slackWebhookUrl
             ? { webhookUrl: settings.slackWebhookUrl }
             : null;
@@ -76,8 +101,10 @@ export const sendCaptureNotificationJob = inngest.createFunction(
         await step.run("send-slack", async () => {
           const result = await sendSlackCaptureComplete(slackTarget, payload);
           if (result.success) {
+            logger.info("Slack capture complete notification sent");
             results.push("slack");
           } else {
+            logger.error("Slack capture complete notification failed", { error: result.error });
             errors.push(`Slack: ${result.error}`);
           }
         });
