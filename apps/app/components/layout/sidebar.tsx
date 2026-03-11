@@ -14,6 +14,7 @@ import {
   Settings,
   X,
 } from "lucide-react";
+import { Button } from "../ui/button";
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -32,7 +33,11 @@ const navigation = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function Sidebar({ isOpen = true, onClose, isMobile = false }: SidebarProps) {
+export function Sidebar({
+  isOpen = true,
+  onClose,
+  isMobile = false,
+}: SidebarProps) {
   const pathname = usePathname();
 
   const sidebarContent = (
@@ -41,11 +46,23 @@ export function Sidebar({ isOpen = true, onClose, isMobile = false }: SidebarPro
       <div className="flex h-16 items-center justify-between border-b border-slate-200 px-6">
         <Link href="/overview" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600">
-            <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            <svg
+              className="h-5 w-5 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
             </svg>
           </div>
-          <span className="text-lg font-semibold text-slate-900">OfferPulse</span>
+          <span className="text-lg font-semibold text-slate-900">
+            OfferPulse
+          </span>
         </Link>
         {isMobile && onClose && (
           <button
@@ -61,7 +78,8 @@ export function Sidebar({ isOpen = true, onClose, isMobile = false }: SidebarPro
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {navigation.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          const isActive =
+            pathname === item.href || pathname.startsWith(item.href + "/");
           const Icon = item.icon;
 
           return (
@@ -77,13 +95,15 @@ export function Sidebar({ isOpen = true, onClose, isMobile = false }: SidebarPro
                 "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-blue-50 text-blue-700"
-                  : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                  : "text-slate-700 hover:bg-slate-50 hover:text-slate-900",
               )}
             >
               <Icon
                 className={cn(
                   "h-5 w-5 flex-shrink-0 transition-colors",
-                  isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
+                  isActive
+                    ? "text-blue-600"
+                    : "text-slate-400 group-hover:text-slate-600",
                 )}
               />
               <span>{item.name}</span>
@@ -110,7 +130,7 @@ export function Sidebar({ isOpen = true, onClose, isMobile = false }: SidebarPro
         <aside
           className={cn(
             "fixed inset-y-0 left-0 z-50 w-64 bg-white transition-transform duration-300 lg:hidden",
-            isOpen ? "translate-x-0" : "-translate-x-full"
+            isOpen ? "translate-x-0" : "-translate-x-full",
           )}
         >
           {sidebarContent}
