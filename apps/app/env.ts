@@ -45,6 +45,8 @@ export const env = createEnv({
       .string()
       .min(1, "FIRECRAWL_API_KEY is required for competitor monitoring")
       .startsWith("fc-", "FIRECRAWL_API_KEY must start with fc-"),
+    SENTRY_DSN: z.url().optional(),
+    SENTRY_AUTH_TOKEN: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z
@@ -65,6 +67,7 @@ export const env = createEnv({
     NEXT_PUBLIC_ENVIRONMENT: z.enum(["dev", "stg", "prd"]).default("dev"),
     NEXT_PUBLIC_MARKETING_APP_URL: z.url().default("http://localhost:3000"),
     NEXT_PUBLIC_DASHBOARD_APP_URL: z.url().default("http://localhost:3001"),
+    NEXT_PUBLIC_SENTRY_DSN: z.url(),
   },
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
@@ -94,12 +97,15 @@ export const env = createEnv({
     SLACK_CLIENT_SECRET: process.env.SLACK_CLIENT_SECRET,
     SLACK_SIGNING_SECRET: process.env.SLACK_SIGNING_SECRET,
     FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY,
+    SENTRY_DSN: process.env.SENTRY_DSN,
+    SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     NEXT_PUBLIC_ENVIRONMENT: process.env.NEXT_PUBLIC_ENVIRONMENT,
     NEXT_PUBLIC_MARKETING_APP_URL: process.env.NEXT_PUBLIC_MARKETING_APP_URL,
     NEXT_PUBLIC_DASHBOARD_APP_URL: process.env.NEXT_PUBLIC_DASHBOARD_APP_URL,
+    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
   },
   skipValidation: process.env.SKIP_ENV_VALIDATION === "true",
 });

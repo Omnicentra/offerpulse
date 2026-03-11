@@ -6,6 +6,14 @@ interface LogConfig {
   label: string;
 }
 
+interface ErrorReportPayload {
+  message: string;
+  error?: Error;
+  args: unknown[];
+}
+
+type ErrorReporter = (payload: ErrorReportPayload) => void;
+
 const LOG_CONFIGS: Record<LogLevel, LogConfig> = {
   trpc: {
     emoji: "",
@@ -35,6 +43,7 @@ const LOG_CONFIGS: Record<LogLevel, LogConfig> = {
 };
 
 const RESET_COLOR = "\x1b[0m";
+let errorReporter: ErrorReporter | null = null;
 
 function stringifyArg(arg: unknown): string {
   if (arg === null) return "null";
@@ -95,6 +104,12 @@ export const logger = {
 
   error(message: string, ...args: unknown[]) {
     console.error(formatMessage("error", message, ...args));
+    const err = args.find((arg): arg is Error => arg instanceof Error);
+    errorReporter?.({
+      message,
+      error: err,
+      args,
+    });
   },
 
   /**
@@ -117,6 +132,10 @@ export const logger = {
       return () => console.timeEnd(`⏱️ ${label}`);
     }
     return () => void 0;
+  },
+
+  setErrorReporter(reporter: ErrorReporter | null) {
+    errorReporter = reporter;
   },
 };
 

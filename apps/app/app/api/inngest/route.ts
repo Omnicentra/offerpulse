@@ -1,4 +1,5 @@
 import { serve } from "inngest/next";
+import * as Sentry from "@sentry/nextjs";
 import { inngest } from "@/src/server/jobs/client";
 import {
   captureSnapshotJob,
@@ -12,7 +13,7 @@ import {
 } from "@/src/server/jobs/functions";
 
 // Create and configure the Inngest serve handler
-export const { GET, POST, PUT } = serve({
+const inngestHandlerOptions: any = {
   client: inngest,
   functions: [
     captureSnapshotJob,
@@ -25,5 +26,15 @@ export const { GET, POST, PUT } = serve({
     generateWeeklyPulseJob,
   ],
   servePath: "/api/inngest",
-  // Enable Inngest Dev Server in development
-});
+  onError: async ({ error, functionId, event, step }: any) => {
+    Sentry.withScope((scope) => {
+      scope.setTag("inngest_function", functionId ?? "unknown");
+      if (step?.id) scope.setTag("inngest_step", step.id);
+      if (event?.name) scope.setTag("inngest_event", event.name);
+      if (event?.id) scope.setContext("event", { id: event.id });
+      Sentry.captureException(error);
+    });
+  },
+};
+
+export const { GET, POST, PUT } = serve(inngestHandlerOptions);

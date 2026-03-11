@@ -1,5 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { type FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
+import * as Sentry from "@sentry/nextjs";
 import superjson from "superjson";
 import { db } from "../db";
 import { auth } from "../auth";
@@ -35,6 +36,14 @@ export type Context = Awaited<ReturnType<typeof createTRPCContext>>;
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
+    Sentry.withScope((scope) => {
+      scope.setTag("trpc_code", error.code);
+      if (shape.data.httpStatus) {
+        scope.setTag("http_status", String(shape.data.httpStatus));
+      }
+      Sentry.captureException(error);
+    });
+
     return {
       ...shape,
       data: {

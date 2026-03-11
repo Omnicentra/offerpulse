@@ -1,8 +1,21 @@
 import "./env";
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@offerpulse/lib", "@offerpulse/ui"],
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.r2.dev",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.offerpulse.com",
+      },
+    ],
+  },
   async rewrites() {
     return [
       {
@@ -19,4 +32,11 @@ const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: "omnicentra",
+  project: "offerpulse-app",
+  silent: true,
+  disableLogger: true,
+  widenClientFileUpload: true,
+  automaticVercelMonitors: true,
+});
