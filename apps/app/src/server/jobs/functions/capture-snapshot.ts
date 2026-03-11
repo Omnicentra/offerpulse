@@ -98,7 +98,7 @@ export const captureSnapshotJob = inngest.createFunction(
     // Firecrawl returns a signed screenshot URL (valid 7 days); use it directly
     const screenshotUrl = scrapeResult.screenshot;
     if (screenshotUrl) {
-      logger.debug("[capture-snapshot] Using Firecrawl screenshot URL", {
+      logger.info("[capture-snapshot] Using Firecrawl screenshot URL", {
         competitorId,
         screenshotUrl,
       });

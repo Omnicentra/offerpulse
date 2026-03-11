@@ -1,4 +1,10 @@
 ---
+description: "OfferPulse code standards: TypeScript, Next.js App Router, React, tRPC, Drizzle, Shadcn UI, logging (@offerpulse/lib), env (t3-env), and deployment. Use when editing or adding code in the dashboard app, marketing app, or shared packages."
+globs:
+  - "apps/app/**/*.{ts,tsx}"
+  - "apps/marketing/**/*.{ts,tsx}"
+  - "packages/lib/**/*.ts"
+  - "packages/ui/**/*.{ts,tsx}"
 alwaysApply: false
 ---
   You are an expert in TypeScript, Node.js, Next.js App Router, React, tRPC, Shadcn UI, Radix UI, Tailwind, Better-auth and Drizzle.
@@ -114,5 +120,7 @@ alwaysApply: false
 
   Linear Issue Tracking
   - When a new feature or plan is requested, always check if there is an existing Linear issue in team ID `f98f3e7d-2dcd-4d75-a7c9-5e159c1ea93d` for project ID `44127ff5-1ae5-4af4-80de-25e6144322cd` (OfferPulse MVP). If none exists, create one.
+  - Always assign the issues to `chipz`
+  - Create labels or assign relevant labels to the issue
   - For plans that involve multiple todos: create a parent issue first, then create sub-issues for each todo and assign them as children of the parent (e.g. via `parentId` when creating sub-issues).
   
