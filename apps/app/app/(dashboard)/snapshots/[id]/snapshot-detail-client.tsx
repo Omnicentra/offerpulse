@@ -351,10 +351,13 @@ export function SnapshotDetailClient({
           </h3>
           <div className="relative h-[420px] overflow-y-auto overflow-x-hidden rounded-xl border border-slate-200 bg-slate-100">
             <div className="relative w-full min-h-full">
-              <img
+              <Image
                 src={snapshot.screenshotUrl}
                 alt="Snapshot screenshot"
+                width={1920}
+                height={5000}
                 className="w-full min-w-full object-top object-contain rounded-xl"
+                unoptimized
               />
             </div>
           </div>
