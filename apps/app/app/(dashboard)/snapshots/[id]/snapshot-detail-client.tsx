@@ -1,7 +1,8 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import Image from "next/image";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -37,6 +38,9 @@ export function SnapshotDetailClient({
   const router = useRouter();
   const { toast } = useToast();
   const trpc = useTRPC();
+  const downloadPdfMutation = useMutation(
+    trpc.snapshots.downloadPDF.mutationOptions()
+  );
 
   const {
     data: snapshot,
@@ -100,14 +104,40 @@ export function SnapshotDetailClient({
 
   const handleDownload = () => {
     if (!snapshot) return;
-    const prevTitle = document.title;
-    document.title = `Snapshot Report - ${competitor?.name ?? "Competitor"} - ${formatTime(snapshot.capturedAt)}`;
-    window.print();
-    document.title = prevTitle;
-    toast({
-      title: "Print / PDF",
-      description: "Use your browser's print dialog to save as PDF",
-    });
+
+    downloadPdfMutation.mutate(
+      { workspaceId, id: snapshot.id },
+      {
+        onSuccess: ({ data, filename }) => {
+          const binary = atob(data);
+          const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+          const blob = new Blob([bytes], { type: "application/pdf" });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.URL.revokeObjectURL(url);
+
+          toast({
+            title: "Report downloaded",
+            description: "Your PDF report is ready.",
+          });
+        },
+        onError: (error) => {
+          toast({
+            title: "Download failed",
+            description:
+              error instanceof Error
+                ? error.message
+                : "Could not generate PDF report.",
+            variant: "destructive",
+          });
+        },
+      }
+    );
   };
 
   if (isLoading && !snapshot) {
@@ -263,9 +293,10 @@ export function SnapshotDetailClient({
               variant="outline"
               onClick={handleDownload}
               className="gap-2 no-print"
+              disabled={downloadPdfMutation.isPending}
             >
               <Download className="h-4 w-4" />
-              Download Report
+              {downloadPdfMutation.isPending ? "Generating PDF..." : "Download Report"}
             </Button>
           }
         />
