@@ -1,24 +1,24 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import posthog from "posthog-js";
-import { signIn, signUp, useSession } from "@/src/server/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { useTRPC, useTRPCClient } from "@/src/lib/trpc/client";
+import { useTRPCClient } from "@/src/lib/trpc/client";
+import { signIn, signUp, useSession } from "@/src/server/auth/client";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   PRICING_PLANS,
   formatPrice,
   type PricingPlan,
 } from "@offerpulse/lib/pricing";
 import { Check, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import posthog from "posthog-js";
+import { Suspense, useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),

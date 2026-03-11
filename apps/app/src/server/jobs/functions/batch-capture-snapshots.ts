@@ -7,7 +7,7 @@ import {
   batchScrapeCompetitors,
   extractSignalsFromFirecrawl,
 } from "../../scraping";
-import { uploadScreenshot } from "../../scraping/screenshot";
+import { logger } from "@offerpulse/lib";
 
 export const batchCaptureSnapshotsJob = inngest.createFunction(
   {
@@ -19,9 +19,11 @@ export const batchCaptureSnapshotsJob = inngest.createFunction(
   { event: "snapshot/batch-capture" },
   async ({ event, step }) => {
     const { workspaceId, frequency } = event.data;
+    logger.debug("[batch-capture] Job started", { workspaceId, frequency });
 
     // Get active competitors with matching frequency
     const activeCompetitors = await step.run("get-competitors", async () => {
+      logger.debug("[batch-capture] Fetching active competitors", { workspaceId });
       return await db.query.competitors.findMany({
         where: and(
           eq(competitors.workspaceId, workspaceId),
@@ -34,17 +36,40 @@ export const batchCaptureSnapshotsJob = inngest.createFunction(
     const toScrape = activeCompetitors.filter(
       (c) => c.monitorSettings?.frequency === frequency
     );
+    logger.debug("[batch-capture] Competitors filtered by frequency", {
+      activeCount: activeCompetitors.length,
+      toScrapeCount: toScrape.length,
+      frequency,
+      competitorIds: toScrape.map((c) => c.id),
+    });
 
     if (toScrape.length === 0) {
+      logger.debug("[batch-capture] No competitors match frequency, skipping", {
+        workspaceId,
+        frequency,
+      });
       return { scraped: 0, reason: "No competitors match frequency" };
     }
 
     // Batch scrape with Firecrawl
     const results = await step.run("batch-scrape", async () => {
+      logger.debug("[batch-capture] Starting batch scrape", {
+        count: toScrape.length,
+        urls: toScrape.map((c) => ({ id: c.id, url: c.baseUrl })),
+      });
       return await batchScrapeCompetitors(
         toScrape.map((c) => ({ url: c.baseUrl, id: c.id })),
         frequency
       );
+    });
+
+    const successCount = results.filter((r) => r.success).length;
+    const failCount = results.length - successCount;
+    logger.debug("[batch-capture] Batch scrape completed", {
+      total: results.length,
+      successCount,
+      failCount,
+      failedIds: results.filter((r) => !r.success).map((r) => r.competitorId),
     });
 
     const firecrawlTag =
@@ -53,29 +78,33 @@ export const batchCaptureSnapshotsJob = inngest.createFunction(
     // Create snapshots and trigger change detection for changed items
     const snapshotIds = await step.run("create-snapshots", async () => {
       const ids: string[] = [];
+      logger.debug("[batch-capture] Creating snapshots from results", {
+        resultCount: results.length,
+      });
 
       for (const result of results) {
         if (!result.success) {
-          console.error(
-            `[batch-capture] Failed to scrape ${result.competitorId}:`,
-            result.error
-          );
+          logger.error("[batch-capture] Failed to scrape competitor", {
+            competitorId: result.competitorId,
+            error: result.error,
+          });
           continue;
         }
 
         const competitor = toScrape.find((c) => c.id === result.competitorId);
-        if (!competitor) continue;
+        if (!competitor) {
+          logger.debug("[batch-capture] Skipping result: competitor not in toScrape", {
+            competitorId: result.competitorId,
+          });
+          continue;
+        }
 
-        let screenshotUrl: string | undefined;
-        if (result.screenshot) {
-          try {
-            const buffer = Buffer.from(result.screenshot, "base64");
-            const hostname = new URL(competitor.baseUrl).hostname.replace(/\./g, "-");
-            const filename = `${hostname}-${Date.now()}.png`;
-            screenshotUrl = await uploadScreenshot(buffer, filename);
-          } catch {
-            // Continue without screenshot
-          }
+        const screenshotUrl = result.screenshot;
+        if (screenshotUrl) {
+          logger.info("[batch-capture] Using Firecrawl screenshot URL", {
+            competitorId: competitor.id,
+            screenshotUrl,
+          });
         }
 
         const changeTracking = result.changeTracking;
@@ -97,6 +126,11 @@ export const batchCaptureSnapshotsJob = inngest.createFunction(
         });
 
         ids.push(snapshotId);
+        logger.debug("[batch-capture] Snapshot created", {
+          snapshotId,
+          competitorId: competitor.id,
+          changeStatus: changeTracking?.changeStatus,
+        });
 
         // Update competitor lastSnapshotAt
         await db
@@ -106,6 +140,10 @@ export const batchCaptureSnapshotsJob = inngest.createFunction(
 
         // Trigger change detection when Firecrawl reports content changed
         if (changeTracking?.changeStatus === "changed") {
+          logger.debug("[batch-capture] Content changed, triggering change detection", {
+            competitorId: competitor.id,
+            snapshotId,
+          });
           await inngest.send({
             name: "change/detected",
             data: {
@@ -118,9 +156,20 @@ export const batchCaptureSnapshotsJob = inngest.createFunction(
         }
       }
 
+      logger.debug("[batch-capture] Create-snapshots step finished", {
+        snapshotCount: ids.length,
+        snapshotIds: ids,
+      });
       return ids;
     });
 
+    logger.info("[batch-capture] Job completed", {
+      workspaceId,
+      frequency,
+      scraped: snapshotIds.length,
+      total: toScrape.length,
+      snapshotIds,
+    });
     return {
       scraped: snapshotIds.length,
       total: toScrape.length,

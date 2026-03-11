@@ -6,6 +6,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { inngest } from "../../jobs/client";
 import { logger } from "@offerpulse/lib";
+import { generateSnapshotPdf } from "../../pdf/generate-snapshot-pdf";
 
 export const snapshotsRouter = router({
   list: workspaceProcedure
@@ -93,6 +94,26 @@ export const snapshotsRouter = router({
       }
 
       return snapshot;
+    }),
+
+  downloadPDF: workspaceProcedure
+    .input(z.object({ workspaceId: z.string(), id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { buffer, model } = await generateSnapshotPdf({
+        db: ctx.db,
+        workspaceId: input.workspaceId,
+        snapshotId: input.id,
+      });
+
+      const sanitizedName = model.competitorName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+
+      return {
+        data: buffer.toString("base64"),
+        filename: `snapshot-${sanitizedName || "report"}-${Date.now()}.pdf`,
+      };
     }),
 
   capture: workspaceProcedure

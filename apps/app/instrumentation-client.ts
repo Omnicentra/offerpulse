@@ -1,3 +1,4 @@
+import "./sentry.client.config";
 import posthog from "posthog-js";
 
 const environment = process.env.NEXT_PUBLIC_ENVIRONMENT || "dev";

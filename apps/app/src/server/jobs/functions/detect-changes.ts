@@ -47,7 +47,7 @@ function extractFields(
   return out;
 }
 
-function analyzeFieldChanges(firecrawlJson: FirecrawlJson): FieldChange[] {
+export function analyzeFieldChanges(firecrawlJson: FirecrawlJson): FieldChange[] {
   const changes: FieldChange[] = [];
 
   const analyzeCategory = (
