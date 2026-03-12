@@ -58,7 +58,6 @@ export default function NewCompetitorPage() {
     },
   });
 
-  const url = watch("url");
   const frequency = watch("frequency");
 
   // Auto-suggest name from URL
