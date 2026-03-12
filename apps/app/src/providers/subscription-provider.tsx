@@ -51,7 +51,14 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     ? getPlanById(subscription.planId as PlanId) ?? null
     : null;
 
-  const isActive = subscription?.status === "active" || subscription?.status === "trialing";
+  const now = new Date();
+  const periodEnd = subscription?.currentPeriodEnd 
+    ? new Date(subscription.currentPeriodEnd) 
+    : null;
+  const isActive = 
+    (subscription?.status === "active" || subscription?.status === "trialing") &&
+    periodEnd !== null &&
+    periodEnd >= now;
   const isTrialing = subscription?.status === "trialing";
   const isPastDue = subscription?.status === "past_due";
 

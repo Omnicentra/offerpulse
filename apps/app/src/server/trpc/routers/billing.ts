@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { router, protectedProcedure, subscribedProcedure } from "../trpc";
 import { subscriptions, user } from "../../db/schema";
 import { env } from "@/env";
-import { getPlanById, TRIAL_PERIOD_DAYS } from "@offerpulse/lib/pricing";
+import { getPlanById } from "@offerpulse/lib/pricing";
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY);
 
@@ -73,7 +73,6 @@ export const billingRouter = router({
           payment_method_types: ["card"],
           line_items: [{ price: price.id, quantity: 1 }],
           subscription_data: {
-            trial_period_days: TRIAL_PERIOD_DAYS,
             metadata: { userId: ctx.user.id, lookupKey: input.lookupKey },
           },
           customer_email: ctx.user.email,

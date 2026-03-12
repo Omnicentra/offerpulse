@@ -184,31 +184,40 @@ export default function BillingPage() {
 
           {/* Actions */}
           <div className="mt-6 flex flex-wrap gap-3">
-            <Button variant="outline" onClick={handlePortal}>
-              Manage payment method
-            </Button>
-            {subscription.cancelAtPeriodEnd ? (
-              <Button
-                variant="outline"
-                onClick={() => reactivateMutation.mutate()}
-                disabled={reactivateMutation.isPending}
-              >
-                {reactivateMutation.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                Reactivate subscription
-              </Button>
+            {subscription.stripeSubscriptionId ? (
+              <>
+                <Button variant="outline" onClick={handlePortal}>
+                  Manage payment method
+                </Button>
+                {subscription.cancelAtPeriodEnd ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => reactivateMutation.mutate()}
+                    disabled={reactivateMutation.isPending}
+                  >
+                    {reactivateMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Reactivate subscription
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="text-red-600 hover:text-red-700"
+                    onClick={() => cancelMutation.mutate()}
+                    disabled={cancelMutation.isPending}
+                  >
+                    {cancelMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Cancel subscription
+                  </Button>
+                )}
+              </>
             ) : (
-              <Button
-                variant="outline"
-                className="text-red-600 hover:text-red-700"
-                onClick={() => cancelMutation.mutate()}
-                disabled={cancelMutation.isPending}
-              >
-                {cancelMutation.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                Cancel subscription
+              <Button onClick={() => handleUpgrade(PRICING_PLANS[0])}>
+                <CreditCard className="mr-2 h-4 w-4" />
+                Subscribe to continue after trial
               </Button>
             )}
           </div>

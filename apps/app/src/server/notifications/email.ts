@@ -32,6 +32,12 @@ export async function sendWelcomeEmail(
   options: { userName?: string | null; dashboardUrl?: string }
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
+    if (env.NODE_ENV === "development") {
+      return {
+        success: true,
+        messageId: "test-message-id",
+      };
+    }
     const dashboardUrl =
       options.dashboardUrl ?? env.NEXT_PUBLIC_DASHBOARD_APP_URL ?? "https://app.offerpulse.com";
     const logoUrl = `${env.NEXT_PUBLIC_MARKETING_APP_URL}/favicon/favicon-96x96.png`;
