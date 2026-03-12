@@ -6,8 +6,9 @@ import * as schema from "../db/schema";
 import { workspaces, workspaceMembers } from "../db/schema";
 import { nanoid } from "nanoid";
 import { env } from "@/env";
-import { sendWelcomeEmail } from "../notifications";
+import { sendWelcomeEmail, sendResetPasswordEmail } from "../notifications";
 import { customSession } from "better-auth/plugins";
+import { logger } from "@offerpulse/lib";
 
 export async function getDefaultWorkspaceId(userId: string) {
   const [membership] = await db.select().from(workspaceMembers).where(eq(workspaceMembers.userId, userId)).limit(1);
@@ -31,7 +32,15 @@ export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false, // Set to true in production with email service
+    requireEmailVerification: false,
+    sendResetPassword: async ({ user, url }) => {
+      await sendResetPasswordEmail(user.email, {
+        userName: user.name ?? null,
+        resetUrl: url,
+      }).catch((err) => {
+        logger.warn("Reset password email failed:", err);
+      });
+    },
   },
 
   socialProviders: {
@@ -73,7 +82,7 @@ export const auth = betterAuth({
               userName: user.name ?? null,
               dashboardUrl: env.NEXT_PUBLIC_DASHBOARD_APP_URL,
             }).catch((err) => {
-              console.warn("Welcome email failed:", err);
+              logger.warn("Welcome email failed:", err);
             });
           }
         },

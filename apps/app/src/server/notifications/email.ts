@@ -5,6 +5,7 @@ import { WelcomeEmail } from "./emails/welcome-email";
 import { ChangeAlertEmail } from "./emails/change-alert-email";
 import { WeeklyPulseEmail } from "./emails/weekly-pulse-email";
 import { CaptureCompleteEmail } from "./emails/capture-complete-email";
+import { ResetPasswordEmail } from "./emails/reset-password-email";
 import { logger } from "@offerpulse/lib";
 
 const resend = new Resend(env.RESEND_API_KEY);
@@ -132,6 +133,39 @@ export async function sendWeeklyPulseEmail(
     };
   } catch (error) {
     console.error("Weekly pulse email send failed:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
+ * Send password reset email
+ */
+export async function sendResetPasswordEmail(
+  to: string,
+  options: { userName?: string | null; resetUrl: string }
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    const logoUrl = `${env.NEXT_PUBLIC_MARKETING_APP_URL}/favicon/favicon-96x96.png`;
+    logger.info("Sending reset password email", { to });
+    const html = await render(
+      ResetPasswordEmail({
+        userName: options.userName ?? null,
+        resetUrl: options.resetUrl,
+        logoUrl,
+      })
+    );
+    const result = await resend.emails.send({
+      from: WELCOME_FROM,
+      to,
+      subject: "Reset your OfferPulse password",
+      html,
+    });
+    return { success: true, messageId: result.data?.id };
+  } catch (error) {
+    logger.error("Reset password email failed", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
