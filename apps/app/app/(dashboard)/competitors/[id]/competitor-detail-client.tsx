@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChangeTypeBadge } from "@/components/ui/change-type-badge";
 import { ConfidenceBadge } from "@/components/ui/confidence-badge";
@@ -66,6 +67,15 @@ export function CompetitorDetailClient({
   const trpc = useTRPC();
 
   const [activeTab, setActiveTab] = useState("overview");
+  const [editingSettings, setEditingSettings] = useState(false);
+  const [tempFrequency, setTempFrequency] = useState<"1h" | "6h" | "daily" | null>(null);
+  const [tempTracking, setTempTracking] = useState({
+    trackPromos: true,
+    trackShipping: true,
+    trackBundles: true,
+    trackCart: true,
+    trackDeliveryReturns: true,
+  });
 
   const { data: competitor = initialCompetitor } = useQuery({
     ...trpc.competitors.get.queryOptions({ workspaceId, id: competitorId }),
@@ -151,6 +161,61 @@ export function CompetitorDetailClient({
       },
     })
   );
+
+  const updateMonitorSettingsMutation = useMutation(
+    trpc.monitorSettings.upsert.mutationOptions({
+      onSuccess: () => {
+        void queryClient.invalidateQueries(
+          trpc.monitorSettings.get.queryFilter({ workspaceId, competitorId })
+        );
+        toast({
+          title: "Settings updated",
+          description: "Monitor settings have been saved.",
+        });
+        setEditingSettings(false);
+      },
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error.message ?? "Failed to update settings",
+          variant: "destructive",
+        });
+      },
+    })
+  );
+
+  const handleEditSettings = () => {
+    if (monitorSettings) {
+      setTempFrequency(monitorSettings.frequency);
+      setTempTracking({
+        trackPromos: monitorSettings.trackPromos,
+        trackShipping: monitorSettings.trackShipping,
+        trackBundles: monitorSettings.trackBundles,
+        trackCart: monitorSettings.trackCart,
+        trackDeliveryReturns: monitorSettings.trackDeliveryReturns,
+      });
+    }
+    setEditingSettings(true);
+  };
+
+  const handleSaveSettings = () => {
+    if (!tempFrequency) return;
+    updateMonitorSettingsMutation.mutate({
+      workspaceId,
+      competitorId,
+      frequency: tempFrequency,
+      trackPromos: tempTracking.trackPromos,
+      trackShipping: tempTracking.trackShipping,
+      trackBundles: tempTracking.trackBundles,
+      trackCart: tempTracking.trackCart,
+      trackDeliveryReturns: tempTracking.trackDeliveryReturns,
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSettings(false);
+    setTempFrequency(null);
+  };
 
   if (!competitor) {
     return (
@@ -506,44 +571,140 @@ export function CompetitorDetailClient({
 
         <TabsContent value="settings" className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-6">
-            <h2 className="mb-4 text-lg font-semibold text-slate-900">
-              Monitor Settings
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Monitor Settings
+              </h2>
+              {!editingSettings && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEditSettings}
+                >
+                  Edit
+                </Button>
+              )}
+            </div>
             {monitorSettings ? (
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm font-medium text-slate-700">
-                    Capture Frequency
-                  </p>
-                  <p className="mt-1 text-sm text-slate-600">
-                    {monitorSettings.frequency === "daily"
-                      ? "Daily"
-                      : monitorSettings.frequency === "6h"
-                        ? "Every 6 hours"
-                        : "Hourly"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-700">Tracking</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {monitorSettings.trackPromos && (
-                      <Badge>Promotions</Badge>
-                    )}
-                    {monitorSettings.trackShipping && (
-                      <Badge>Shipping</Badge>
-                    )}
-                    {monitorSettings.trackBundles && (
-                      <Badge>Bundles</Badge>
-                    )}
-                    {monitorSettings.trackCart && (
-                      <Badge>Cart Incentives</Badge>
-                    )}
-                    {monitorSettings.trackDeliveryReturns && (
-                      <Badge>Delivery & Returns</Badge>
-                    )}
+              editingSettings ? (
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-slate-700">
+                      Capture Frequency
+                    </label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {(["daily", "6h", "1h"] as const).map((freq) => (
+                        <label
+                          key={freq}
+                          className={`relative flex cursor-pointer flex-col rounded-xl border-2 p-4 transition-colors ${
+                            tempFrequency === freq
+                              ? "border-blue-600 bg-blue-50"
+                              : "border-slate-200 hover:border-slate-300"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="frequency"
+                            value={freq}
+                            checked={tempFrequency === freq}
+                            onChange={(e) =>
+                              setTempFrequency(e.target.value as "1h" | "6h" | "daily")
+                            }
+                            className="sr-only"
+                          />
+                          <span className="text-sm font-medium text-slate-900">
+                            {freq === "daily" ? "Daily" : freq === "6h" ? "Every 6h" : "Hourly"}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-slate-700">
+                      What to Track
+                    </label>
+                    <div className="space-y-2">
+                      {[
+                        { key: "trackPromos", label: "Promotions & Discounts" },
+                        { key: "trackShipping", label: "Shipping Offers" },
+                        { key: "trackBundles", label: "Bundle Deals" },
+                        { key: "trackCart", label: "Cart Incentives" },
+                        { key: "trackDeliveryReturns", label: "Delivery & Returns" },
+                      ].map(({ key, label }) => (
+                        <label
+                          key={key}
+                          className="flex items-center gap-3 rounded-xl border border-slate-200 p-4 hover:bg-slate-50"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={tempTracking[key as keyof typeof tempTracking]}
+                            onChange={(e) =>
+                              setTempTracking({
+                                ...tempTracking,
+                                [key]: e.target.checked,
+                              })
+                            }
+                            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+                          />
+                          <span className="text-sm font-medium text-slate-900">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={handleCancelEdit}
+                      disabled={updateMonitorSettingsMutation.isPending}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleSaveSettings}
+                      disabled={updateMonitorSettingsMutation.isPending}
+                    >
+                      {updateMonitorSettingsMutation.isPending ? "Saving..." : "Save"}
+                    </Button>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">
+                      Capture Frequency
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {monitorSettings.frequency === "daily"
+                        ? "Daily"
+                        : monitorSettings.frequency === "6h"
+                          ? "Every 6 hours"
+                          : "Hourly"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">Tracking</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {monitorSettings.trackPromos && (
+                        <Badge>Promotions</Badge>
+                      )}
+                      {monitorSettings.trackShipping && (
+                        <Badge>Shipping</Badge>
+                      )}
+                      {monitorSettings.trackBundles && (
+                        <Badge>Bundles</Badge>
+                      )}
+                      {monitorSettings.trackCart && (
+                        <Badge>Cart Incentives</Badge>
+                      )}
+                      {monitorSettings.trackDeliveryReturns && (
+                        <Badge>Delivery & Returns</Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
             ) : (
               <p className="text-sm text-slate-500">
                 No monitor settings configured

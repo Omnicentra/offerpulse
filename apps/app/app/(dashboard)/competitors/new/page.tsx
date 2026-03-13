@@ -118,6 +118,12 @@ export default function NewCompetitorPage() {
       domain,
       baseUrl,
       tags,
+      frequency: data.frequency,
+      trackPromos: data.trackPromos,
+      trackShipping: data.trackShipping,
+      trackBundles: data.trackBundles,
+      trackCart: data.trackCart,
+      trackDeliveryReturns: data.trackDeliveryReturns,
     });
   };
 

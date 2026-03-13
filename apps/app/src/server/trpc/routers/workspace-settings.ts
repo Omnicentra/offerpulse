@@ -5,6 +5,9 @@ import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { DEFAULT_OPENROUTER_MODEL, PREMIUM_OPENROUTER_MODEL } from "@offerpulse/lib/constants";
 import { logger } from "@offerpulse/lib";
+import { inngest } from "../../jobs/client";
+import { cancelScheduledCaptures } from "../../jobs/inngest-api";
+import { calculateNextRun } from "../../jobs/functions/schedule-captures-scheduled";
 
 export const workspaceSettingsRouter = router({
   get: workspaceProcedure
@@ -29,6 +32,20 @@ export const workspaceSettingsRouter = router({
             openRouterModel: DEFAULT_OPENROUTER_MODEL,
           })
           .returning();
+
+        // Bootstrap scheduler for new workspace
+        const nextRunTime = calculateNextRun(settings.defaultFrequency);
+        await inngest.send({
+          name: "workspace/schedule-captures",
+          data: { workspaceId: input.workspaceId },
+          ts: nextRunTime.getTime(),
+        });
+
+        logger.info("Bootstrapped scheduler for new workspace", {
+          workspaceId: input.workspaceId,
+          frequency: settings.defaultFrequency,
+          nextRunTime: nextRunTime.toISOString(),
+        });
       }
       logger.debug("Workspace settings", { settings });
       return settings;
@@ -79,17 +96,20 @@ export const workspaceSettingsRouter = router({
         where: eq(workspaceSettings.workspaceId, workspaceId),
       });
 
+      let updated: typeof workspaceSettings.$inferSelect | undefined;
+      const frequencyChanged =
+        data.defaultFrequency && existing?.defaultFrequency !== data.defaultFrequency;
+
       if (existing) {
-        const [updated] = await ctx.db
+        const result = await ctx.db
           .update(workspaceSettings)
           .set(setPayload)
           .where(eq(workspaceSettings.workspaceId, workspaceId))
           .returning();
-
-        return updated;
+        updated = result[0];
       } else {
         // Create new
-        const [created] = await ctx.db
+        const result = await ctx.db
           .insert(workspaceSettings)
           .values({
             id: `ws_${nanoid()}`,
@@ -103,8 +123,46 @@ export const workspaceSettingsRouter = router({
             openRouterModel: openRouterModel ?? DEFAULT_OPENROUTER_MODEL,
           })
           .returning();
-
-        return created;
+        updated = result[0];
       }
+
+      // If frequency changed, cancel old scheduled events and send new ones
+      if (frequencyChanged && data.defaultFrequency) {
+        logger.info("Workspace frequency changed, rescheduling captures", {
+          workspaceId,
+          oldFrequency: existing?.defaultFrequency,
+          newFrequency: data.defaultFrequency,
+        });
+
+        // Cancel all pending scheduled captures for this workspace
+        try {
+          await cancelScheduledCaptures({
+            workspaceId,
+            functionId: "schedule-captures-scheduled",
+            // Cancel runs started in last 7 days (Inngest max sleep duration)
+            startedAfter: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+            startedBefore: new Date(),
+          });
+        } catch (error) {
+          logger.error("Failed to cancel scheduled captures", error);
+          // Continue even if cancellation fails - new event will still be sent
+        }
+
+        // Send new scheduled event with updated frequency
+        const nextRunTime = calculateNextRun(data.defaultFrequency);
+        await inngest.send({
+          name: "workspace/schedule-captures",
+          data: { workspaceId },
+          ts: nextRunTime.getTime(), // Schedule for future execution
+        });
+
+        logger.info("Rescheduled captures for workspace", {
+          workspaceId,
+          frequency: data.defaultFrequency,
+          nextRunTime: nextRunTime.toISOString(),
+        });
+      }
+
+      return updated;
     }),
 });
