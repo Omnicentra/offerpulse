@@ -158,6 +158,22 @@ export const workspaceProcedure = subscribedProcedure.use(
 );
 
 /**
+ * Shopify integration procedure - requires Growth or Agency plan
+ */
+export const shopifyIntegrationProcedure = workspaceProcedure.use(
+  async ({ ctx, next }) => {
+    const planId = ctx.subscription.planId as string;
+    if (!["growth", "agency"].includes(planId)) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Shopify integration requires Growth or Agency plan",
+      });
+    }
+    return next({ ctx });
+  }
+);
+
+/**
  * Router and procedure exports
  */
 export const router = t.router;
