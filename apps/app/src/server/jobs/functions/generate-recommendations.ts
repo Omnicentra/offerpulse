@@ -5,6 +5,9 @@ import {
   recommendationChecklistItems,
   changeEvents,
   workspaceSettings,
+  ownStores,
+  storeProducts,
+  storePromos,
 } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -56,6 +59,43 @@ export const generateRecommendationsJob = inngest.createFunction(
       return { success: false, reason: "Change event not found" };
     }
 
+    // Build store context for personalized recommendations
+    const storeContext = await step.run("build-store-context", async () => {
+      const [store] = await db
+        .select()
+        .from(ownStores)
+        .where(eq(ownStores.workspaceId, workspaceId));
+
+      if (!store) return null;
+
+      const products = await db
+        .select()
+        .from(storeProducts)
+        .where(eq(storeProducts.ownStoreId, store.id));
+
+      const promos = await db
+        .select()
+        .from(storePromos)
+        .where(eq(storePromos.ownStoreId, store.id));
+
+      const activePromos = promos.filter((p) => p.active);
+
+      return {
+        storeName: store.storeName,
+        currency: store.currency,
+        products: products.map((p) => ({
+          name: p.name,
+          price: parseFloat(p.price),
+          compareAtPrice: p.compareAtPrice ? parseFloat(p.compareAtPrice) : undefined,
+        })),
+        promos: activePromos.map((p) => ({
+          name: p.name,
+          discountType: p.discountType,
+          discountValue: p.discountValue ? parseFloat(p.discountValue) : 0,
+        })),
+      };
+    });
+
     // Generate AI-powered recommendation
     const aiRecommendation = await step.run("generate-ai-recommendation", async () => {
       const settings = await db.query.workspaceSettings.findFirst({
@@ -89,6 +129,7 @@ export const generateRecommendationsJob = inngest.createFunction(
           beforeSignals,
           afterSignals,
           detectionResult,
+          storeContext: storeContext ?? undefined,
         },
         { model }
       );

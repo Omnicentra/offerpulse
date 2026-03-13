@@ -541,6 +541,12 @@ export function CompetitorDetailClient({
                         >
                           {rec.status}
                         </Badge>
+                        {ownStore && (storeProducts.length > 0 || ownStore.platform === "shopify") && (
+                          <Badge variant="outline" className="border-green-300 bg-green-50 text-green-800">
+                            <Check className="mr-1 h-3 w-3" />
+                            Personalized for your store
+                          </Badge>
+                        )}
                       </div>
                       <h3 className="mt-2 text-sm font-semibold text-slate-900">
                         {rec.title}
