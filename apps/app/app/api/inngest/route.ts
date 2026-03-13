@@ -10,6 +10,9 @@ import {
   sendAlertsJob,
   sendCaptureNotificationJob,
   generateWeeklyPulseJob,
+  syncShopifyStoreJob,
+  scheduleShopifySyncsJob,
+  pruneStoreHistoryJob,
 } from "@/src/server/jobs/functions";
 
 // Create and configure the Inngest serve handler
@@ -24,6 +27,9 @@ const inngestHandlerOptions: any = {
     sendAlertsJob,
     sendCaptureNotificationJob,
     generateWeeklyPulseJob,
+    syncShopifyStoreJob,
+    scheduleShopifySyncsJob,
+    pruneStoreHistoryJob,
   ],
   servePath: "/api/inngest",
   onError: async ({ error, functionId, event, step }: any) => {

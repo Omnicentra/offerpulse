@@ -34,4 +34,5 @@ export const events = {
   },
   "pulse/generate": {} as { workspaceId: string; weekOf: string },
   "workspace/schedule-captures": {} as { workspaceId: string },
+  "shopify/store.sync": {} as { workspaceId: string },
 };
