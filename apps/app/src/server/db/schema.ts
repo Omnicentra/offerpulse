@@ -448,6 +448,8 @@ export const workspaceSettings = pgTable("workspace_settings", {
   defaultTrackDeliveryReturns: boolean("default_track_delivery_returns")
     .notNull()
     .default(true),
+  /** OpenRouter model ID (e.g. openai/gpt-4.1-mini, x-ai/grok-4.1-fast, google/gemini-3.1-flash-lite-preview). Null = use app default. */
+  openRouterModel: text("open_router_model", { enum: ["openai/gpt-4.1-mini", "x-ai/grok-4.1-fast", "google/gemini-3.1-pro-preview"] }).default("openai/gpt-4.1-mini"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

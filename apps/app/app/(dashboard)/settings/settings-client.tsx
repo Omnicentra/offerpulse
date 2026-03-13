@@ -16,16 +16,38 @@ import { useTRPC } from "@/src/lib/trpc/client";
 import { resetApi } from "@/src/mock/api";
 import type { RouterOutputs } from "@/src/server/trpc/routers/root";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, CreditCard, RefreshCw, Users } from "lucide-react";
+import { ChevronRight, CreditCard, Lock, RefreshCw, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { PREMIUM_OPENROUTER_MODEL } from "@offerpulse/lib/constants";
 
 type WorkspaceSettingsRow = RouterOutputs["workspaceSettings"]["get"];
 
 interface SettingsClientProps {
   workspaceId: string;
   initialSettings: WorkspaceSettingsRow;
+  planId: string;
 }
+
+/** OpenRouter models for recommendations — labels highlight purpose */
+const OPENROUTER_MODEL_OPTIONS = [
+  { value: "openai/gpt-4.1-mini", label: "Balanced (recommended) — Cost-effective, good quality" },
+  {
+    value: "x-ai/grok-4.1-fast",
+    label: "Fast + reasoning — Quick responses with step-by-step thinking",
+  },
+  {
+    value: "google/gemini-3.1-pro-preview",
+    label: "Best quality — Highest accuracy and reasoning (Gemini Pro)",
+  },
+] as const;
 
 /** UI-friendly shape for form state */
 interface LocalSettings {
@@ -37,6 +59,7 @@ interface LocalSettings {
     cart: boolean;
     deliveryReturns: boolean;
   };
+  openRouterModel: string | null;
 }
 
 function toLocalSettings(row: WorkspaceSettingsRow): LocalSettings {
@@ -49,13 +72,19 @@ function toLocalSettings(row: WorkspaceSettingsRow): LocalSettings {
       cart: row.defaultTrackCart,
       deliveryReturns: row.defaultTrackDeliveryReturns,
     },
+    openRouterModel: row.openRouterModel ?? null,
   };
 }
+
+const BEST_QUALITY_TOOLTIP =
+  "The Best quality model (Gemini Pro) is available on Growth and Agency plans. Upgrade your plan to unlock.";
 
 export function SettingsClient({
   workspaceId,
   initialSettings,
+  planId,
 }: SettingsClientProps) {
+  const canUseBestQualityModel = planId === "growth" || planId === "agency";
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -126,6 +155,7 @@ export function SettingsClient({
       defaultTrackBundles: localSettings.defaultTrack.bundles,
       defaultTrackCart: localSettings.defaultTrack.cart,
       defaultTrackDeliveryReturns: localSettings.defaultTrack.deliveryReturns,
+      openRouterModel: localSettings.openRouterModel || null,
     });
   };
 
@@ -212,6 +242,57 @@ export function SettingsClient({
                 </label>
               ))}
             </div>
+          </div>
+
+          <div>
+            <Label className="mb-3 block">AI Model (OpenRouter)</Label>
+            <p className="mb-2 text-sm text-slate-600">
+              Choose based on your priority: balanced cost, faster responses with reasoning, or highest-quality analysis.
+            </p>
+            <Select
+              value={localSettings.openRouterModel ?? "__default__"}
+              onValueChange={(value) =>
+                setLocalSettings({
+                  ...localSettings,
+                  openRouterModel: value === "__default__" ? null : value,
+                })
+              }
+            >
+              <SelectTrigger className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20">
+                <SelectValue placeholder="Balanced (recommended)" />
+              </SelectTrigger>
+              <SelectContent>
+                {OPENROUTER_MODEL_OPTIONS.map((opt) => {
+                  const isPremium = opt.value === PREMIUM_OPENROUTER_MODEL;
+                  const disabled = isPremium && !canUseBestQualityModel;
+                  const itemValue = opt.value || "__default__";
+                  return (
+                    <SelectItem
+                      key={itemValue}
+                      value={itemValue}
+                      disabled={disabled}
+                      title={disabled ? BEST_QUALITY_TOOLTIP : undefined}
+                      className={disabled ? "opacity-60" : undefined}
+                    >
+                      {isPremium && !canUseBestQualityModel ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Lock className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                          {opt.label}
+                        </span>
+                      ) : (
+                        opt.label
+                      )}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            {!canUseBestQualityModel && (
+              <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
+                <Lock className="h-3.5 w-3.5 shrink-0" />
+                {BEST_QUALITY_TOOLTIP}
+              </p>
+            )}
           </div>
 
           <div>

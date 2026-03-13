@@ -57,6 +57,13 @@
       "when": 1772723258171,
       "tag": "0007_clear_ted_forrester",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1773400104433,
+      "tag": "0008_lucky_texas_twister",
+      "breakpoints": true
     }
   ]
 }

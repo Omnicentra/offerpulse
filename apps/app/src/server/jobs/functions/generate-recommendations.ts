@@ -1,9 +1,14 @@
 import { inngest } from "../client";
 import { db } from "../../db";
-import { recommendations, recommendationChecklistItems, changeEvents } from "../../db/schema";
+import {
+  recommendations,
+  recommendationChecklistItems,
+  changeEvents,
+  workspaceSettings,
+} from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { generateRecommendation, getAvailableProvider } from "../../ai";
+import { generateRecommendation } from "../../ai";
 import { detectChanges } from "../../change-detection";
 import type { ExtractedSignals } from "../../scraping/extractor";
 import type { ChangeDetectionResult } from "../../change-detection";
@@ -53,7 +58,10 @@ export const generateRecommendationsJob = inngest.createFunction(
 
     // Generate AI-powered recommendation
     const aiRecommendation = await step.run("generate-ai-recommendation", async () => {
-      const provider = getAvailableProvider();
+      const settings = await db.query.workspaceSettings.findFirst({
+        where: eq(workspaceSettings.workspaceId, workspaceId),
+      });
+      const model = settings?.openRouterModel ?? undefined;
 
       // Firecrawl change events have diffType 'json' and fieldsChanged
       const isFirecrawlChange = changeEvent.diffType === "json" && (changeEvent.fieldsChanged?.length ?? 0) > 0;
@@ -82,7 +90,7 @@ export const generateRecommendationsJob = inngest.createFunction(
           afterSignals,
           detectionResult,
         },
-        provider || undefined
+        { model }
       );
 
       return result;
