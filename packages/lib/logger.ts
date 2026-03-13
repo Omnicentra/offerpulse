@@ -105,11 +105,13 @@ export const logger = {
   error(message: string, ...args: unknown[]) {
     console.error(formatMessage("error", message, ...args));
     const err = args.find((arg): arg is Error => arg instanceof Error);
-    errorReporter?.({
-      message,
-      error: err,
-      args,
-    });
+    if (errorReporter) {
+      try {
+        errorReporter({ message, error: err, args });
+      } catch {
+        // Silently ignore reporter failures to avoid cascading errors
+      }
+    }
   },
 
   /**

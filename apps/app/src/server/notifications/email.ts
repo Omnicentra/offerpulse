@@ -10,6 +10,11 @@ import { logger } from "@offerpulse/lib";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
+interface ResendEmailResult {
+  data?: { id?: string } | null;
+  error?: { message?: string } | string | null;
+}
+
 export interface EmailAlertData {
   competitorName: string;
   competitorUrl: string;
@@ -48,18 +53,32 @@ export async function sendWelcomeEmail(
         logoUrl,
       })
     );
-    const result = await resend.emails.send({
+    const result: ResendEmailResult = await resend.emails.send({
       from: WELCOME_FROM,
       to,
       subject: "Welcome to OfferPulse — add your first competitor",
       html,
     });
+    if (result.error || !result.data?.id) {
+      const errorMessage =
+        typeof result.error === "string"
+          ? result.error
+          : result.error?.message ?? "Email API error";
+      logger.error("Welcome email send failed via Resend", {
+        to,
+        error: result.error,
+      });
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
     return {
       success: true,
-      messageId: result.data?.id,
+      messageId: result.data.id,
     };
   } catch (error) {
-    console.error("Welcome email send failed:", error);
+    logger.error("Welcome email send failed", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -83,18 +102,34 @@ export async function sendChangeAlertEmail(
         logoUrl,
       })
     );
-    const result = await resend.emails.send({
+    const result: ResendEmailResult = await resend.emails.send({
       from: WELCOME_FROM,
       to,
       subject: `[${data.changeType}] ${data.competitorName} changed their offer`,
       html,
     });
+    if (result.error || !result.data?.id) {
+      const errorMessage =
+        typeof result.error === "string"
+          ? result.error
+          : result.error?.message ?? "Email API error";
+      logger.error("Change alert email send failed via Resend", {
+        to,
+        changeType: data.changeType,
+        competitorName: data.competitorName,
+        error: result.error,
+      });
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
     return {
       success: true,
-      messageId: result.data?.id,
+      messageId: result.data.id,
     };
   } catch (error) {
-    console.error("Email send failed:", error);
+    logger.error("Change alert email send failed", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -127,18 +162,33 @@ export async function sendWeeklyPulseEmail(
         logoUrl,
       })
     );
-    const result = await resend.emails.send({
+    const result: ResendEmailResult = await resend.emails.send({
       from: WELCOME_FROM,
       to,
       subject: `📊 Your Weekly Pulse - ${data.totalChanges} changes detected`,
       html,
     });
+    if (result.error || !result.data?.id) {
+      const errorMessage =
+        typeof result.error === "string"
+          ? result.error
+          : result.error?.message ?? "Email API error";
+      logger.error("Weekly pulse email send failed via Resend", {
+        to,
+        totalChanges: data.totalChanges,
+        error: result.error,
+      });
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
     return {
       success: true,
-      messageId: result.data?.id,
+      messageId: result.data.id,
     };
   } catch (error) {
-    console.error("Weekly pulse email send failed:", error);
+    logger.error("Weekly pulse email send failed", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -163,13 +213,27 @@ export async function sendResetPasswordEmail(
         logoUrl,
       })
     );
-    const result = await resend.emails.send({
+    const result: ResendEmailResult = await resend.emails.send({
       from: WELCOME_FROM,
       to,
       subject: "Reset your OfferPulse password",
       html,
     });
-    return { success: true, messageId: result.data?.id };
+    if (result.error || !result.data?.id) {
+      const errorMessage =
+        typeof result.error === "string"
+          ? result.error
+          : result.error?.message ?? "Email API error";
+      logger.error("Reset password email failed via Resend", {
+        to,
+        error: result.error,
+      });
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+    return { success: true, messageId: result.data.id };
   } catch (error) {
     logger.error("Reset password email failed", error);
     return {
@@ -217,15 +281,31 @@ export async function sendCaptureCompleteEmail(
         logoUrl,
       })
     );
-    const result = await resend.emails.send({
+    const result: ResendEmailResult = await resend.emails.send({
       from: WELCOME_FROM,
       to,
       subject: `${statusEmoji} Capture ${statusLabel}: ${data.competitorName}`,
       html,
     });
-    return { success: true, messageId: result.data?.id };
+    if (result.error || !result.data?.id) {
+      const errorMessage =
+        typeof result.error === "string"
+          ? result.error
+          : result.error?.message ?? "Email API error";
+      logger.error("Capture complete email failed via Resend", {
+        to,
+        status: data.status,
+        competitorName: data.competitorName,
+        error: result.error,
+      });
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+    return { success: true, messageId: result.data.id };
   } catch (error) {
-    console.error("Capture complete email failed:", error);
+    logger.error("Capture complete email failed", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

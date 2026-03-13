@@ -36,7 +36,5 @@ export default withSentryConfig(nextConfig, {
   org: "omnicentra",
   project: "offerpulse-app",
   silent: true,
-  disableLogger: true,
   widenClientFileUpload: true,
-  automaticVercelMonitors: true,
 });

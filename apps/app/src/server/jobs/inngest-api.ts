@@ -17,9 +17,24 @@ interface InngestCancellationResponse {
   if?: string;
 }
 
+/** Safe for CEL string interpolation: alphanumeric, underscore, hyphen only; 1–64 chars. */
+const CEL_SAFE_WORKSPACE_ID = /^[a-zA-Z0-9_-]{1,64}$/;
+
+function validateWorkspaceIdForCel(workspaceId: string): string {
+  if (typeof workspaceId !== "string" || workspaceId.length === 0) {
+    throw new Error("cancelScheduledCaptures: workspaceId is required");
+  }
+  if (!CEL_SAFE_WORKSPACE_ID.test(workspaceId)) {
+    throw new Error(
+      "cancelScheduledCaptures: workspaceId must contain only letters, digits, underscore, and hyphen (1–64 chars)"
+    );
+  }
+  return workspaceId;
+}
+
 /**
  * Cancel pending scheduled capture jobs for a workspace using Inngest's bulk cancellation API.
- * 
+ *
  * @see https://www.inngest.com/docs/guides/cancel-running-functions#bulk-cancel-via-the-rest-api
  * @see https://api-docs.inngest.com/docs/inngest-api/8gh90chdy0gw4-create-a-cancellation
  */
@@ -29,6 +44,8 @@ export async function cancelScheduledCaptures({
   startedAfter,
   startedBefore,
 }: CancelScheduledCapturesOptions): Promise<InngestCancellationResponse | null> {
+  const safeWorkspaceId = validateWorkspaceIdForCel(workspaceId);
+
   if (!env.INNGEST_SIGNING_KEY) {
     logger.warn("INNGEST_SIGNING_KEY not configured, skipping bulk cancellation");
     return null;
@@ -36,7 +53,7 @@ export async function cancelScheduledCaptures({
 
   const appId = "offerpulse";
   const fullFunctionId = `${appId}-${functionId}`;
-  
+
   // Default to last 7 days if not specified (Inngest max sleep duration)
   const defaultStartedAfter = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const defaultStartedBefore = new Date();
@@ -46,11 +63,11 @@ export async function cancelScheduledCaptures({
     function_id: fullFunctionId,
     started_after: (startedAfter ?? defaultStartedAfter).toISOString(),
     started_before: (startedBefore ?? defaultStartedBefore).toISOString(),
-    if: `event.data.workspaceId == "${workspaceId}"`,
+    if: `event.data.workspaceId == "${safeWorkspaceId}"`,
   };
 
   logger.debug("Calling Inngest bulk cancellation API", {
-    workspaceId,
+    workspaceId: safeWorkspaceId,
     functionId: fullFunctionId,
     ...requestBody,
   });
@@ -80,7 +97,7 @@ export async function cancelScheduledCaptures({
     const result = (await response.json()) as InngestCancellationResponse;
     
     logger.info("Successfully cancelled scheduled captures", {
-      workspaceId,
+      workspaceId: safeWorkspaceId,
       cancellationId: result.id,
       functionId: result.function_id,
     });

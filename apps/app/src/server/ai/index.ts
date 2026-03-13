@@ -34,6 +34,9 @@ async function callOpenRouter(options: {
     model,
   });
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -50,7 +53,10 @@ async function callOpenRouter(options: {
       temperature: 0.3,
       max_tokens: 1000,
     }),
+    signal: controller.signal,
   });
+
+  clearTimeout(timeoutId);
 
   if (!response.ok) {
     const errorBody = await response.text();

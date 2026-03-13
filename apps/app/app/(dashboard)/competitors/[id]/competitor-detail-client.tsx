@@ -663,7 +663,7 @@ export function CompetitorDetailClient({
                     </Button>
                     <Button
                       onClick={handleSaveSettings}
-                      disabled={updateMonitorSettingsMutation.isPending}
+                      disabled={updateMonitorSettingsMutation.isPending || !tempFrequency}
                     >
                       {updateMonitorSettingsMutation.isPending ? "Saving..." : "Save"}
                     </Button>
