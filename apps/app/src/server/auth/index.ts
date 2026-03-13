@@ -11,6 +11,8 @@ import { customSession } from "better-auth/plugins";
 import { logger, TRIAL_PERIOD_DAYS } from "@offerpulse/lib";
 import Stripe from "stripe";
 
+const stripe = new Stripe(env.STRIPE_SECRET_KEY);
+
 export async function getDefaultWorkspaceId(userId: string) {
   const [membership] = await db.select().from(workspaceMembers).where(eq(workspaceMembers.userId, userId)).limit(1);
   if (!membership) {
@@ -78,53 +80,49 @@ export const auth = betterAuth({
           });
 
           // Create Stripe subscription with trial (fire-and-forget; do not block signup)
-          (async () => {
-            try {
-              const stripe = new Stripe(env.STRIPE_SECRET_KEY);
-              logger.debug("Creating Stripe trial subscription for new user", { userId: user.id });
+          try {
+            logger.debug("Creating Stripe trial subscription for new user", { userId: user.id });
 
-              const prices = await stripe.prices.list({
-                lookup_keys: ["starter_monthly"],
-                limit: 1,
-              });
+            const prices = await stripe.prices.list({
+              lookup_keys: ["starter_monthly"],
+              limit: 1,
+            });
 
-              const price = prices.data[0];
-              if (!price) {
-                logger.error("Starter monthly price not found in Stripe", { userId: user.id });
-                return;
-              }
-
-              const customer = await stripe.customers.create({
-                email: user.email,
-                name: user.name ?? undefined,
-                metadata: { userId: user.id },
-              });
-
-              const subscription = await stripe.subscriptions.create({
-                customer: customer.id,
-                items: [{ price: price.id }],
-                trial_period_days: TRIAL_PERIOD_DAYS,
-                metadata: { userId: user.id, lookupKey: "starter_monthly" },
-                payment_settings: {
-                  save_default_payment_method: 'on_subscription',
-                },
-                trial_settings: {
-                  end_behavior: {
-                    missing_payment_method: 'cancel',
-                  },
-                },
-              });
-
-              logger.info("Stripe trial subscription created", {
-                userId: user.id,
-                subscriptionId: subscription.id,
-                customerId: customer.id,
-              });
-            } catch (error) {
-              logger.error("Failed to create Stripe trial subscription", error, { userId: user.id });
+            const price = prices.data[0];
+            if (!price) {
+              logger.error("Starter monthly price not found in Stripe", { userId: user.id });
+              return;
             }
-          })();
 
+            const customer = await stripe.customers.create({
+              email: user.email,
+              name: user.name ?? undefined,
+              metadata: { userId: user.id },
+            });
+
+            const subscription = await stripe.subscriptions.create({
+              customer: customer.id,
+              items: [{ price: price.id }],
+              trial_period_days: TRIAL_PERIOD_DAYS,
+              metadata: { userId: user.id, lookupKey: "starter_monthly" },
+              payment_settings: {
+                save_default_payment_method: 'on_subscription',
+              },
+              trial_settings: {
+                end_behavior: {
+                  missing_payment_method: 'cancel',
+                },
+              },
+            });
+
+            logger.info("Stripe trial subscription created", {
+              userId: user.id,
+              subscriptionId: subscription.id,
+              customerId: customer.id,
+            });
+          } catch (error) {
+            logger.error("Failed to create Stripe trial subscription", error, { userId: user.id });
+          }
           // Send welcome email (fire-and-forget; do not block signup)
           if (user.email) {
             sendWelcomeEmail(user.email, {
@@ -139,7 +137,7 @@ export const auth = betterAuth({
     },
   },
   plugins: [
-    customSession(async ({user, session}) => {
+    customSession(async ({ user, session }) => {
       const workspaceId = await getDefaultWorkspaceId(user.id);
       return {
         ...session,

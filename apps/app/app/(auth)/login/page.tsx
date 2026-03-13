@@ -91,12 +91,6 @@ function LoginForm() {
         });
       }
       posthog.capture("signin_completed", {});
-
-      toast({
-        title: "Welcome back!",
-        description: "You've successfully logged in.",
-      });
-
       router.push("/overview");
     } catch (error) {
       // Track unexpected error
