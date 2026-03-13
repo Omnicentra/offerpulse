@@ -64,6 +64,20 @@
       "when": 1773400104433,
       "tag": "0008_lucky_texas_twister",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1773420145697,
+      "tag": "0009_violet_dazzler",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1773420461083,
+      "tag": "0010_youthful_liz_osborn",
+      "breakpoints": true
     }
   ]
 }

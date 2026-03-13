@@ -48,6 +48,11 @@ export const env = createEnv({
       .string()
       .min(1, "FIRECRAWL_API_KEY is required for competitor monitoring")
       .startsWith("fc-", "FIRECRAWL_API_KEY must start with fc-"),
+    SHOPIFY_API_KEY: z.string().min(1).optional(),
+    SHOPIFY_API_SECRET: z.string().min(1).optional(),
+    SHOPIFY_SCOPES: z
+      .string()
+      .default("read_products,read_inventory,read_price_rules,read_discounts"),
     SENTRY_DSN: z.url().optional(),
     SENTRY_AUTH_TOKEN: z.string().optional(),
   },
@@ -100,6 +105,9 @@ export const env = createEnv({
     SLACK_CLIENT_SECRET: process.env.SLACK_CLIENT_SECRET,
     SLACK_SIGNING_SECRET: process.env.SLACK_SIGNING_SECRET,
     FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY,
+    SHOPIFY_API_KEY: process.env.SHOPIFY_API_KEY,
+    SHOPIFY_API_SECRET: process.env.SHOPIFY_API_SECRET,
+    SHOPIFY_SCOPES: process.env.SHOPIFY_SCOPES,
     SENTRY_DSN: process.env.SENTRY_DSN,
     SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
