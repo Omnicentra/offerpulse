@@ -13,6 +13,12 @@ const createCompetitorSchema = z.object({
   platformGuess: z.enum(["shopify", "other"]).default("other"),
   tags: z.array(z.string()).default([]),
   isActive: z.boolean().default(true),
+  frequency: z.enum(["1h", "6h", "daily"]).optional(),
+  trackPromos: z.boolean().optional(),
+  trackShipping: z.boolean().optional(),
+  trackBundles: z.boolean().optional(),
+  trackCart: z.boolean().optional(),
+  trackDeliveryReturns: z.boolean().optional(),
 });
 
 const updateCompetitorSchema = z.object({
@@ -67,7 +73,16 @@ export const competitorsRouter = router({
   create: workspaceProcedure
     .input(createCompetitorSchema)
     .mutation(async ({ ctx, input }) => {
-      const { workspaceId, ...data } = input;
+      const {
+        workspaceId,
+        frequency,
+        trackPromos,
+        trackShipping,
+        trackBundles,
+        trackCart,
+        trackDeliveryReturns,
+        ...competitorData
+      } = input;
 
       const id = `comp_${nanoid()}`;
 
@@ -76,20 +91,20 @@ export const competitorsRouter = router({
         .values({
           id,
           workspaceId,
-          ...data,
+          ...competitorData,
         })
         .returning();
 
-      // Create default monitor settings
+      // Create monitor settings with provided values or defaults
       await ctx.db.insert(monitorSettings).values({
         id: `ms_${nanoid()}`,
         competitorId: id,
-        frequency: "daily",
-        trackPromos: true,
-        trackShipping: true,
-        trackBundles: true,
-        trackCart: true,
-        trackDeliveryReturns: true,
+        frequency: frequency ?? "daily",
+        trackPromos: trackPromos ?? true,
+        trackShipping: trackShipping ?? true,
+        trackBundles: trackBundles ?? true,
+        trackCart: trackCart ?? true,
+        trackDeliveryReturns: trackDeliveryReturns ?? true,
       });
 
       return newCompetitor;

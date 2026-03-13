@@ -10,7 +10,6 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
     "type-check": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/server/db/migrate.ts",
@@ -18,6 +17,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "pnpm with-env tsx src/server/db/seed.ts",
+    "db:drop": "drizzle-kit drop",
     "with-env": "dotenv -e .env.local --"
   },
   "packageManager": "pnpm@9.0.0",

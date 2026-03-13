@@ -33,6 +33,7 @@ export default async function SettingsPage() {
     <SettingsClient
       workspaceId={workspaceId}
       initialSettings={initialSettings}
+      planId={subscription.planId}
     />
   );
 }

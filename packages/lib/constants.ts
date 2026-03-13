@@ -95,3 +95,8 @@ export const PLAN_LABELS: Record<PlanType, string> = {
   [PlanType.TRIAL]: "Trial",
   [PlanType.PRO]: "Pro",
 };
+
+/** Default OpenRouter model when workspace has no override. Balanced: gpt-4.1-mini; Fast+reasoning: grok-4.1-fast; Best quality: gemini-3.1-pro-preview */
+export const DEFAULT_OPENROUTER_MODEL = "openai/gpt-4.1-mini";
+/** OpenRouter model ID restricted to Growth/Agency plans (Best quality). */
+export const PREMIUM_OPENROUTER_MODEL = "google/gemini-3.1-pro-preview";

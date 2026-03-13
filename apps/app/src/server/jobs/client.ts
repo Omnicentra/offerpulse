@@ -33,4 +33,5 @@ export const events = {
     workspaceId: string;
   },
   "pulse/generate": {} as { workspaceId: string; weekOf: string },
+  "workspace/schedule-captures": {} as { workspaceId: string },
 };

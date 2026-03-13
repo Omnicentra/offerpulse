@@ -13,6 +13,7 @@ const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
 
 const RELEVANT_EVENTS = new Set([
   "checkout.session.completed",
+  "customer.subscription.created",
   "customer.subscription.updated",
   "customer.subscription.deleted",
   "invoice.payment_succeeded",
@@ -60,6 +61,31 @@ export async function POST(req: Request) {
 
   try {
     switch (event.type) {
+      case "customer.subscription.created": {
+        const sub = event.data.object as Stripe.Subscription;
+        const userId = sub.metadata?.userId;
+
+        if (!userId) {
+          logger.warn("customer.subscription.created skipped: no userId in metadata", {
+            subId: sub.id,
+            metadata: sub.metadata,
+          });
+          break;
+        }
+
+        logger.debug("customer.subscription.created upserting subscription", {
+          userId,
+          subId: sub.id,
+          status: sub.status,
+        });
+        await upsertSubscription(userId, sub);
+        logger.info("customer.subscription.created processed", {
+          userId,
+          subscriptionId: sub.id,
+        });
+        break;
+      }
+
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         logger.debug("checkout.session.completed", {

@@ -9,6 +9,8 @@ import {
   Img,
   Link,
   Preview,
+  Row,
+  Column,
   Section,
   Text,
 } from "@react-email/components";
@@ -23,12 +25,31 @@ export function WelcomeEmail({ userName, dashboardUrl, logoUrl }: WelcomeEmailPr
   const firstName = userName?.split(/\s+/)[0] ?? "there";
   const addCompetitorUrl = `${dashboardUrl}/competitors?onboarding=1`;
 
+  const steps = [
+    {
+      number: "1",
+      title: "Add a competitor",
+      description: "Paste any competitor product or promo page URL. We capture their current offer instantly.",
+    },
+    {
+      number: "2",
+      title: "We monitor changes",
+      description: "OfferPulse runs periodic snapshots and detects pricing, promotion, and copy changes automatically.",
+    },
+    {
+      number: "3",
+      title: "Get AI recommendations",
+      description: "Receive actionable suggestions on how to respond to every change — straight to your inbox or Slack.",
+    },
+  ];
+
   return (
     <Html>
       <Head />
-      <Preview>You&apos;re in — here&apos;s how to get the most out of OfferPulse</Preview>
+      <Preview>Welcome to OfferPulse, {firstName} — get started in 3 easy steps</Preview>
       <Body style={main}>
         <Container style={container}>
+          {/* Header */}
           <Section style={header}>
             <Img
               src={logoUrl}
@@ -41,22 +62,33 @@ export function WelcomeEmail({ userName, dashboardUrl, logoUrl }: WelcomeEmailPr
             <Text style={tagline}>Competitor intelligence that moves the needle</Text>
           </Section>
 
+          {/* Main content */}
           <Section style={content}>
             <Heading as="h1" style={heading}>
-              Welcome, {firstName}
+              Welcome to OfferPulse, {firstName}!
             </Heading>
             <Text style={paragraph}>
-              You&apos;re all set. OfferPulse will track your competitors&apos; offers, detect
-              changes, and suggest actions so you can stay ahead.
+              You&apos;re now part of a community of e-commerce sellers who stay one step ahead of
+              the competition. OfferPulse tracks your competitors&apos; offers, detects changes, and
+              surfaces AI-powered recommendations so you can act fast.
             </Text>
 
-            <Text style={subheading}>Get the most out of OfferPulse</Text>
-            <Text style={paragraph}>
-              <strong>Add your first competitor</strong> — Enter their product or
-              promo page URL. We&apos;ll capture their current offer and start monitoring
-              for changes. The sooner you add competitors, the sooner you get
-              actionable alerts and recommendations.
-            </Text>
+            {/* Get started steps card */}
+            <Section style={stepsCard}>
+              <Text style={stepsTitle}>Get started in 3 easy steps:</Text>
+
+              {steps.map((step) => (
+                <Row key={step.number} style={stepRow}>
+                  <Column style={stepNumberCol}>
+                    <div style={stepBadge}>{step.number}</div>
+                  </Column>
+                  <Column style={stepContentCol}>
+                    <Text style={stepTitle}>{step.title}</Text>
+                    <Text style={stepDescription}>{step.description}</Text>
+                  </Column>
+                </Row>
+              ))}
+            </Section>
 
             <Section style={buttonWrapper}>
               <Button style={button} href={addCompetitorUrl}>
@@ -64,15 +96,15 @@ export function WelcomeEmail({ userName, dashboardUrl, logoUrl }: WelcomeEmailPr
               </Button>
             </Section>
 
-            <Text style={paragraph}>
-              After that, we&apos;ll run periodic snapshots, highlight what changed, and
-              surface AI-powered recommendations. You can tune alert frequency and
-              channels in your dashboard anytime.
+            <Text style={helpText}>
+              You can tune alert frequency and notification channels (email, Slack) in your
+              dashboard settings at any time.
             </Text>
           </Section>
 
           <Hr style={hr} />
 
+          {/* Footer */}
           <Section style={footer}>
             <Text style={footerText}>
               Need help? Reply to this email or visit{" "}
@@ -91,86 +123,144 @@ export function WelcomeEmail({ userName, dashboardUrl, logoUrl }: WelcomeEmailPr
 export default WelcomeEmail;
 
 const main = {
-  backgroundColor: "#f8fafc",
+  backgroundColor: "#f1f5f9",
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Ubuntu, sans-serif',
 };
 
 const container = {
   backgroundColor: "#ffffff",
-  margin: "0 auto",
+  margin: "32px auto",
   padding: "0",
-  marginBottom: "64px",
   maxWidth: "600px",
-  borderRadius: "8px",
+  borderRadius: "12px",
   overflow: "hidden" as const,
-  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
+  boxShadow: "0 4px 24px rgba(0, 0, 0, 0.08)",
 };
 
 const header = {
-  padding: "32px 40px 24px",
-  background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+  padding: "36px 40px 28px",
+  background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)",
   textAlign: "center" as const,
 };
 
 const logoImg = {
   display: "block",
-  margin: "0 auto 8px",
+  margin: "0 auto 10px",
 };
 
 const logo = {
-  fontSize: "24px",
-  fontWeight: "700",
+  fontSize: "26px",
+  fontWeight: "800",
   color: "#f8fafc",
-  margin: "0 0 4px",
-  letterSpacing: "-0.02em",
+  margin: "0 0 6px",
+  letterSpacing: "-0.03em",
 };
 
 const tagline = {
-  fontSize: "14px",
+  fontSize: "13px",
   color: "#94a3b8",
   margin: "0",
+  letterSpacing: "0.01em",
 };
 
 const content = {
-  padding: "32px 40px 40px",
+  padding: "36px 40px 32px",
 };
 
 const heading = {
-  fontSize: "24px",
+  fontSize: "26px",
   lineHeight: "1.3",
-  fontWeight: "600",
+  fontWeight: "700",
   color: "#0f172a",
-  margin: "0 0 16px",
-};
-
-const subheading = {
-  fontSize: "16px",
-  fontWeight: "600",
-  color: "#0f172a",
-  margin: "24px 0 8px",
+  margin: "0 0 14px",
 };
 
 const paragraph = {
-  fontSize: "16px",
-  lineHeight: "1.6",
+  fontSize: "15px",
+  lineHeight: "1.65",
   color: "#475569",
-  margin: "0 0 16px",
+  margin: "0 0 28px",
+};
+
+const stepsCard = {
+  backgroundColor: "#f8fafc",
+  border: "1px solid #e2e8f0",
+  borderRadius: "10px",
+  padding: "24px 24px 8px",
+  margin: "0 0 28px",
+};
+
+const stepsTitle = {
+  fontSize: "15px",
+  fontWeight: "700",
+  color: "#0f172a",
+  margin: "0 0 20px",
+};
+
+const stepRow = {
+  marginBottom: "18px",
+};
+
+const stepNumberCol = {
+  width: "36px",
+  verticalAlign: "top" as const,
+  paddingRight: "14px",
+};
+
+const stepBadge = {
+  width: "28px",
+  height: "28px",
+  borderRadius: "50%",
+  backgroundColor: "#0f172a",
+  color: "#ffffff",
+  fontSize: "13px",
+  fontWeight: "700",
+  textAlign: "center" as const,
+  lineHeight: "28px",
+  display: "inline-block",
+};
+
+const stepContentCol = {
+  verticalAlign: "top" as const,
+};
+
+const stepTitle = {
+  fontSize: "14px",
+  fontWeight: "600",
+  color: "#0f172a",
+  margin: "0 0 3px",
+};
+
+const stepDescription = {
+  fontSize: "13px",
+  lineHeight: "1.55",
+  color: "#64748b",
+  margin: "0 0 0",
 };
 
 const buttonWrapper = {
   textAlign: "center" as const,
-  margin: "28px 0",
+  margin: "0 0 24px",
 };
 
 const button = {
   backgroundColor: "#0f172a",
   color: "#ffffff",
-  padding: "14px 28px",
-  borderRadius: "6px",
+  padding: "14px 32px",
+  borderRadius: "8px",
   fontWeight: "600",
-  fontSize: "16px",
+  fontSize: "15px",
   textDecoration: "none",
+  display: "inline-block",
+};
+
+const helpText = {
+  fontSize: "13px",
+  lineHeight: "1.6",
+  color: "#94a3b8",
+  margin: "0",
+  textAlign: "center" as const,
 };
 
 const hr = {
@@ -184,7 +274,7 @@ const footer = {
 };
 
 const footerText = {
-  fontSize: "14px",
+  fontSize: "13px",
   lineHeight: "1.6",
   color: "#64748b",
   margin: "0 0 8px",
@@ -193,7 +283,7 @@ const footerText = {
 const footerNote = {
   fontSize: "12px",
   color: "#94a3b8",
-  margin: "16px 0 0",
+  margin: "8px 0 0",
 };
 
 const link = {

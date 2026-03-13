@@ -58,7 +58,6 @@ export default function NewCompetitorPage() {
     },
   });
 
-  const url = watch("url");
   const frequency = watch("frequency");
 
   // Auto-suggest name from URL
@@ -119,6 +118,12 @@ export default function NewCompetitorPage() {
       domain,
       baseUrl,
       tags,
+      frequency: data.frequency,
+      trackPromos: data.trackPromos,
+      trackShipping: data.trackShipping,
+      trackBundles: data.trackBundles,
+      trackCart: data.trackCart,
+      trackDeliveryReturns: data.trackDeliveryReturns,
     });
   };
 

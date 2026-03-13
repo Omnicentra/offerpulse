@@ -1,5 +1,6 @@
 import "./sentry.client.config";
 import posthog from "posthog-js";
+import * as Sentry from "@sentry/nextjs";
 
 const environment = process.env.NEXT_PUBLIC_ENVIRONMENT || "dev";
 const isProduction = environment === "prd";
@@ -26,3 +27,7 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
 // IMPORTANT: Never combine this approach with other client-side PostHog initialization approaches,
 // especially components like a PostHogProvider. instrumentation-client.ts is the correct solution
 // for initializing client-side PostHog in Next.js 15.3+ apps.
+
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+
+

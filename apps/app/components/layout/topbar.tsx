@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
-import { Search, Plus, Menu, LogOut, User as UserIcon, ChevronDown } from "lucide-react";
+import Image from "next/image";
+import { Search, Plus, Menu, LogOut, User as UserIcon, ChevronDown, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,6 +17,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { signOut, useSession } from "@/src/server/auth/client";
 import { useWorkspace } from "@/src/providers/workspace-provider";
+import { useSubscription } from "@/src/providers/subscription-provider";
 
 interface TopbarProps {
   onMenuClick?: () => void;
@@ -30,6 +32,11 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
   const { data: session } = useSession();
   const user = session?.user ?? null;
   const { workspace, workspaces, setWorkspaceId, isLoading: isLoadingWorkspace } = useWorkspace();
+  const { subscription, isTrialing } = useSubscription();
+
+  const daysRemaining = isTrialing && subscription?.trialEnd
+    ? Math.max(0, Math.ceil((new Date(subscription.trialEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 0;
 
   const handleLogout = async () => {
     await signOut();
@@ -107,6 +114,17 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
           </Dialog>
         </div>
 
+        {/* Trial indicator */}
+        {isTrialing && daysRemaining > 0 && (
+          <button
+            onClick={() => router.push("/settings/billing")}
+            className="hidden items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-900 transition-colors hover:bg-amber-100 lg:flex"
+          >
+            <Clock className="h-3.5 w-3.5" />
+            {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} left in trial
+          </button>
+        )}
+
         {/* Search */}
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -136,10 +154,22 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
         <Dialog open={showUserMenu} onOpenChange={setShowUserMenu}>
           <DialogTrigger asChild>
             <button
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-sm font-semibold text-white ring-2 ring-white hover:ring-slate-200"
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-sm font-semibold text-white ring-2 ring-white hover:ring-slate-200"
               aria-label="User menu"
             >
-              {user?.name?.charAt(0).toUpperCase() || "U"}
+              {user?.image ? (
+                <Image
+                  src={user.image}
+                  alt=""
+                  width={40}
+                  height={40}
+                  className="h-full w-full object-cover object-center"
+                  referrerPolicy="no-referrer"
+                  unoptimized
+                />
+              ) : (
+                user?.name?.charAt(0).toUpperCase() || "U"
+              )}
             </button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[320px]">
@@ -148,8 +178,20 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-lg font-semibold text-white">
-                  {user?.name?.charAt(0).toUpperCase() || "U"}
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-lg font-semibold text-white">
+                  {user?.image ? (
+                    <Image
+                      src={user.image}
+                      alt=""
+                      width={48}
+                      height={48}
+                      className="h-full w-full object-cover object-center"
+                      referrerPolicy="no-referrer"
+                      unoptimized
+                    />
+                  ) : (
+                    user?.name?.charAt(0).toUpperCase() || "U"
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-slate-900 truncate">{user?.name || "Demo User"}</p>

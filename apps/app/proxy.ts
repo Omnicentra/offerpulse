@@ -6,7 +6,8 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes (auth pages and onboarding)
-  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/signup");
+  const AUTH_PAGES = ["/login", "/signup", "/reset-password", "/forgot-password"];
+  const isAuthPage = AUTH_PAGES.some((route) => pathname.startsWith(route));
   const isOnboardingPage = pathname.startsWith("/onboarding");
   const isApiRoute = pathname.startsWith("/api");
 

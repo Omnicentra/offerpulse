@@ -1,0 +1,1 @@
+ALTER TABLE "workspace_settings" ADD COLUMN "open_router_model" text DEFAULT 'openai/gpt-4.1-mini';

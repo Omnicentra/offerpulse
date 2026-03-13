@@ -1,16 +1,15 @@
-import OpenAI from "openai";
-import Anthropic from "@anthropic-ai/sdk";
+import { env } from "@/env";
+import { logger } from "@offerpulse/lib";
 import { ChangeDetectionResult } from "../change-detection";
-
-export type AIProvider = "openai" | "anthropic";
+import { DEFAULT_OPENROUTER_MODEL } from "@offerpulse/lib/constants";
 
 export interface RecommendationInput {
   competitorName: string;
   competitorUrl: string;
   changeType: string;
   changeSummary: string;
-  beforeSignals: any;
-  afterSignals: any;
+  beforeSignals: unknown;
+  afterSignals: unknown;
   detectionResult: ChangeDetectionResult;
 }
 
@@ -23,36 +22,69 @@ export interface RecommendationOutput {
   actionSteps: string[];
 }
 
-// Initialize AI clients
-let openaiClient: OpenAI | null = null;
-let anthropicClient: Anthropic | null = null;
+async function callOpenRouter(options: {
+  systemPrompt: string;
+  userPrompt: string;
+  model?: string;
+}): Promise<string> {
+  const { systemPrompt, userPrompt, model = DEFAULT_OPENROUTER_MODEL } = options;
 
-function getOpenAI(): OpenAI {
-  if (!openaiClient && process.env.OPENAI_API_KEY) {
-    openaiClient = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+  logger.debug("OpenRouter: generating recommendation", {
+    provider: "openrouter",
+    model,
+  });
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+      max_tokens: 1000,
+    }),
+    signal: controller.signal,
+  });
+
+  clearTimeout(timeoutId);
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    logger.error("OpenRouter request failed", {
+      status: response.status,
+      statusText: response.statusText,
+      body: errorBody,
     });
+    throw new Error(`OpenRouter request failed with status ${response.status}`);
   }
 
-  if (!openaiClient) {
-    throw new Error("OpenAI API key not configured");
+  const json = (await response.json()) as {
+    choices?: { message?: { content?: string } }[];
+  };
+
+  const content = json.choices?.[0]?.message?.content;
+
+  if (!content) {
+    logger.warn("OpenRouter response missing content", json);
+    return "{}";
   }
 
-  return openaiClient;
+  return content;
 }
 
-function getAnthropic(): Anthropic {
-  if (!anthropicClient && process.env.ANTHROPIC_API_KEY) {
-    anthropicClient = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
-  }
-
-  if (!anthropicClient) {
-    throw new Error("Anthropic API key not configured");
-  }
-
-  return anthropicClient;
+export interface GenerateRecommendationOptions {
+  /** OpenRouter model ID. Overrides workspace default when provided. */
+  model?: string;
 }
 
 /**
@@ -60,7 +92,7 @@ function getAnthropic(): Anthropic {
  */
 export async function generateRecommendation(
   input: RecommendationInput,
-  provider: AIProvider = "openai"
+  options?: GenerateRecommendationOptions
 ): Promise<RecommendationOutput> {
   const systemPrompt = `You are an e-commerce competitive intelligence advisor for Shopify sellers. Your role is to analyze competitor offer changes and provide actionable, strategic recommendations.
 
@@ -107,33 +139,11 @@ Provide a strategic recommendation in the following JSON format:
 }`;
 
   try {
-    let response: string;
-
-    if (provider === "openai") {
-      const completion = await getOpenAI().chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.7,
-        max_tokens: 1000,
-      });
-
-      response = completion.choices[0].message.content || "{}";
-    } else {
-      const message = await getAnthropic().messages.create({
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 1000,
-        temperature: 0.7,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userPrompt }],
-      });
-
-      const content = message.content[0];
-      response = content.type === "text" ? content.text : "{}";
-    }
+    const response = await callOpenRouter({
+      systemPrompt,
+      userPrompt,
+      model: options?.model,
+    });
 
     // Parse JSON response
     const parsed = JSON.parse(response);
@@ -150,7 +160,9 @@ Provide a strategic recommendation in the following JSON format:
         : ["Review the change", "Assess impact", "Plan response"],
     };
   } catch (error) {
-    console.error("AI recommendation generation failed:", error);
+    logger.error("AI recommendation generation failed", error as Error, {
+      provider: "openrouter",
+    });
 
     // Fallback to rule-based recommendation
     return generateFallbackRecommendation(input);
@@ -218,19 +230,4 @@ function generateFallbackRecommendation(input: RecommendationInput): Recommendat
     rationale,
     actionSteps,
   };
-}
-
-/**
- * Determine which AI provider to use based on available API keys
- */
-export function getAvailableProvider(): AIProvider | null {
-  if (process.env.OPENAI_API_KEY) {
-    return "openai";
-  }
-
-  if (process.env.ANTHROPIC_API_KEY) {
-    return "anthropic";
-  }
-
-  return null;
 }
