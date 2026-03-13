@@ -41,7 +41,8 @@
     "SLACK_SIGNING_SECRET",
     "SENTRY_DSN",
     "SENTRY_AUTH_TOKEN",
-    "NEXT_PUBLIC_SENTRY_DSN"
+    "NEXT_PUBLIC_SENTRY_DSN",
+    "LOG_LEVEL"
   ],
   "tasks": {
     "build": {

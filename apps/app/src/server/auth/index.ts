@@ -105,6 +105,14 @@ export const auth = betterAuth({
                 items: [{ price: price.id }],
                 trial_period_days: TRIAL_PERIOD_DAYS,
                 metadata: { userId: user.id, lookupKey: "starter_monthly" },
+                payment_settings: {
+                  save_default_payment_method: 'on_subscription',
+                },
+                trial_settings: {
+                  end_behavior: {
+                    missing_payment_method: 'cancel',
+                  },
+                },
               });
 
               logger.info("Stripe trial subscription created", {
