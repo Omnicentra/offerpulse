@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useTRPC } from "@/src/lib/trpc/client";
 import {
   Camera,
+  Check,
   ExternalLink,
   Pause,
   Play,
@@ -22,6 +23,7 @@ import {
   Lightbulb,
   Loader2,
   ArrowLeft,
+  Store,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { RouterOutputs } from "@/src/server/trpc/routers/root";
@@ -105,6 +107,16 @@ export function CompetitorDetailClient({
     ...trpc.monitorSettings.get.queryOptions({ workspaceId, competitorId }),
     initialData: initialMonitorSettings ?? undefined,
     enabled: !!workspaceId && !!competitorId,
+  });
+
+  const { data: ownStore } = useQuery({
+    ...trpc.ownStore.get.queryOptions({ workspaceId }),
+    enabled: !!workspaceId,
+  });
+
+  const { data: storeProducts = [] } = useQuery({
+    ...trpc.ownStore.products.list.queryOptions({ workspaceId }),
+    enabled: !!workspaceId && !!ownStore,
   });
 
   const captureMutation = useMutation(
@@ -333,6 +345,26 @@ export function CompetitorDetailClient({
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
+          {/* Store context */}
+          {ownStore && (storeProducts.length > 0 || ownStore.platform === "shopify") && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/30 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Store className="h-4 w-4 text-amber-600" />
+                  <span className="text-sm font-medium text-slate-900">
+                    Your store: {ownStore.storeName}
+                  </span>
+                  <span className="text-xs text-slate-600">
+                    {storeProducts.length} products configured
+                  </span>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/settings/store">Manage store</Link>
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Latest Snapshot */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-lg font-semibold text-slate-900">
