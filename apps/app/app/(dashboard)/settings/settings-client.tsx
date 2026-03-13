@@ -16,7 +16,7 @@ import { useTRPC } from "@/src/lib/trpc/client";
 import { resetApi } from "@/src/mock/api";
 import type { RouterOutputs } from "@/src/server/trpc/routers/root";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, CreditCard, Lock, RefreshCw, Users } from "lucide-react";
+import { ChevronRight, CreditCard, Lock, RefreshCw, Store, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -184,6 +184,22 @@ export function SettingsClient({
             <div>
               <h3 className="text-sm font-semibold text-slate-900">Team Members</h3>
               <p className="mt-1 text-sm text-slate-600">Manage workspace members</p>
+            </div>
+          </div>
+          <ChevronRight className="h-5 w-5 text-slate-400" />
+        </button>
+
+        <button
+          onClick={() => router.push("/settings/store")}
+          className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50/50"
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100">
+              <Store className="h-6 w-6 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">Your store</h3>
+              <p className="mt-1 text-sm text-slate-600">Products, promos & pricing</p>
             </div>
           </div>
           <ChevronRight className="h-5 w-5 text-slate-400" />
