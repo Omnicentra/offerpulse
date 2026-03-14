@@ -15,52 +15,57 @@ const redis = new Redis({
   token: env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-// Create rate limiter: 5 requests per 15 minutes
+// Create rate limiter: 3 requests per 15 minutes
 const ratelimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(5, "15 m"),
+  limiter: Ratelimit.slidingWindow(3, "15 m"),
   analytics: true,
   prefix: "@offerpulse/marketing",
 });
 
+export interface RateLimitResult {
+  success: boolean;
+  limit: number;
+  remaining: number;
+  reset: number;
+}
+
 export const rateLimiter = {
-  async isRateLimited(identifier: string): Promise<boolean> {
+  async checkLimit(identifier: string): Promise<RateLimitResult> {
     try {
-      const { success } = await ratelimit.limit(identifier);
-      return !success;
+      const result = await ratelimit.limit(identifier);
+      return {
+        success: result.success,
+        limit: result.limit,
+        remaining: result.remaining,
+        reset: result.reset,
+      };
     } catch (error) {
       logger.error("[rate-limit] Upstash rate limit check failed:", error);
       // Fail open: if rate limiter is down, allow request
-      return false;
-    }
-  },
-
-  async getRemainingRequests(identifier: string): Promise<number> {
-    try {
-      const { remaining } = await ratelimit.limit(identifier);
-      return remaining;
-    } catch (error) {
-      logger.error("[rate-limit] Failed to get remaining requests:", error);
-      return 5; // Return max on error
-    }
-  },
-
-  async getResetTime(identifier: string): Promise<number> {
-    try {
-      const { reset } = await ratelimit.limit(identifier);
-      return reset;
-    } catch (error) {
-      logger.error("[rate-limit] Failed to get reset time:", error);
-      return Date.now() + 15 * 60 * 1000; // 15 minutes from now
+      return {
+        success: true,
+        limit: 5,
+        remaining: 5,
+        reset: Date.now() + 15 * 60 * 1000,
+      };
     }
   },
 };
 
 export function getClientIdentifier(request: Request): string {
-  // In production, use real IP from headers
-  // For now, use a combination of headers
-  const forwarded = request.headers.get("x-forwarded-for");
+  // Vercel provides client IP in x-forwarded-for header (first IP is the real client)
+  // Cloudflare uses cf-connecting-ip
+  // Generic proxies use x-real-ip
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  const cfConnectingIp = request.headers.get("cf-connecting-ip");
   const realIp = request.headers.get("x-real-ip");
   
-  return forwarded?.split(",")[0] || realIp || "unknown";
+  // Priority: CF > x-forwarded-for > x-real-ip > fallback
+  if (cfConnectingIp) return cfConnectingIp;
+  if (forwardedFor) return forwardedFor.split(",")[0].trim();
+  if (realIp) return realIp;
+  
+  // Fallback for local dev
+  return "127.0.0.1";
 }

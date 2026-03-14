@@ -8,7 +8,6 @@ import {
   type ExtractedOffer,
 } from "@/lib/tools/extractor";
 import { suggestClarityFixes } from "@/lib/tools/openrouter";
-import { toolCache } from "@/lib/tools/cache";
 import { rateLimiter, getClientIdentifier } from "@/lib/tools/rate-limit";
 import { logger } from "@/lib/logger";
 
@@ -22,7 +21,6 @@ export interface OfferClarityResponse {
   url: string;
   offers: ExtractedOffer;
   timestamp: string;
-  cached: boolean;
   clarity: {
     score: number;
     issues: string[];
@@ -38,13 +36,29 @@ export async function POST(request: Request) {
   try {
     // Rate limiting
     const identifier = getClientIdentifier(request);
-    logger.debug("[offer-clarity-check] client identifier", identifier);
+    logger.debug("[offer-clarity-check] client identifier", { identifier });
 
-    if (await rateLimiter.isRateLimited(identifier)) {
-      logger.debug("[offer-clarity-check] rate limited");
+    const rateLimitResult = await rateLimiter.checkLimit(identifier);
+    
+    // Always include rate limit headers for transparency
+    const headers = new Headers({
+      "X-RateLimit-Limit": rateLimitResult.limit.toString(),
+      "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+      "X-RateLimit-Reset": new Date(rateLimitResult.reset).toISOString(),
+    });
+
+    if (!rateLimitResult.success) {
+      logger.debug("[offer-clarity-check] rate limited", {
+        identifier,
+        remaining: rateLimitResult.remaining,
+        reset: new Date(rateLimitResult.reset).toISOString(),
+      });
       return NextResponse.json(
-        { error: "Rate limit exceeded. Please try again later." },
-        { status: 429 }
+        { 
+          error: "Rate limit exceeded. Please try again later.",
+          resetAt: new Date(rateLimitResult.reset).toISOString(),
+        },
+        { status: 429, headers }
       );
     }
 
@@ -63,15 +77,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid URL format" }, { status: 400 });
     }
 
-    const cacheKey = toolCache.getCacheKey(url, "clarity");
-    const cached = toolCache.get(cacheKey);
-
-    if (cached) {
-      logger.debug("[offer-clarity-check] cache hit", { url, elapsed: Date.now() - startTime });
-      return NextResponse.json({ ...cached, cached: true });
-    }
-
-    logger.debug("[offer-clarity-check] cache miss, calling fetchStoreHtml", { elapsed: Date.now() - startTime });
+    logger.debug("[offer-clarity-check] calling fetchStoreHtml", { elapsed: Date.now() - startTime });
 
     // Fetch rendered HTML without screenshot to reduce credits/cost.
     const fetchStart = Date.now();
@@ -113,7 +119,6 @@ export async function POST(request: Request) {
       url: finalUrl,
       offers,
       timestamp: new Date().toISOString(),
-      cached: false,
       clarity: {
         score: clarity.score,
         issues: clarity.issues,
@@ -122,11 +127,8 @@ export async function POST(request: Request) {
       },
     };
 
-    // Cache result
-    toolCache.set(cacheKey, result);
-
     logger.debug("[offer-clarity-check] success", { url: finalUrl, totalMs: Date.now() - startTime });
-    return NextResponse.json(result);
+    return NextResponse.json(result, { headers });
   } catch (error) {
     const elapsed = Date.now() - startTime;
     logger.error("[offer-clarity-check] API error", { error, elapsedMs: elapsed });

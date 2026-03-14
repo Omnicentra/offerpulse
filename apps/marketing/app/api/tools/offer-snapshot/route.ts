@@ -6,7 +6,6 @@ import {
   mergeExtractedOffers,
 } from "@/lib/tools/extractor";
 import { extractOffersFromImage } from "@/lib/tools/openrouter";
-import { toolCache } from "@/lib/tools/cache";
 import { rateLimiter, getClientIdentifier } from "@/lib/tools/rate-limit";
 import {
   uploadScreenshot,
@@ -45,7 +44,6 @@ export interface OfferSnapshotResponse {
   pagesAnalyzed: PageResult[];
   screenshotUrl?: string;
   timestamp: string;
-  cached: boolean;
   stats?: {
     totalPages: number;
     successfulPages: number;
@@ -61,13 +59,29 @@ export async function POST(request: Request) {
   try {
     // Rate limiting
     const identifier = getClientIdentifier(request);
-    logger.debug("[offer-snapshot] client identifier", identifier);
+    logger.debug("[offer-snapshot] client identifier", { identifier });
 
-    if (await rateLimiter.isRateLimited(identifier)) {
-      logger.debug("[offer-snapshot] rate limited");
+    const rateLimitResult = await rateLimiter.checkLimit(identifier);
+    
+    // Always include rate limit headers for transparency
+    const headers = new Headers({
+      "X-RateLimit-Limit": rateLimitResult.limit.toString(),
+      "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+      "X-RateLimit-Reset": new Date(rateLimitResult.reset).toISOString(),
+    });
+
+    if (!rateLimitResult.success) {
+      logger.debug("[offer-snapshot] rate limited", {
+        identifier,
+        remaining: rateLimitResult.remaining,
+        reset: new Date(rateLimitResult.reset).toISOString(),
+      });
       return NextResponse.json(
-        { error: "Rate limit exceeded. Please try again later." },
-        { status: 429 }
+        { 
+          error: "Rate limit exceeded. Please try again later.",
+          resetAt: new Date(rateLimitResult.reset).toISOString(),
+        },
+        { status: 429, headers }
       );
     }
 
@@ -94,16 +108,8 @@ export async function POST(request: Request) {
     }
 
     const domain = extractDomain(url);
-    const flowSuffix = flows.length > 0 ? `+${[...flows].sort().join("+")}` : "";
-    const cacheKey = toolCache.getCacheKey(domain, `multi-page-extract${flowSuffix}`);
-    const cached = toolCache.get(cacheKey);
 
-    if (cached) {
-      logger.debug("[offer-snapshot] cache hit", { domain, elapsed: Date.now() - startTime });
-      return NextResponse.json({ ...cached, cached: true });
-    }
-
-    logger.debug("[offer-snapshot] cache miss, starting multi-page discovery", {
+    logger.debug("[offer-snapshot] starting multi-page discovery", {
       elapsed: Date.now() - startTime,
     });
 
@@ -395,12 +401,8 @@ export async function POST(request: Request) {
       pagesAnalyzed,
       screenshotUrl,
       timestamp: new Date().toISOString(),
-      cached: false,
       stats,
     };
-
-    // Cache result (24 hour cache for multi-page results)
-    toolCache.set(cacheKey, result, 24 * 60 * 60 * 1000);
 
     logger.debug("[offer-snapshot] success (multi-page)", {
       domain,
@@ -414,7 +416,7 @@ export async function POST(request: Request) {
         aggregatedOffers.announcements.length,
     });
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, { headers });
   } catch (error) {
     const elapsed = Date.now() - startTime;
     logger.error("[offer-snapshot] API error", { error, elapsedMs: elapsed });

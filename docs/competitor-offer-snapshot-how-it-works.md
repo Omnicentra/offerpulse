@@ -14,19 +14,17 @@ When someone enters a competitor’s store URL (e.g. `https://example-store.com`
 
 1. **User enters a URL** on the Offer Snapshot tool page and clicks “Scan” (or lands with a URL in the link for a pre-filled scan).
 
-2. **Our server checks** that the URL is valid and that the user hasn’t hit the rate limit (we allow a limited number of scans per hour per visitor to keep the tool fair and sustainable).
+2. **Our server checks** that the URL is valid and that the user hasn’t hit the rate limit. We use **Upstash Redis** to limit how many scans each visitor can do (e.g. 5 scans per 15 minutes per IP). This keeps the tool fair and sustainable; responses include standard rate-limit headers so clients can show remaining requests and when the limit resets.
 
-3. **We check the cache.** If we’ve scanned that exact URL recently (within about 30 minutes), we return the stored result immediately so the user doesn’t have to wait and we don’t re-scan unnecessarily.
+3. **We “visit” the store** using **Firecrawl**. Firecrawl loads the page like a real browser (including JavaScript) and returns the rendered HTML and a screenshot. That way we see what a real visitor sees—banners, promo bars, and offers—not an empty or half-loaded page.
 
-4. **We “visit” the store in a headless browser.** We don’t open a normal browser window; we use a cloud service (Browserless) that loads the page exactly as a real browser would—including all the JavaScript that many stores use to show banners, promo bars, and offers. That way we see what a real visitor sees, not an empty or half-loaded page.
-
-5. **We capture two things:**
+4. **We capture two things:**
    - The **fully rendered HTML** (the page structure and text after everything has loaded).
-   - A **full-page screenshot** of the store.
+   - A **full-page screenshot** of the store (from Firecrawl, or we upload our own to R2 when needed).
 
-6. **We upload the screenshot** to our own storage (Cloudflare R2). That gives us a permanent, public link to the image so we can show it in the report (“Site Screenshot” section) and in shareable links.
+5. **We upload the screenshot** (if not already from Firecrawl) to our own storage (Cloudflare R2). That gives us a permanent, public link to the image so we can show it in the report (“Site Screenshot” section) and in shareable links.
 
-7. **We analyze the page text** with our “extractor.” It doesn’t use AI for this step—it uses predefined patterns (like “free shipping over £50” or “20% off with code SAVE20”) to find:
+6. **We analyze the page text** with our “extractor.” It doesn’t use AI for this step—it uses predefined patterns (like “free shipping over £50” or “20% off with code SAVE20”) to find:
    - Shipping thresholds (e.g. free delivery over $75)
    - Discounts (percent off, fixed amount off, promo codes)
    - Bundles (e.g. “Buy 2 get 1 free”, “3 for 2”)
@@ -34,24 +32,27 @@ When someone enters a competitor’s store URL (e.g. `https://example-store.com`
    - Cart incentives (e.g. “You’re £10 away from free shipping”)
    - Announcement bar / banner text
 
-8. **We score the offers** using simple rules (e.g. “has a shipping threshold” = +15, “has discounts” = +15, “has multiple types of offers” = stacking bonus). The result is a 0–100 score and a grade (e.g. A, B+).
+7. **We score the offers** using simple rules (e.g. “has a shipping threshold” = +15, “has discounts” = +15, “has multiple types of offers” = stacking bonus). The result is a 0–100 score and a grade (e.g. A, B+).
 
-9. **We build the report:** score, grade, list of offers by category, the screenshot, and short recommendations (e.g. “Match competitor’s free shipping threshold”).
+8. **We build the report:** score, grade, list of offers by category, the screenshot, and short recommendations (e.g. “Match competitor’s free shipping threshold”).
 
-10. **We store the result in the cache** and send it back to the user’s browser. The tool page then displays the report (score ring, metrics, offer stack, screenshot, recommendations).
+9. **We send the result** back to the user’s browser. The tool page then displays the report (score ring, metrics, offer stack, screenshot, recommendations). We do not cache results; each scan is a fresh run. Rate limiting (via Upstash Redis) is the only shared state we use to control usage.
 
 ---
 
 ## Who does what (services we use)
 
-- **Browserless.io**  
-  A “browser in the cloud.” We send it the store URL; it loads the page with a real Chrome engine (including JavaScript), then sends us back the rendered HTML and a screenshot. We use their REST API (simple request/response) rather than holding a long-lived browser connection, which is more reliable for this use case.
+- **Upstash Redis**  
+  We use it **only for rate limiting**. Each request is checked against a sliding-window limit (e.g. 5 requests per 15 minutes per IP). There is no result cache; we rely on a single source of truth (Redis) for usage control. Responses include `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers.
+
+- **Firecrawl**  
+  A “browser in the cloud.” We send it the store URL; it loads the page with a real browser engine (including JavaScript), then sends us back the rendered HTML and a screenshot. This is the same approach used by the dashboard app’s snapshot capture, so behavior is consistent across marketing and app.
 
 - **Cloudflare R2**  
-  Object storage (like S3). We upload each screenshot there and get back a public URL (e.g. `https://screenshots.offerpulse.io/snapshots/example-store-1234567890.png`). The report uses that URL to show the “Site Screenshot” and allow full-size view. We don’t store sensitive data—only public store screenshots.
+  Object storage (like S3). We upload screenshots there when needed and get back a public URL (e.g. `https://screenshots.offerpulse.io/snapshots/example-store-1234567890.png`). The report uses that URL to show the “Site Screenshot” and allow full-size view. We don’t store sensitive data—only public store screenshots.
 
 - **Our own API and pages**  
-  The marketing site hosts the tool page and an API route (`/api/tools/extract`). That route coordinates: rate limiting → cache check → call to Browserless → upload to R2 → run the extractor → score → cache and return the result.
+  The marketing site hosts the tool page and API routes (e.g. `/api/tools/offer-snapshot`, `/api/tools/offer-clarity-check`). Each route: checks rate limit (Upstash) → calls Firecrawl (and R2 when needed) → runs the extractor → scores → returns the result. No in-memory or separate cache; every scan is a fresh run.
 
 ---
 
@@ -87,17 +88,17 @@ The total is capped at 100, then converted to a grade (A+, A, A-, B+, etc.) and 
 ```
 User enters URL
        ↓
-Rate limit check → Cache check
-       ↓ (if not cached)
-Browserless: load page in real browser → get HTML + screenshot
+Rate limit check (Upstash Redis) → if over limit: 429 + reset time
        ↓
-Upload screenshot to R2 → get public URL
+Firecrawl: load page in real browser → get HTML + screenshot
+       ↓
+Upload screenshot to R2 if needed → get public URL
        ↓
 Extractor: scan HTML for offers (patterns, no AI)
        ↓
 Scoring: compute 0–100 + grade
        ↓
-Save to cache → return report (score, offers, screenshot URL, recommendations)
+Return report (score, offers, screenshot URL, recommendations) + rate limit headers
        ↓
 Tool page displays report
 ```
@@ -108,10 +109,11 @@ Tool page displays report
 
 This behavior was implemented according to the **Snapshot Tool Implementation** plan (see the plan file and the related agent transcript for the full technical history). The main pieces are:
 
-- **Scraper** (Browserless): loads the store and returns HTML + screenshot.  
+- **Rate limiting** (Upstash Redis): single source of truth for usage control; no result cache.  
+- **Scraper** (Firecrawl): loads the store and returns HTML + screenshot (aligned with the dashboard app).  
 - **Extractor**: finds offers in the HTML using patterns.  
 - **Scoring**: turns extracted offers into a 0–100 score and grade.  
-- **API route**: rate limit, cache, Browserless, R2 upload, extract, score, respond.  
+- **API routes**: rate limit (Upstash) → Firecrawl (and R2 when needed) → extract → score → respond.  
 - **Tool page**: form, progress, report (score, metrics, offer stack, screenshot, recommendations).
 
-If you want more detail on any single step (e.g. “exactly which phrases we look for” or “how the screenshot gets from Browserless to the report”), we can add a short section for that next.
+If you want more detail on any single step (e.g. “exactly which phrases we look for” or “how the screenshot gets from Firecrawl to the report”), we can add a short section for that next.
