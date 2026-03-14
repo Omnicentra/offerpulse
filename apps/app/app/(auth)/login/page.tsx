@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,7 +22,6 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,22 +39,6 @@ function LoginForm() {
   useEffect(() => {
     posthog.capture("signin_page_viewed");
   }, []);
-
-  // Cross-domain tracking: run when searchParams (e.g. ph_device_id) is available or changes
-  useEffect(() => {
-    const marketingDeviceId = searchParams.get("ph_device_id");
-
-    if (marketingDeviceId) {
-      try {
-        posthog.alias(marketingDeviceId);
-        posthog.capture("cross_domain_tracking_connected", {
-          marketing_device_id: marketingDeviceId,
-        });
-      } catch (error) {
-        console.error("Failed to alias PostHog device ID:", error);
-      }
-    }
-  }, [searchParams]);
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
@@ -259,7 +242,7 @@ function LoginForm() {
           </form>
 
           <div className="mt-6 text-center text-sm text-slate-600">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-700">
               Sign up
             </Link>
@@ -288,7 +271,7 @@ function LoginFormFallback() {
             <div className="h-11 rounded-md bg-slate-200 animate-pulse" />
           </div>
           <div className="mt-6 text-center text-sm text-slate-600">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-700">
               Sign up
             </Link>

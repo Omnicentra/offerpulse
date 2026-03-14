@@ -45,7 +45,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico, icon.svg (favicon files)
      * - images in public folder
+     * - /ingest, /_px (PostHog proxy - must not run proxy or redirects turn POST into GET → 400)
      */
-    "/((?!_next/static|_next/image|favicon.ico|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|icon.svg|ingest(?:$|/)|_px(?:$|/)|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

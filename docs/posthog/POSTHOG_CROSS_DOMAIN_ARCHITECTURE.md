@@ -33,15 +33,15 @@ Cookie on app.offerpulse.io:
 
 Without cross-domain tracking, PostHog sees these as **two different users**.
 
-### The Solution: URL Parameter + Alias
+### The Solution: URL Parameter + Bootstrap
 
-1. **Marketing site** passes device_id via URL parameter
-2. **Dashboard app** reads parameter and aliases the IDs
-3. **PostHog** merges both sessions into one person
+1. **Marketing site** passes both `distinct_id` and `session_id` via URL parameters
+2. **Dashboard app** extracts IDs and bootstraps PostHog initialization with them
+3. **PostHog** continues the same session seamlessly across domains
 
 ## Implementation Details
 
-### Step 1: Capture Device ID on Marketing Site
+### Step 1: Capture IDs on Marketing Site
 
 When user clicks signup/login CTA on marketing site:
 
@@ -50,37 +50,48 @@ When user clicks signup/login CTA on marketing site:
 export function buildAppSignupUrl(params = {}) {
   const url = new URL('/signup', 'https://app.offerpulse.io');
   
-  // Get PostHog device ID from current session
-  const deviceId = posthog.get_distinct_id(); // "abc-123-def"
+  // Get PostHog distinct_id and session_id from current session
+  const distinctId = posthog.get_distinct_id(); // "abc-123-def"
+  const sessionId = posthog.get_session_id(); // "session-456"
   
-  // Pass as URL parameter
-  url.searchParams.set('ph_device_id', deviceId);
+  // Pass both as URL parameters
+  url.searchParams.set('ph_distinct_id', distinctId);
+  url.searchParams.set('ph_session_id', sessionId);
   
   return url.toString();
-  // Returns: https://app.offerpulse.io/signup?ph_device_id=abc-123-def
+  // Returns: https://app.offerpulse.io/signup?ph_distinct_id=abc-123-def&ph_session_id=session-456
 }
 ```
 
-### Step 2: Alias on Dashboard App
+### Step 2: Bootstrap on Dashboard App
 
-When user lands on dashboard signup/login page:
+PostHog initialization extracts IDs from URL and bootstraps them:
 
 ```typescript
-// apps/app/app/(auth)/signup/page.tsx
-useEffect(() => {
-  const marketingDeviceId = searchParams.get('ph_device_id'); // "abc-123-def"
-  
-  if (marketingDeviceId) {
-    // Current dashboard device_id: "xyz-789-ghi"
-    // Marketing device_id from URL: "abc-123-def"
-    
-    // Merge them into one person
-    posthog.alias(marketingDeviceId);
-    
-    // Now this session uses "abc-123-def" as distinct_id
-    // All future events will use this ID
-  }
-}, [searchParams]);
+// apps/app/instrumentation-client.ts
+// Extract PostHog IDs from URL BEFORE initialization
+const urlParams = new URLSearchParams(window.location.search);
+const distinctId = urlParams.get('ph_distinct_id');
+const sessionId = urlParams.get('ph_session_id');
+
+posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
+  api_host: "/ingest",
+  ui_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+  // Bootstrap with IDs from marketing site
+  bootstrap: {
+    distinctID: distinctId,
+    sessionID: sessionId,
+  },
+  loaded: (posthogInstance) => {
+    // Track successful cross-domain connection
+    if (distinctId || sessionId) {
+      posthogInstance.capture("cross_domain_tracking_connected", {
+        from_domain: "marketing",
+        method: "bootstrap"
+      });
+    }
+  },
+});
 ```
 
 ### Step 3: Identify After Signup
@@ -124,23 +135,24 @@ Person 2 (device_id: xyz-789-ghi)  ← DIFFERENT PERSON!
 
 **Result:** Funnel breaks, can't connect landing → signup
 
-### After Alias (Fixed)
+### After Bootstrap (Fixed)
 
 ```
 Person 1 (distinct_id: test@example.com)
-  Device IDs: abc-123-def, xyz-789-ghi (merged)
+  Device ID: abc-123-def (same across both domains)
+  Session ID: session-456 (same across both domains)
   
   Timeline:
-  1. landing_page_viewed (from offerpulse.io)
-  2. landing_input_focused (from offerpulse.io)
-  3. landing_url_submitted (from offerpulse.io)
-  4. cross_domain_tracking_connected (from app.offerpulse.io)
-  5. signup_form_submitted (from app.offerpulse.io)
-  6. signup_completed (from app.offerpulse.io)
+  1. landing_page_viewed (from offerpulse.io, session: session-456)
+  2. landing_input_focused (from offerpulse.io, session: session-456)
+  3. landing_url_submitted (from offerpulse.io, session: session-456)
+  4. cross_domain_tracking_connected (from app.offerpulse.io, session: session-456)
+  5. signup_form_submitted (from app.offerpulse.io, session: session-456)
+  6. signup_completed (from app.offerpulse.io, session: session-456)
   7. [identified as test@example.com]
 ```
 
-**Result:** Complete funnel, single user profile
+**Result:** Complete funnel, single user profile, seamless session replay continuity
 
 ## Shared PostHog Credentials
 
@@ -293,21 +305,28 @@ Monitor these to ensure cross-domain tracking works:
 
 ## Technical Notes
 
-### Why Alias vs Identify?
+### Why Bootstrap vs Alias?
 
-**Alias:**
-- Merges two **anonymous** device IDs
-- Use BEFORE user is identified
-- Tells PostHog: "these two IDs are the same person"
+**Bootstrap (Current Implementation):**
+- Continues the **same session** across domains
+- IDs are set during PostHog initialization
+- Maintains session replay continuity
+- More reliable for feature flags
+- Recommended by PostHog for cross-domain tracking
+
+**Alias (Alternative):**
+- Merges two **different anonymous** device IDs after initialization
+- Use when you can't bootstrap (e.g., can't access URL during init)
+- Doesn't maintain session replay continuity
 
 **Identify:**
 - Associates anonymous session with **known** user ID
 - Use AFTER user signs up/logs in
 - Tells PostHog: "this device belongs to user@example.com"
 
-**Correct order:**
-1. `posthog.alias(marketingDeviceId)` - merge sessions
-2. `posthog.identify(email, props)` - identify user
+**Correct order with Bootstrap:**
+1. `posthog.init({ bootstrap: { distinctID, sessionID } })` - continue session
+2. `posthog.identify(email, props)` - identify user after signup
 
 ### Why Not Use Single Domain?
 

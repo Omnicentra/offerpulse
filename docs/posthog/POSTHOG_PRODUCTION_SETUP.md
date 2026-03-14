@@ -3,6 +3,14 @@
 ## Issue Summary
 Client-side PostHog tracking wasn't working in production because environment variables weren't configured in Vercel.
 
+### ERR_BLOCKED_BY_CLIENT (Ad Blockers)
+
+If you see **ERR_BLOCKED_BY_CLIENT** or **400** in the Network tab for PostHog requests:
+
+- **Cause:** The request is blocked by an ad blocker or privacy extension before it reaches your server. Using `api_host: NEXT_PUBLIC_POSTHOG_HOST` (direct to PostHog) is always blocked as third-party. The path `/ingest` is also on many blocklists.
+- **Fix:** We use a **neutral proxy path** `/_px` so requests go to your domain (e.g. `https://www.offerpulse.io/_px/...`) and the path is not in common blocklists. Both apps use `api_host: "/_px"` and Next.js rewrites proxy `/_px` to PostHog.
+- **Do not** set `api_host` to `NEXT_PUBLIC_POSTHOG_HOST` in production—always use the relative path so traffic goes through your domain.
+
 ## What Was Fixed
 
 ### 1. Removed Invalid `defaults` Configuration

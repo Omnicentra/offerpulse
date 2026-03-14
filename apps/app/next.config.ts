@@ -18,17 +18,18 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
+      // PostHog proxy: neutral path to avoid ad-blocker blocklists (/ingest is often blocked)
       {
-        source: "/ingest/static/:path*",
+        source: "/_px/static/:path*",
         destination: "https://eu-assets.i.posthog.com/static/:path*",
       },
       {
-        source: "/ingest/:path*",
+        source: "/_px/:path*",
         destination: "https://eu.i.posthog.com/:path*",
       },
     ];
   },
-  // This is required to support PostHog trailing slash API requests
+  // Required for PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
 };
 

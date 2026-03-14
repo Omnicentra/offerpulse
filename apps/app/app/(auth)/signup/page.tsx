@@ -39,17 +39,6 @@ function SignupForm() {
 
   useEffect(() => {
     posthog.capture("signup_page_viewed");
-  }, []);
-
-  useEffect(() => {
-    const marketingDeviceId = searchParams.get("ph_device_id");
-    if (marketingDeviceId) {
-      try {
-        posthog.alias(marketingDeviceId);
-      } catch (error) {
-        console.error("Failed to alias PostHog device ID:", error);
-      }
-    }
 
     if (searchParams.get("checkout") === "cancelled") {
       toast({

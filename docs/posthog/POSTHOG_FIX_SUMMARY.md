@@ -37,19 +37,27 @@
 
 **Problem:** Users navigating from offerpulse.io → app.offerpulse.io were tracked as different users, breaking funnels
 
-**Solution:** Pass PostHog device ID via URL and alias sessions
+**Solution:** Pass PostHog IDs via URL and bootstrap them on dashboard app (PostHog's recommended approach)
 
 **Files changed:**
-- `packages/lib/routing.ts` - Updated `buildAppSignupUrl()` and `buildAppLoginUrl()` to pass `ph_device_id`
-- `apps/app/app/(auth)/signup/page.tsx` - Added alias logic to connect sessions
-- `apps/app/app/(auth)/login/page.tsx` - Added alias logic to connect sessions
+- `packages/lib/routing.ts` - Updated `buildAppSignupUrl()` and `buildAppLoginUrl()` to pass both `ph_distinct_id` and `ph_session_id`
+- `apps/app/instrumentation-client.ts` - Added bootstrap logic to extract IDs from URL and initialize PostHog with them
+- `apps/app/app/(auth)/signup/page.tsx` - Removed alias logic (handled by bootstrap)
+- `apps/app/app/(auth)/login/page.tsx` - Removed alias logic (handled by bootstrap)
 
 **How it works:**
-1. User visits landing page on offerpulse.io → PostHog creates device_id
-2. User clicks signup → URL includes `?ph_device_id=abc-123`
-3. Dashboard app calls `posthog.alias(abc-123)` to merge sessions
-4. All events (landing + signup) attributed to same user
-5. After signup, user identified with email
+1. User visits landing page on offerpulse.io → PostHog creates `distinct_id` and `session_id`
+2. User clicks signup → URL includes `?ph_distinct_id=abc-123&ph_session_id=session-456`
+3. Dashboard app extracts IDs from URL **before** PostHog initializes
+4. Dashboard app bootstraps PostHog with these IDs: `posthog.init({ bootstrap: { distinctID, sessionID } })`
+5. Same session continues seamlessly across domains
+6. After signup, user identified with email
+
+**Benefits of bootstrap approach:**
+- ✅ Full session replay continuity across domains
+- ✅ More reliable feature flag evaluation
+- ✅ Simpler code (no useEffect with alias calls)
+- ✅ PostHog's recommended best practice
 
 ### 4. Updated Marketing Links ✅
 
@@ -64,16 +72,16 @@
 
 ```mermaid
 flowchart TD
-    Start[User visits offerpulse.io] -->|PostHog creates| DeviceID["device_id: abc-123"]
-    DeviceID -->|tracks| Landing["landing_page_viewed<br/>landing_input_focused<br/>landing_url_submitted"]
-    Landing -->|clicks signup| Redirect["Redirect to:<br/>app.offerpulse.io/signup<br/>?ph_device_id=abc-123"]
-    Redirect -->|page loads| Alias["posthog.alias(abc-123)<br/>connects sessions"]
-    Alias -->|tracks| CrossDomain["cross_domain_tracking_connected"]
+    Start[User visits offerpulse.io] -->|PostHog creates| IDs["distinct_id: abc-123<br/>session_id: session-456"]
+    IDs -->|tracks| Landing["landing_page_viewed<br/>landing_input_focused<br/>landing_url_submitted"]
+    Landing -->|clicks signup| Redirect["Redirect to:<br/>app.offerpulse.io/signup<br/>?ph_distinct_id=abc-123<br/>&ph_session_id=session-456"]
+    Redirect -->|page loads| Bootstrap["posthog.init with bootstrap:<br/>distinctID: abc-123<br/>sessionID: session-456"]
+    Bootstrap -->|tracks| CrossDomain["cross_domain_tracking_connected"]
     CrossDomain -->|user submits| Signup["signup_form_submitted"]
     Signup -->|Better Auth| Auth{Auth Success?}
     Auth -->|yes| Success["signup_completed<br/>posthog.identify(email)"]
     Auth -->|no| Error["signup_error"]
-    Success -->|single user| Complete["✅ Complete funnel:<br/>landing → signup<br/>(same person)"]
+    Success -->|single user| Complete["✅ Complete funnel:<br/>landing → signup<br/>(same person, same session)"]
 ```
 
 ## Testing Instructions
@@ -207,8 +215,8 @@ Wait for deployments to complete, then:
 
 | Issue | Quick Fix |
 |-------|-----------|
-| Device ID not passed | Check PostHog initialized on marketing site |
-| Alias not working | Verify `ph_device_id` in URL, check console for errors |
+| IDs not passed | Check PostHog initialized on marketing site |
+| Bootstrap not working | Verify `ph_distinct_id` and `ph_session_id` in URL, check console for errors |
 | Events as different users | Check `cross_domain_tracking_connected` event exists |
 | No events appearing | Verify env vars set in Vercel, redeploy |
 | TypeScript errors | Run `pnpm install`, check posthog-js installed |

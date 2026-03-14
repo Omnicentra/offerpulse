@@ -14,9 +14,9 @@
 - Proper `posthog.identify()` calls with actual user data from Better Auth
 
 ### 3. Implemented Cross-Domain Tracking
-- Marketing site passes PostHog `device_id` when redirecting to dashboard
-- Dashboard app aliases the marketing device_id to connect sessions
-- Complete funnel: offerpulse.io → app.offerpulse.io tracked as one user
+- Marketing site passes PostHog `distinct_id` and `session_id` when redirecting to dashboard
+- Dashboard app bootstraps PostHog initialization with these IDs to continue the same session
+- Complete funnel: offerpulse.io → app.offerpulse.io tracked as one user with session continuity
 
 ## Local Testing
 
@@ -47,12 +47,12 @@
 
 1. Go to `http://localhost:3000`
 2. Open DevTools → Console
-3. Type: `posthog.get_distinct_id()`
-4. **Record this ID** (e.g., "abc-123-def")
+3. Type: `posthog.get_distinct_id()` and `posthog.get_session_id()`
+4. **Record both IDs** (e.g., distinct_id: "abc-123-def", session_id: "session-456")
 
 **Expected:**
 - PostHog initialized
-- Device ID created
+- Both distinct_id and session_id created
 - `landing_page_viewed` event tracked
 
 **Verify in PostHog:**
@@ -85,28 +85,31 @@
 
 **Expected URL format:**
 ```
-http://localhost:3001/signup?ph_device_id=abc-123-def&competitorUrl=...&source=...
+http://localhost:3001/signup?ph_distinct_id=abc-123-def&ph_session_id=session-456&competitorUrl=...&source=...
 ```
 
 **Verify:**
-- URL contains `ph_device_id` parameter
-- Value matches the device ID from Step 1
+- URL contains both `ph_distinct_id` and `ph_session_id` parameters
+- Values match the IDs from Step 1
 
-#### Step 4: Dashboard App Alias
+#### Step 4: Dashboard App Bootstrap
 
 1. Page loads on `http://localhost:3001/signup`
 2. Open DevTools → Console
-3. Type: `posthog.get_distinct_id()`
+3. Type: `posthog.get_distinct_id()` and `posthog.get_session_id()`
 
 **Expected:**
-- Device ID is same as Step 1 OR aliased
+- Both distinct_id and session_id match Step 1 (bootstrapped from URL)
 - `cross_domain_tracking_connected` event tracked
-- Console shows "PostHog device ID aliased" (if debug mode on)
+- Session continues seamlessly from marketing site
 
 **Verify in Console:**
 ```javascript
 posthog.get_distinct_id()
 // Should return: "abc-123-def" (same as marketing site)
+
+posthog.get_session_id()
+// Should return: "session-456" (same session as marketing site)
 ```
 
 #### Step 5: Real Signup
@@ -168,7 +171,7 @@ posthog.get_distinct_id()
 7. Verify events:
    - `signin_form_submitted`
    - `signin_completed`
-   - Device ID aliased correctly
+   - Session continued from marketing site (same distinct_id and session_id)
 
 ## Production Testing
 
@@ -217,14 +220,14 @@ Follow the same steps as local testing, but with production URLs:
 
 - [ ] Marketing site PostHog initialized (check console: `window.posthog`)
 - [ ] Dashboard app PostHog initialized (check console: `window.posthog`)
-- [ ] Device ID captured on marketing site
-- [ ] Redirect URL contains `ph_device_id` parameter
-- [ ] Dashboard app aliases device ID (check console for success)
+- [ ] Both distinct_id and session_id captured on marketing site
+- [ ] Redirect URL contains both `ph_distinct_id` and `ph_session_id` parameters
+- [ ] Dashboard app bootstraps with IDs from URL (same distinct_id and session_id)
 - [ ] `cross_domain_tracking_connected` event tracked
 - [ ] Real signup creates `signup_completed` event (not mock)
 - [ ] User identified with email in PostHog
 - [ ] Person profile shows events from both domains
-- [ ] Funnel shows complete user journey
+- [ ] Funnel shows complete user journey with session continuity
 
 ## Debugging
 
@@ -252,30 +255,34 @@ posthog.get_distinct_id()
 - Check browser console for initialization errors
 - Ensure instrumentation-client.ts loaded
 
-### Issue: Alias Not Working
+### Issue: Bootstrap Not Working
 
-**Symptom:** Dashboard shows different device ID than marketing
+**Symptom:** Dashboard shows different distinct_id or session_id than marketing
 
 **Possible causes:**
-1. `ph_device_id` parameter missing from URL
-2. PostHog not initialized before alias() called
-3. Error in useEffect hook
+1. `ph_distinct_id` or `ph_session_id` parameters missing from URL
+2. Bootstrap config not applied during initialization
+3. IDs extracted incorrectly from URL
 
 **Debug:**
 ```javascript
 // In dashboard app console
 const urlParams = new URLSearchParams(window.location.search);
-console.log('Device ID from URL:', urlParams.get('ph_device_id'));
+console.log('Distinct ID from URL:', urlParams.get('ph_distinct_id'));
+console.log('Session ID from URL:', urlParams.get('ph_session_id'));
 
 // Check PostHog
 posthog.get_distinct_id()
 // Should match URL parameter
+
+posthog.get_session_id()
+// Should match URL parameter
 ```
 
 **Fix:**
-- Add console.log in useEffect to debug
-- Check for errors in console
-- Verify PostHog initialized before alias() called
+- Check `instrumentation-client.ts` extracts IDs before `posthog.init()`
+- Verify bootstrap config is spread into init options
+- Check for errors in console during initialization
 
 ### Issue: Events from Different Users
 
@@ -294,7 +301,7 @@ posthog.get_distinct_id()
 **Fix:**
 - Follow debugging steps above
 - Ensure both apps use same `NEXT_PUBLIC_POSTHOG_KEY`
-- Check that alias() is called before any other events
+- Check that bootstrap config is applied during initialization
 
 ### Issue: No Events Appearing
 
@@ -333,7 +340,7 @@ window.posthog
 | `landing_input_focused` | offerpulse.io | Input engagement |
 | `landing_competitor_url_entered` | offerpulse.io | User typed URL |
 | `landing_competitor_url_submitted` | offerpulse.io | Form submitted |
-| `cross_domain_tracking_connected` | app.offerpulse.io | Alias successful |
+| `cross_domain_tracking_connected` | app.offerpulse.io | Bootstrap successful |
 | `signup_form_submitted` | app.offerpulse.io | Real signup attempt |
 | `signup_completed` | app.offerpulse.io | Real signup success |
 | `signup_error` | app.offerpulse.io | Signup failed |
@@ -453,19 +460,19 @@ Create PostHog alerts for:
 - Check package.json has latest version
 - Run `pnpm install` to update dependencies
 
-### Issue: Alias Not Merging Sessions
+### Issue: Bootstrap Not Merging Sessions
 
-**Symptom:** Events from two domains shown as different people
+**Symptom:** Events from two domains shown as different people or different sessions
 
 **Possible causes:**
-1. `ph_device_id` missing from URL
-2. Alias called after identify
+1. `ph_distinct_id` or `ph_session_id` missing from URL
+2. Bootstrap config not applied during initialization
 3. PostHog configuration issue
 
 **Fix:**
-- Call alias() BEFORE any other PostHog calls
-- Check alias happens in useEffect on mount
-- Verify device_id passed in URL correctly
+- Check IDs are extracted from URL BEFORE posthog.init()
+- Verify bootstrap config is spread into init options
+- Ensure both IDs are passed in URL from marketing site
 
 ## Success Criteria
 
@@ -537,13 +544,13 @@ After 48 hours of real data:
 - `apps/marketing/app/(marketing)/page.tsx` - Updated to use buildAppSignupUrl()
 
 ### Dashboard App
-- `apps/app/app/(auth)/signup/page.tsx` - Added PostHog tracking + alias logic
-- `apps/app/app/(auth)/login/page.tsx` - Added PostHog tracking + alias logic
+- `apps/app/app/(auth)/signup/page.tsx` - Added PostHog tracking + removed alias logic (bootstrap handles it)
+- `apps/app/app/(auth)/login/page.tsx` - Added PostHog tracking + removed alias logic (bootstrap handles it)
 - `apps/app/env.ts` - Made PostHog vars required (previously done)
-- `apps/app/instrumentation-client.ts` - Removed invalid defaults option (previously done)
+- `apps/app/instrumentation-client.ts` - Added bootstrap logic to extract IDs from URL and initialize with them
 
 ### Shared Package
-- `packages/lib/routing.ts` - Updated to pass PostHog device ID in URLs
+- `packages/lib/routing.ts` - Updated to pass both PostHog distinct_id and session_id in URLs
 
 ### Documentation
 - `POSTHOG_TRACKING_AUDIT.md` - Comprehensive audit report
@@ -552,9 +559,9 @@ After 48 hours of real data:
 
 ## Support Resources
 
-- PostHog Cross-Domain Tracking: https://posthog.com/docs/libraries/js/guides/cross-domain-tracking
+- PostHog Cross-Domain Tracking: https://posthog.com/tutorials/cross-domain-tracking
+- PostHog Bootstrap Method: https://posthog.com/docs/libraries/js#bootstrap
 - PostHog Identifying Users: https://posthog.com/docs/product-analytics/identify
-- PostHog Alias Method: https://posthog.com/docs/libraries/js#alias
 
 ## Contact
 
