@@ -134,19 +134,19 @@ export async function POST(request: Request) {
       })),
     });
 
-    // PHASE 3: Scraping with concurrency limit (Browserless free plan = 2 concurrent)
-    const BROWSERLESS_CONCURRENCY = 2;
+    // PHASE 3: Scraping with concurrency limit (Firecrawl API)
+    const FIRECRAWL_CONCURRENCY = 3;
     const scrapeStart = Date.now();
     logger.debug("[offer-snapshot] starting scraping with concurrency limit", {
       urlCount: filteredUrls.length,
-      concurrency: BROWSERLESS_CONCURRENCY,
+      concurrency: FIRECRAWL_CONCURRENCY,
     });
 
     const scrapeOnePage = async (
       urlInfo: (typeof filteredUrls)[0]
     ): Promise<PageOffers> => {
       try {
-        const { html, finalUrl, screenshotBuffer } = await fetchStoreHtml(
+        const { html, finalUrl, screenshotBuffer, screenshotUrl: firecrawlScreenshotUrl } = await fetchStoreHtml(
           urlInfo.url
         );
 
@@ -170,9 +170,12 @@ export async function POST(request: Request) {
           }
         }
 
-        // Upload screenshot for homepage only
+        // Use Firecrawl screenshot URL directly for homepage (same as dashboard pipeline).
+        // Fallback to R2 upload only if we don't receive Firecrawl screenshot URL.
         let screenshotUrl: string | undefined;
-        if (screenshotBuffer && isHomepage) {
+        if (isHomepage && firecrawlScreenshotUrl) {
+          screenshotUrl = firecrawlScreenshotUrl;
+        } else if (screenshotBuffer && isHomepage) {
           try {
             const filename = generateScreenshotFilename(finalUrl);
             screenshotUrl = await uploadScreenshot(screenshotBuffer, filename);
@@ -212,10 +215,10 @@ export async function POST(request: Request) {
       }
     };
 
-    // Process URLs in batches of BROWSERLESS_CONCURRENCY to respect Browserless limit
+    // Process URLs in batches to avoid overloading the scraping provider
     const pageOffers: PageOffers[] = [];
-    for (let i = 0; i < filteredUrls.length; i += BROWSERLESS_CONCURRENCY) {
-      const batch = filteredUrls.slice(i, i + BROWSERLESS_CONCURRENCY);
+    for (let i = 0; i < filteredUrls.length; i += FIRECRAWL_CONCURRENCY) {
+      const batch = filteredUrls.slice(i, i + FIRECRAWL_CONCURRENCY);
       const batchResults = await Promise.allSettled(
         batch.map((urlInfo) => scrapeOnePage(urlInfo))
       );

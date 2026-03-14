@@ -33,12 +33,6 @@ export const env = createEnv({
     DOPPLER_CONFIG: z.string().default("dev"),
     DOPPLER_ENVIRONMENT: z.enum(["dev", "stg", "prd"]).default("dev"),
     DOPPLER_PROJECT: z.string().default("offerpulse"),
-    BROWSERLESS_API_KEY: z
-      .string()
-      .min(1, "BROWSERLESS_API_KEY is required for JS-rendered scraping"),
-    BROWSERLESS_WSS_URL: z
-      .url()
-      .default("wss://production-lon.browserless.io"),
     R2_ACCOUNT_ID: z
       .string()
       .min(1, "R2_ACCOUNT_ID is required for screenshot storage"),
@@ -97,8 +91,6 @@ export const env = createEnv({
     DOPPLER_CONFIG: process.env.DOPPLER_CONFIG,
     DOPPLER_ENVIRONMENT: process.env.DOPPLER_ENVIRONMENT,
     DOPPLER_PROJECT: process.env.DOPPLER_PROJECT,
-    BROWSERLESS_API_KEY: process.env.BROWSERLESS_API_KEY,
-    BROWSERLESS_WSS_URL: process.env.BROWSERLESS_WSS_URL,
     R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
     R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
     R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,

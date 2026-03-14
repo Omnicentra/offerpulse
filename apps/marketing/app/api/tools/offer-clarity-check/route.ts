@@ -73,9 +73,11 @@ export async function POST(request: Request) {
 
     logger.debug("[offer-clarity-check] cache miss, calling fetchStoreHtml", { elapsed: Date.now() - startTime });
 
-    // Fetch rendered HTML (no screenshot needed for clarity check to save cost)
+    // Fetch rendered HTML without screenshot to reduce credits/cost.
     const fetchStart = Date.now();
-    const { html, finalUrl } = await fetchStoreHtml(url);
+    const { html, finalUrl } = await fetchStoreHtml(url, {
+      includeScreenshot: false,
+    });
 
     logger.debug("[offer-clarity-check] fetchStoreHtml completed", { finalUrl, htmlLength: html?.length, fetchMs: Date.now() - fetchStart });
     
