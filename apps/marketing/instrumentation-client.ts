@@ -4,7 +4,7 @@ const environment = process.env.NEXT_PUBLIC_ENVIRONMENT || "dev";
 const isLocal = process.env.NODE_ENV === "development";
 
 posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-  api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+  api_host: "/ingest",
   ui_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
   // Enables capturing unhandled exceptions via Error Tracking
   capture_exceptions: true,
