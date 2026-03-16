@@ -78,6 +78,13 @@
       "when": 1773420461083,
       "tag": "0010_youthful_liz_osborn",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1773421928848,
+      "tag": "0011_secret_trish_tilby",
+      "breakpoints": true
     }
   ]
 }

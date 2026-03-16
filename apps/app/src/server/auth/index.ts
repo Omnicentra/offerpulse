@@ -7,7 +7,7 @@ import { workspaces, workspaceMembers } from "../db/schema";
 import { nanoid } from "nanoid";
 import { env } from "@/env";
 import { sendWelcomeEmail, sendResetPasswordEmail } from "../notifications";
-import { customSession } from "better-auth/plugins";
+import { customSession, admin as adminPlugin } from "better-auth/plugins";
 import { logger, TRIAL_PERIOD_DAYS } from "@offerpulse/lib";
 import Stripe from "stripe";
 
@@ -137,6 +137,7 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    adminPlugin(),
     customSession(async ({ user, session }) => {
       const workspaceId = await getDefaultWorkspaceId(user.id);
       return {

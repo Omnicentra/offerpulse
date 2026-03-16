@@ -163,7 +163,9 @@ export const workspaceProcedure = subscribedProcedure.use(
 export const shopifyIntegrationProcedure = workspaceProcedure.use(
   async ({ ctx, next }) => {
     const planId = ctx.subscription.planId as string;
-    if (!["growth", "agency"].includes(planId)) {
+    const isAdmin = ctx.user?.role === "admin";
+
+    if (!isAdmin && !["growth", "agency"].includes(planId)) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Shopify integration requires Growth or Agency plan",
