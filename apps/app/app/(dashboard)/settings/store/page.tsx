@@ -30,6 +30,7 @@ export default async function StoreSettingsPage() {
 
   return (
     <StoreClient
+      isAdmin={session.user.role === "admin"}
       workspaceId={workspaceId}
       initialStore={initialStore}
       planId={subscription.planId}

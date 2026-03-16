@@ -1,20 +1,20 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
-  Users,
-  TrendingUp,
-  Camera,
-  Lightbulb,
-  Bell,
   BarChart3,
+  Bell,
+  Camera,
+  LayoutDashboard,
+  Lightbulb,
   Settings,
+  TrendingUp,
+  Users,
   X,
 } from "lucide-react";
-import { Button } from "../ui/button";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ShopifyStatus } from "./shopify-status";
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -111,6 +111,9 @@ export function Sidebar({
           );
         })}
       </nav>
+
+      {/* Shopify Status */}
+      <ShopifyStatus />
     </div>
   );
 

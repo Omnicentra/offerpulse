@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { getOnboardingIntent } from "@offerpulse/lib/routing";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -74,7 +75,14 @@ function LoginForm() {
         });
       }
       posthog.capture("signin_completed", {});
-      router.push("/overview");
+      
+      // Check if user has onboarding intent (e.g., clicked marketing CTA but decided to login)
+      const intent = getOnboardingIntent();
+      if (intent) {
+        router.push("/onboarding/shopify");
+      } else {
+        router.push("/overview");
+      }
     } catch (error) {
       // Track unexpected error
       posthog.capture("signin_error", {
@@ -94,10 +102,15 @@ function LoginForm() {
   const onGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     posthog.capture("signin_google_clicked");
+    
+    // Check if user has onboarding intent
+    const intent = getOnboardingIntent();
+    const callbackURL = intent ? "/onboarding/shopify" : "/overview";
+    
     try {
       const { error } = await signIn.social({
         provider: "google",
-        callbackURL: "/overview",
+        callbackURL,
       });
       if (error) {
         posthog.capture("signin_error", { error_message: error.message });

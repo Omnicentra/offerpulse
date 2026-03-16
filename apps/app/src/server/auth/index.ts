@@ -6,7 +6,7 @@ import * as schema from "../db/schema";
 import { workspaces, workspaceMembers, user } from "../db/schema";
 import { nanoid } from "nanoid";
 import { env } from "@/env";
-import { sendWelcomeEmail, sendResetPasswordEmail } from "../notifications";
+import { sendWelcomeEmail, sendResetPasswordEmail, sendInternalAlertEmail } from "../notifications";
 import { customSession, admin as adminPlugin } from "better-auth/plugins";
 import { logger, TRIAL_PERIOD_DAYS } from "@offerpulse/lib";
 import Stripe from "stripe";
@@ -30,6 +30,14 @@ export const getDefaultWorkspaceId = cache(async (userId: string) => {
     throw new Error("User is not a member of any workspace");
   }
   return membership;
+});
+
+export const getPriceId = cache(async (lookupKey: string) => {
+  const prices = await stripe.prices.list({
+    lookup_keys: [lookupKey],
+    limit: 1,
+  });
+  return prices.data[0]?.id;
 });
 
 export const auth = betterAuth({
@@ -94,14 +102,20 @@ export const auth = betterAuth({
           try {
             logger.debug("Creating Stripe trial subscription for new user", { userId: user.id });
 
-            const prices = await stripe.prices.list({
-              lookup_keys: ["starter_monthly"],
-              limit: 1,
-            });
-
-            const price = prices.data[0];
-            if (!price) {
+            const priceId = await getPriceId("starter_monthly");
+            if (!priceId) {
               logger.error("Starter monthly price not found in Stripe", { userId: user.id });
+
+              await sendInternalAlertEmail(
+                "OfferPulse alert: starter_monthly Stripe price missing",
+                [
+                  "<p>Failed to create Stripe trial subscription for a new user because the <code>starter_monthly</code> price could not be found.</p>",
+                  `<p><strong>User ID:</strong> ${user.id}</p>`,
+                  `<p><strong>User email:</strong> ${user.email ?? "N/A"}</p>`,
+                  "<p>Please verify that the Stripe price with lookup key <code>starter_monthly</code> exists and is active.</p>",
+                ].join("")
+              );
+
               return;
             }
 
@@ -113,7 +127,7 @@ export const auth = betterAuth({
 
             const subscription = await stripe.subscriptions.create({
               customer: customer.id,
-              items: [{ price: price.id }],
+              items: [{ price: priceId }],
               trial_period_days: TRIAL_PERIOD_DAYS,
               metadata: { userId: user.id, lookupKey: "starter_monthly" },
               payment_settings: {

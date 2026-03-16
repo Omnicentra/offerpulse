@@ -49,9 +49,10 @@ interface StoreClientProps {
   workspaceId: string;
   initialStore: RouterOutputs["ownStore"]["get"];
   planId: string;
+  isAdmin: boolean;
 }
 
-export function StoreClient({ workspaceId, initialStore, planId }: StoreClientProps) {
+export function StoreClient({ workspaceId, initialStore, planId, isAdmin }: StoreClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -65,7 +66,7 @@ export function StoreClient({ workspaceId, initialStore, planId }: StoreClientPr
     enabled: !!workspaceId,
   });
 
-  const canUseShopify = planId === "growth" || planId === "agency";
+  const canUseShopify = isAdmin || planId === "growth" || planId === "agency";
   const isShopifyConnected = (store?.platform ?? initialStore.platform) === "shopify";
 
   const disconnectMutation = useMutation(

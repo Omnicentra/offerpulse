@@ -48,8 +48,8 @@ export const env = createEnv({
       .string()
       .min(1, "FIRECRAWL_API_KEY is required for competitor monitoring")
       .startsWith("fc-", "FIRECRAWL_API_KEY must start with fc-"),
-    SHOPIFY_API_KEY: z.string().min(1).optional(),
-    SHOPIFY_API_SECRET: z.string().min(1).optional(),
+    SHOPIFY_API_KEY: z.string().min(1),
+    SHOPIFY_API_SECRET: z.string().min(1),
     SHOPIFY_SCOPES: z
       .string()
       .default("read_products,read_inventory,read_price_rules,read_discounts"),
