@@ -37,3 +37,6 @@ _old_*
 
 tsconfig.tsbuildinfo*
 next-env.d.ts
+
+#shopify
+apps/app/offer-pulse

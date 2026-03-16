@@ -3,23 +3,34 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
 import * as schema from "../db/schema";
-import { workspaces, workspaceMembers } from "../db/schema";
+import { workspaces, workspaceMembers, user } from "../db/schema";
 import { nanoid } from "nanoid";
 import { env } from "@/env";
 import { sendWelcomeEmail, sendResetPasswordEmail } from "../notifications";
 import { customSession, admin as adminPlugin } from "better-auth/plugins";
 import { logger, TRIAL_PERIOD_DAYS } from "@offerpulse/lib";
 import Stripe from "stripe";
+import { cache } from "react";
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY);
 
-export async function getDefaultWorkspaceId(userId: string) {
-  const [membership] = await db.select().from(workspaceMembers).where(eq(workspaceMembers.userId, userId)).limit(1);
+export const getDefaultWorkspaceId = cache(async (userId: string) => {
+  const [membership] = await db
+    .select({
+      workspaceId: workspaceMembers.workspaceId,
+      userRole: user.role,
+    })
+    .from(workspaceMembers)
+    .leftJoin(user, eq(workspaceMembers.userId, user.id))
+    .where(eq(workspaceMembers.userId, userId))
+    .limit(1);
+
+  logger.debug("getDefaultWorkspaceId result", membership);
   if (!membership) {
     throw new Error("User is not a member of any workspace");
   }
-  return membership.workspaceId;
-}
+  return membership;
+});
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -139,12 +150,13 @@ export const auth = betterAuth({
   plugins: [
     adminPlugin(),
     customSession(async ({ user, session }) => {
-      const workspaceId = await getDefaultWorkspaceId(user.id);
+      const { workspaceId, userRole } = await getDefaultWorkspaceId(user.id);
       return {
         ...session,
         user: {
           ...user,
           workspaceId,
+          role: userRole,
         },
       };
     }),

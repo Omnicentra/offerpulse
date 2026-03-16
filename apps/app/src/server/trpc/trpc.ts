@@ -163,7 +163,7 @@ export const workspaceProcedure = subscribedProcedure.use(
 export const shopifyIntegrationProcedure = workspaceProcedure.use(
   async ({ ctx, next }) => {
     const planId = ctx.subscription.planId as string;
-    const isAdmin = ctx.user?.role === "admin";
+    const isAdmin = ctx.user.role === "admin";
 
     if (!isAdmin && !["growth", "agency"].includes(planId)) {
       throw new TRPCError({
