@@ -33,6 +33,15 @@ export interface RateLimitResult {
 export const rateLimiter = {
   async checkLimit(identifier: string): Promise<RateLimitResult> {
     try {
+      logger.debug("[rate-limit] checking limit", { identifier });
+      if (process.env.NODE_ENV === "development") {
+        return {
+          success: true,
+          limit: 5,
+          remaining: 5,
+          reset: Date.now() + 15 * 60 * 1000,
+        };
+      }
       const result = await ratelimit.limit(identifier);
       return {
         success: result.success,

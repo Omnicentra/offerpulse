@@ -1,6 +1,5 @@
 "use client"
 
-import type { OfferSnapshotResponse } from "@/app/api/offer-snapshot/route"
 import { Container } from "@/components/container"
 import { CtaSection } from "@/components/cta-section"
 import { FaqAccordion } from "@/components/faq-accordion"
@@ -9,7 +8,6 @@ import { CheckoutRevealSection } from "@/components/home/CheckoutRevealSection"
 import { HowItWorksStepper } from "@/components/how-it-works-stepper"
 import { InputAnnotation } from "@/components/input-annotation"
 import { OfferSnapshotForm } from "@/components/offer-snapshot-form"
-import { OfferSnapshotTeaser } from "@/components/offer-snapshot-teaser"
 import { PricingCards } from "@/components/pricing-cards"
 import { PricingToggle } from "@/components/pricing-toggle"
 import { ReportPreview } from "@/components/report-preview"
@@ -21,7 +19,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { WhatWeTrackTabs } from "@/components/what-we-track-tabs"
 import { track } from "@/lib/analytics"
-import { buildAppSignupUrl } from "@offerpulse/lib/routing"
 import { extractDomain } from "@offerpulse/lib/utils"
 import {
   AlertTriangle,
@@ -31,12 +28,10 @@ import {
   CheckCircle,
   Mail,
   TrendingUp,
-  XCircle,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useCallback, useEffect, useState } from "react"
-
 const testimonials = [
   {
     quote:
@@ -71,8 +66,6 @@ function getPreviewDomain(rawUrl: string): string {
 }
 
 export default function HomePage() {
-  const [snapshotData, setSnapshotData] = useState<OfferSnapshotResponse | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const [previewDomain, setPreviewDomain] = useState("competitor-store.com")
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly")
 
@@ -159,97 +152,6 @@ export default function HomePage() {
               <HeroProductTheatre domain={previewDomain} />
             </div>
           </div>
-
-          {/* Snapshot results: error or success with blur + CTA */}
-          {(snapshotData || error) && (
-            <div className="mx-auto mt-16 max-w-3xl">
-              {error && (
-                <Card className="rounded-2xl border-destructive/30 bg-destructive/5">
-                  <CardContent className="flex items-center gap-3 p-5">
-                    <XCircle className="h-5 w-5 shrink-0 text-destructive" />
-                    <div>
-                      <p className="font-semibold text-destructive">Something went wrong</p>
-                      <p className="text-sm text-body">{error}</p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="ml-auto rounded-xl"
-                      onClick={() => {
-                        setError(null)
-                        setSnapshotData(null)
-                      }}
-                      aria-label="Retry offer snapshot"
-                    >
-                      Retry
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-              {snapshotData && (
-                <div className="relative">
-                  <div className="relative rounded-2xl">
-                    <OfferSnapshotTeaser data={snapshotData} />
-                    <div className="absolute inset-x-0 bottom-0 h-40 rounded-b-2xl bg-gradient-to-t from-background to-transparent pointer-events-none" />
-                    <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 rounded-b-2xl bg-gradient-to-t from-bg via-bg to-transparent p-6 pt-24">
-                      <div className="text-center">
-                        <p className="text-lg font-bold text-ink">
-                          Start monitoring this competitor now
-                        </p>
-                        <p className="mt-2 text-sm text-body/70">
-                          14-day free trial • No credit card • Cancel anytime
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap justify-center gap-3">
-                        <Button 
-                          asChild 
-                          size="lg" 
-                          className="rounded-xl shadow-lg hover:shadow-xl"
-                          onClick={() => {
-                            track("landing_cta_clicked", {
-                              source: "snapshot_result",
-                              competitor_url: snapshotData.domain,
-                              action: "start_trial"
-                            })
-                          }}
-                        >
-                          <Link href={buildAppSignupUrl({
-                            competitorUrl: snapshotData.domain,
-                            source: "landing_snapshot_result"
-                          })}>
-                            Start free trial →
-                          </Link>
-                        </Button>
-                        <Button 
-                          asChild 
-                          variant="outline" 
-                          size="lg" 
-                          className="rounded-xl"
-                          onClick={() => {
-                            track("landing_cta_clicked", {
-                              source: "snapshot_result",
-                              competitor_url: snapshotData.domain,
-                              action: "view_pricing"
-                            })
-                          }}
-                        >
-                          <Link href="/pricing">View pricing</Link>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-6 text-center">
-                    <p className="text-sm text-body">
-                      This was a <strong className="font-semibold text-ink">free one-time snapshot</strong>.
-                    </p>
-                    <p className="mt-1 text-sm text-body/70">
-                      Create an account to get real-time alerts and continuous monitoring.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </Container>
       </section>
 

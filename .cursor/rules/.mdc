@@ -93,6 +93,13 @@ alwaysApply: false
   
   Follow Next.js docs for Data Fetching, Rendering, and Routing.
 
+  API Routes (Next.js Route Handlers)
+  - Validate request bodies with Zod using `schema.safeParse(body)` instead of manual type checks.
+  - Define schemas in `lib/validators.ts` (or a domain-specific module) and reuse across routes.
+  - On parse failure, return 400 with the first validation error message: `parsed.error.errors[0]?.message`.
+  - Use `.transform()` and `.refine()` for normalization (e.g. URL prepending `https://`, trimming strings) before business logic.
+  - Avoid casting `body as { ... }`; always validate with Zod for type safety and consistent error handling.
+
   Logging
   - Always use `@offerpulse/lib` logger (`import { logger } from "@offerpulse/lib"`) instead of `console.log`, `console.warn`, or `console.error`.
   - Use `logger.debug` for development/troubleshooting, `logger.info` for notable events, `logger.warn` for recoverable issues, `logger.error` for failures.

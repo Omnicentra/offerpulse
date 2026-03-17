@@ -63,7 +63,6 @@ npm start
 │   ├── faq-accordion.tsx     # FAQ accordion
 │   ├── cta-section.tsx       # Call-to-action sections
 │   ├── offer-snapshot-form.tsx    # URL input form
-│   ├── offer-snapshot-teaser.tsx  # Snapshot results display
 │   ├── offer-snapshot-skeleton.tsx # Loading skeleton
 │   └── full-report-locked.tsx     # Gated content overlay
 ├── lib/
@@ -110,9 +109,9 @@ const plans = [
 ]
 ```
 
-## Replacing the Mock API
+## Offer Snapshot Tool
 
-The Offer Snapshot API (`app/api/offer-snapshot/route.ts`) currently returns mock data. To integrate real scraping:
+The Offer Snapshot tool is implemented at `app/api/tools/offer-snapshot/route.ts`. To integrate additional scraping:
 
 ### 1. Set Up Scraping Infrastructure
 
