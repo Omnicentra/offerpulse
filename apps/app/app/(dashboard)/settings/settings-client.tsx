@@ -10,14 +10,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/hooks/use-toast";
 import { useTRPC } from "@/src/lib/trpc/client";
 import { resetApi } from "@/src/mock/api";
-import type { RouterOutputs } from "@/src/server/trpc/routers/root";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, CreditCard, Lock, RefreshCw, Store, Users } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Lock, RefreshCw } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Select,
@@ -26,19 +24,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PREMIUM_OPENROUTER_MODEL } from "@offerpulse/lib/constants";
-
-type WorkspaceSettingsRow = RouterOutputs["workspaceSettings"]["get"];
+import { StoreClient } from "./store/store-client";
+import { AccountClient } from "./account/account-client";
+import { MembersTab } from "./members-tab";
+import { BillingTab } from "./billing-tab";
+import { WorkspaceSettingsRow, UserProfile, OwnStore, Members } from "@/src/lib/trpc/types";
 
 interface SettingsClientProps {
   workspaceId: string;
   initialSettings: WorkspaceSettingsRow;
   planId: string;
+  userRole: string;
+  initialProfile: UserProfile;
+  initialStore: OwnStore;
+  initialMembers: Members;
 }
 
-/** OpenRouter models for recommendations — labels highlight purpose */
 const OPENROUTER_MODEL_OPTIONS = [
-  { value: "openai/gpt-4.1-mini", label: "Balanced (recommended) — Cost-effective, good quality" },
+  {
+    value: "openai/gpt-4.1-mini",
+    label: "Balanced (recommended) — Cost-effective, good quality",
+  },
   {
     value: "x-ai/grok-4.1-fast",
     label: "Fast + reasoning — Quick responses with step-by-step thinking",
@@ -49,7 +57,6 @@ const OPENROUTER_MODEL_OPTIONS = [
   },
 ] as const;
 
-/** UI-friendly shape for form state */
 interface LocalSettings {
   defaultFrequency: "daily" | "6h" | "1h";
   defaultTrack: {
@@ -79,16 +86,26 @@ function toLocalSettings(row: WorkspaceSettingsRow): LocalSettings {
 const BEST_QUALITY_TOOLTIP =
   "The Best quality model (Gemini Pro) is available on Growth and Agency plans. Upgrade your plan to unlock.";
 
+type TabValue = "general" | "store" | "members" | "billing" | "account";
+
 export function SettingsClient({
   workspaceId,
   initialSettings,
   planId,
+  userRole,
+  initialProfile,
+  initialStore,
+  initialMembers,
 }: SettingsClientProps) {
   const canUseBestQualityModel = planId === "growth" || planId === "agency";
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const trpc = useTRPC();
+
+  const tabParam = searchParams.get("tab") as TabValue | null;
+  const [activeTab, setActiveTab] = useState<TabValue>(tabParam ?? "general");
 
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [localSettings, setLocalSettings] = useState<LocalSettings>(() =>
@@ -105,6 +122,21 @@ export function SettingsClient({
   useEffect(() => {
     setLocalSettings(toLocalSettings(settings));
   }, [settings]);
+
+  useEffect(() => {
+    const newTab = searchParams.get("tab") as TabValue | null;
+    if (newTab && ["general", "store", "members", "billing", "account"].includes(newTab)) {
+      setActiveTab(newTab);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (value: string) => {
+    const tab = value as TabValue;
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", tab);
+    router.push(url.pathname + url.search, { scroll: false });
+  };
 
   const updateMutation = useMutation(
     trpc.workspaceSettings.update.mutationOptions({
@@ -126,6 +158,7 @@ export function SettingsClient({
       },
     })
   );
+
   const resetMutation = useMutation({
     mutationFn: resetApi.resetDemoData,
     onSuccess: () => {
@@ -163,230 +196,256 @@ export function SettingsClient({
     resetMutation.mutate();
   };
 
-
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
-      <PageHeader
-        title="Settings"
-        description="Manage your workspace settings and preferences"
-      />
-
-      {/* Navigation Cards */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <button
-          onClick={() => router.push("/settings/members")}
-          className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50/50"
-        >
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100">
-              <Users className="h-6 w-6 text-blue-600" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-slate-900">Team Members</h3>
-              <p className="mt-1 text-sm text-slate-600">Manage workspace members</p>
-            </div>
-          </div>
-          <ChevronRight className="h-5 w-5 text-slate-400" />
-        </button>
-
-        <button
-          onClick={() => router.push("/settings/store")}
-          className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50/50"
-        >
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100">
-              <Store className="h-6 w-6 text-amber-600" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-slate-900">Your store</h3>
-              <p className="mt-1 text-sm text-slate-600">Products, promos & pricing</p>
-            </div>
-          </div>
-          <ChevronRight className="h-5 w-5 text-slate-400" />
-        </button>
-
-        <button
-          onClick={() => router.push("/settings/billing")}
-          className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50/50"
-        >
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100">
-              <CreditCard className="h-6 w-6 text-green-600" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-slate-900">Billing & Plan</h3>
-              <p className="mt-1 text-sm text-slate-600">View plan and usage</p>
-            </div>
-          </div>
-          <ChevronRight className="h-5 w-5 text-slate-400" />
-        </button>
+    <div className="mx-auto max-w-6xl space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
+        <p className="mt-1 text-sm text-slate-600">
+          Manage your workspace settings and preferences
+        </p>
       </div>
 
-      {/* Workspace Settings */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-6 text-lg font-semibold text-slate-900">Default Monitor Settings</h2>
-
-        <div className="space-y-6">
-          <div>
-            <Label className="mb-3 block">Default Capture Frequency</Label>
-            <div className="grid grid-cols-3 gap-3">
-              {(["daily", "6h", "1h"] as const).map((freq) => (
-                <label
-                  key={freq}
-                  className={`flex cursor-pointer flex-col rounded-xl border-2 p-4 transition-colors ${
-                    localSettings.defaultFrequency === freq
-                      ? "border-blue-600 bg-blue-50"
-                      : "border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="frequency"
-                    value={freq}
-                    checked={localSettings.defaultFrequency === freq}
-                    onChange={(e) =>
-                      setLocalSettings({
-                        ...localSettings,
-                        defaultFrequency: e.target.value as "daily" | "6h" | "1h",
-                      })
-                    }
-                    className="sr-only"
-                  />
-                  <span className="text-sm font-medium text-slate-900">
-                    {freq === "daily" ? "Daily" : freq === "6h" ? "Every 6h" : "Hourly"}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <Label className="mb-3 block">AI Model (OpenRouter)</Label>
-            <p className="mb-2 text-sm text-slate-600">
-              Choose based on your priority: balanced cost, faster responses with reasoning, or highest-quality analysis.
-            </p>
-            <Select
-              value={localSettings.openRouterModel ?? "__default__"}
-              onValueChange={(value) =>
-                setLocalSettings({
-                  ...localSettings,
-                  openRouterModel: value === "__default__" ? null : value,
-                })
-              }
-            >
-              <SelectTrigger className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20">
-                <SelectValue placeholder="Balanced (recommended)" />
-              </SelectTrigger>
-              <SelectContent>
-                {OPENROUTER_MODEL_OPTIONS.map((opt) => {
-                  const isPremium = opt.value === PREMIUM_OPENROUTER_MODEL;
-                  const disabled = isPremium && !canUseBestQualityModel;
-                  const itemValue = opt.value || "__default__";
-                  return (
-                    <SelectItem
-                      key={itemValue}
-                      value={itemValue}
-                      disabled={disabled}
-                      title={disabled ? BEST_QUALITY_TOOLTIP : undefined}
-                      className={disabled ? "opacity-60" : undefined}
-                    >
-                      {isPremium && !canUseBestQualityModel ? (
-                        <span className="inline-flex items-center gap-2">
-                          <Lock className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                          {opt.label}
-                        </span>
-                      ) : (
-                        opt.label
-                      )}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-            {!canUseBestQualityModel && (
-              <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
-                <Lock className="h-3.5 w-3.5 shrink-0" />
-                {BEST_QUALITY_TOOLTIP}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <Label className="mb-3 block">Default Tracking</Label>
-            <div className="space-y-2">
-              {[
-                { key: "promos", label: "Promotions & Discounts" },
-                { key: "shipping", label: "Shipping Offers" },
-                { key: "bundles", label: "Bundle Deals" },
-                { key: "cart", label: "Cart Incentives" },
-                { key: "deliveryReturns", label: "Delivery & Returns" },
-              ].map(({ key, label }) => (
-                <label
-                  key={key}
-                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 p-4 hover:bg-slate-50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={localSettings.defaultTrack[key as keyof typeof localSettings.defaultTrack]}
-                    onChange={(e) =>
-                      setLocalSettings({
-                        ...localSettings,
-                        defaultTrack: {
-                          ...localSettings.defaultTrack,
-                          [key]: e.target.checked,
-                        },
-                      })
-                    }
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
-                  />
-                  <span className="text-sm font-medium text-slate-900">{label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 flex justify-end gap-3">
-          <Button variant="outline" onClick={() => setLocalSettings(toLocalSettings(settings))}>
-            Reset
-          </Button>
-          <Button onClick={handleSave} disabled={updateMutation.isPending}>
-            {updateMutation.isPending ? "Saving..." : "Save Changes"}
-          </Button>
-        </div>
-      </div>
-
-      {/* Demo Data Management */}
-      <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100">
-              <RefreshCw className="h-6 w-6 text-orange-600" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-slate-900">Reset Demo Data</h3>
-              <p className="mt-1 text-sm text-slate-600">
-                Reset all competitors, snapshots, changes, and recommendations to the initial demo state
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => setResetDialogOpen(true)}
-            className="flex-shrink-0"
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="inline-flex h-auto w-full justify-start gap-8 border-b border-slate-200 bg-transparent p-0">
+          <TabsTrigger
+            value="general"
+            className="relative rounded-none border-b-2 border-transparent bg-transparent px-1 pb-3 pt-0 font-medium text-slate-600 shadow-none transition-none data-[state=active]:border-slate-900 data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none"
           >
-            Reset Data
-          </Button>
-        </div>
-      </div>
+            General
+          </TabsTrigger>
+          <TabsTrigger
+            value="store"
+            className="relative rounded-none border-b-2 border-transparent bg-transparent px-1 pb-3 pt-0 font-medium text-slate-600 shadow-none transition-none data-[state=active]:border-slate-900 data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none"
+          >
+            Store
+          </TabsTrigger>
+          <TabsTrigger
+            value="members"
+            className="relative rounded-none border-b-2 border-transparent bg-transparent px-1 pb-3 pt-0 font-medium text-slate-600 shadow-none transition-none data-[state=active]:border-slate-900 data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none"
+          >
+            Members
+          </TabsTrigger>
+          <TabsTrigger
+            value="billing"
+            className="relative rounded-none border-b-2 border-transparent bg-transparent px-1 pb-3 pt-0 font-medium text-slate-600 shadow-none transition-none data-[state=active]:border-slate-900 data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none"
+          >
+            Billing
+          </TabsTrigger>
+          <TabsTrigger
+            value="account"
+            className="relative rounded-none border-b-2 border-transparent bg-transparent px-1 pb-3 pt-0 font-medium text-slate-600 shadow-none transition-none data-[state=active]:border-slate-900 data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none"
+          >
+            Account
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Reset Confirmation Dialog */}
+        <div className="mt-8">
+          <TabsContent value="general" className="m-0 space-y-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-6 text-lg font-semibold text-slate-900">
+                Default Monitor Settings
+              </h2>
+
+              <div className="space-y-6">
+                <div>
+                  <Label className="mb-3 block">Default Capture Frequency</Label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {(["daily", "6h", "1h"] as const).map((freq) => (
+                      <label
+                        key={freq}
+                        className={`flex cursor-pointer flex-col rounded-xl border-2 p-4 transition-colors ${
+                          localSettings.defaultFrequency === freq
+                            ? "border-blue-600 bg-blue-50"
+                            : "border-slate-200 hover:border-slate-300"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="frequency"
+                          value={freq}
+                          checked={localSettings.defaultFrequency === freq}
+                          onChange={(e) =>
+                            setLocalSettings({
+                              ...localSettings,
+                              defaultFrequency: e.target.value as "daily" | "6h" | "1h",
+                            })
+                          }
+                          className="sr-only"
+                        />
+                        <span className="text-sm font-medium text-slate-900">
+                          {freq === "daily"
+                            ? "Daily"
+                            : freq === "6h"
+                              ? "Every 6h"
+                              : "Hourly"}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="mb-3 block">AI Model (OpenRouter)</Label>
+                  <p className="mb-2 text-sm text-slate-600">
+                    Choose based on your priority: balanced cost, faster responses with
+                    reasoning, or highest-quality analysis.
+                  </p>
+                  <Select
+                    value={localSettings.openRouterModel ?? "__default__"}
+                    onValueChange={(value) =>
+                      setLocalSettings({
+                        ...localSettings,
+                        openRouterModel: value === "__default__" ? null : value,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20">
+                      <SelectValue placeholder="Balanced (recommended)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {OPENROUTER_MODEL_OPTIONS.map((opt) => {
+                        const isPremium = opt.value === PREMIUM_OPENROUTER_MODEL;
+                        const disabled = isPremium && !canUseBestQualityModel;
+                        const itemValue = opt.value || "__default__";
+                        return (
+                          <SelectItem
+                            key={itemValue}
+                            value={itemValue}
+                            disabled={disabled}
+                            title={disabled ? BEST_QUALITY_TOOLTIP : undefined}
+                            className={disabled ? "opacity-60" : undefined}
+                          >
+                            {isPremium && !canUseBestQualityModel ? (
+                              <span className="inline-flex items-center gap-2">
+                                <Lock className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                                {opt.label}
+                              </span>
+                            ) : (
+                              opt.label
+                            )}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  {!canUseBestQualityModel && (
+                    <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
+                      <Lock className="h-3.5 w-3.5 shrink-0" />
+                      {BEST_QUALITY_TOOLTIP}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label className="mb-3 block">Default Tracking</Label>
+                  <div className="space-y-2">
+                    {[
+                      { key: "promos", label: "Promotions & Discounts" },
+                      { key: "shipping", label: "Shipping Offers" },
+                      { key: "bundles", label: "Bundle Deals" },
+                      { key: "cart", label: "Cart Incentives" },
+                      { key: "deliveryReturns", label: "Delivery & Returns" },
+                    ].map(({ key, label }) => (
+                      <label
+                        key={key}
+                        className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 p-4 hover:bg-slate-50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={
+                            localSettings.defaultTrack[
+                              key as keyof typeof localSettings.defaultTrack
+                            ]
+                          }
+                          onChange={(e) =>
+                            setLocalSettings({
+                              ...localSettings,
+                              defaultTrack: {
+                                ...localSettings.defaultTrack,
+                                [key]: e.target.checked,
+                              },
+                            })
+                          }
+                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+                        />
+                        <span className="text-sm font-medium text-slate-900">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setLocalSettings(toLocalSettings(settings))}
+                >
+                  Reset
+                </Button>
+                <Button onClick={handleSave} disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100">
+                    <RefreshCw className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      Reset Demo Data
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Reset all competitors, snapshots, changes, and recommendations to
+                      the initial demo state
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setResetDialogOpen(true)}
+                  className="flex-shrink-0"
+                >
+                  Reset Data
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="store" className="m-0">
+            <StoreClient
+              workspaceId={workspaceId}
+              initialStore={initialStore}
+              planId={planId}
+              isAdmin={userRole === "admin"}
+              embedded
+            />
+          </TabsContent>
+
+          <TabsContent value="members" className="m-0">
+            <MembersTab workspaceId={workspaceId} initialMembers={initialMembers} />
+          </TabsContent>
+
+          <TabsContent value="billing" className="m-0">
+            <BillingTab />
+          </TabsContent>
+
+          <TabsContent value="account" className="m-0">
+            <AccountClient initialProfile={initialProfile} embedded />
+          </TabsContent>
+        </div>
+      </Tabs>
+
       <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reset Demo Data</DialogTitle>
             <DialogDescription>
-              This will delete all your current data and restore the initial demo dataset. This action cannot be undone.
+              This will delete all your current data and restore the initial demo dataset.
+              This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

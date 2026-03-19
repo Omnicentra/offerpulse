@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Send, Unlink } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 function SlackLogo({ className }: { className?: string }) {
   return (
@@ -64,7 +65,7 @@ export default function AlertsPage() {
   const { workspaceId } = useWorkspace();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { data: settings, isLoading } = useQuery(
     trpc.alerts.get.queryOptions(
@@ -133,16 +134,16 @@ export default function AlertsPage() {
         title: "Slack connected",
         description: "Your workspace is now connected to Slack. Choose a channel below.",
       });
-      window.history.replaceState({}, "", "/alerts");
+      router.replace("/alerts");
     } else if (error === "oauth_failed") {
       toast({
         title: "Slack connection failed",
         description: "Could not connect to Slack. Please try again.",
         variant: "destructive",
       });
-      window.history.replaceState({}, "", "/alerts");
+      router.replace("/alerts");
     }
-  }, [searchParams, toast]);
+  }, [searchParams, toast, router]);
 
   const updateMutation = useMutation(
     trpc.alerts.update.mutationOptions({

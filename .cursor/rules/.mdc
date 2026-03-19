@@ -130,4 +130,10 @@ alwaysApply: false
   - Always assign the issues to `chipz`
   - Create labels or assign relevant labels to the issue
   - For plans that involve multiple todos: create a parent issue first, then create sub-issues for each todo and assign them as children of the parent (e.g. via `parentId` when creating sub-issues).
+
+  Development Server
+  - DO NOT run `pnpm dev`, `pnpm dev:app`, or `pnpm dev:marketing` to test or confirm changes.
+  - Use type checking (`pnpm type-check`) and linting (`pnpm lint`) to verify code correctness.
+  - Assume the user will test changes in their own development environment.
+  - Only start dev servers if the user explicitly requests it.
   

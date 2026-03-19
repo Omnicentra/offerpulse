@@ -14,26 +14,34 @@ export default async function SettingsPage() {
   }
 
   const caller = await createCaller();
-  const workspaceId = session.user.workspaceId;
+  const { workspaceId, role } = session.user;
 
   if (!workspaceId) {
     redirect("/login");
   }
 
-  // Require active subscription before calling workspace procedures
   const subscription = await caller.billing.getSubscription();
   const isActive = ["active", "trialing"].includes(subscription?.status ?? "");
   if (!subscription || !isActive) {
     redirect("/settings/billing");
   }
 
-  const initialSettings = await caller.workspaceSettings.get({ workspaceId });
+  const [initialSettings, initialProfile, initialStore, initialMembers] = await Promise.all([
+    caller.workspaceSettings.get({ workspaceId }),
+    caller.users.getProfile(),
+    caller.ownStore.get({ workspaceId }),
+    caller.users.list({ workspaceId }),
+  ]);
 
   return (
     <SettingsClient
       workspaceId={workspaceId}
       initialSettings={initialSettings}
       planId={subscription.planId}
+      userRole={role ?? "user"}
+      initialProfile={initialProfile}
+      initialStore={initialStore}
+      initialMembers={initialMembers}
     />
   );
 }

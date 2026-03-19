@@ -43,7 +43,11 @@ export default function HomePage() {
     )
   );
 
-  const { data: changeEvents, isLoading: isLoadingChanges } = useQuery(
+  const {
+    data: changeEvents,
+    isLoading: isLoadingChanges,
+    dataUpdatedAt: changeEventsUpdatedAt,
+  } = useQuery(
     trpc.changeEvents.list.queryOptions(
       { workspaceId: workspaceId! },
       { enabled: !!workspaceId }
@@ -67,11 +71,30 @@ export default function HomePage() {
   // Calculate stats
   const activeCompetitors = competitors?.filter((c) => c.isActive).length || 0;
   
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const refTime = changeEventsUpdatedAt ?? 0;
+  const sevenDaysAgo = new Date(Math.max(0, refTime - 7 * 24 * 60 * 60 * 1000));
+  const fourteenDaysAgo = new Date(Math.max(0, refTime - 14 * 24 * 60 * 60 * 1000));
   const recentChanges = changeEvents?.filter(
     (e) => new Date(e.detectedAt) > sevenDaysAgo
   ) || [];
-  
+  const priorPeriodChanges =
+    changeEvents?.filter((e) => {
+      const d = new Date(e.detectedAt);
+      return d > fourteenDaysAgo && d <= sevenDaysAgo;
+    }) || [];
+
+  const changesTrend =
+    priorPeriodChanges.length > 0
+      ? (() => {
+          const prior = priorPeriodChanges.length;
+          const current = recentChanges.length;
+          const pct = ((current - prior) / prior) * 100;
+          const trend = pct > 0 ? "up" : pct < 0 ? "down" : "neutral";
+          const sign = pct > 0 ? "+" : "";
+          return { value: `${sign}${Math.round(pct)}%`, trend } as const;
+        })()
+      : undefined;
+
   const highConfidenceChanges = recentChanges.filter(
     (e) => e.confidence === "high"
   ).length;
@@ -117,7 +140,7 @@ export default function HomePage() {
         <StatCard
           label="Changes (7 days)"
           value={recentChanges.length}
-          change={{ value: "+12%", trend: "up" }}
+          change={changesTrend}
           icon={TrendingUp}
         />
         <StatCard
@@ -203,7 +226,7 @@ export default function HomePage() {
         {/* This Week's Pulse */}
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-            <h2 className="text-lg font-semibold text-slate-900">This Week's Pulse</h2>
+            <h2 className="text-lg font-semibold text-slate-900">This Week&apos;s Pulse</h2>
             <Button
               variant="ghost"
               size="sm"

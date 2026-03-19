@@ -50,9 +50,10 @@ interface StoreClientProps {
   initialStore: RouterOutputs["ownStore"]["get"];
   planId: string;
   isAdmin: boolean;
+  embedded?: boolean;
 }
 
-export function StoreClient({ workspaceId, initialStore, planId, isAdmin }: StoreClientProps) {
+export function StoreClient({ workspaceId, initialStore, planId, isAdmin, embedded = false }: StoreClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -115,20 +116,22 @@ export function StoreClient({ workspaceId, initialStore, planId, isAdmin }: Stor
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push("/settings")}
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
-        <PageHeader
-          title="Your store"
-          description="Configure your store details, products, and promotions for personalized competitor insights"
-        />
-      </div>
+    <div className={embedded ? "space-y-8" : "mx-auto max-w-4xl space-y-8"}>
+      {!embedded && (
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push("/settings")}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          <PageHeader
+            title="Your store"
+            description="Configure your store details, products, and promotions for personalized competitor insights"
+          />
+        </div>
+      )}
 
       {/* Shopify connection */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

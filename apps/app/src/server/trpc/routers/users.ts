@@ -1,7 +1,7 @@
 import { router, protectedProcedure, subscribedProcedure, workspaceProcedure } from "../trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { workspaceMembers, workspaces, user } from "../../db/schema";
+import { workspaceMembers, workspaces, user, account } from "../../db/schema";
 import { eq, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { getPlanById, type PlanId } from "@offerpulse/lib/pricing";
@@ -230,6 +230,68 @@ export const usersRouter = router({
         role: updated.role,
         membershipId: updated.id,
         createdAt: updated.createdAt,
+      };
+    }),
+
+  getProfile: protectedProcedure.query(async ({ ctx }) => {
+    const userRecord = await ctx.db.query.user.findFirst({
+      where: eq(user.id, ctx.user.id),
+    });
+
+    if (!userRecord) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "User not found",
+      });
+    }
+
+    const credentialAccount = await ctx.db.query.account.findFirst({
+      where: and(
+        eq(account.userId, ctx.user.id),
+        eq(account.providerId, "credential")
+      ),
+    });
+
+    return {
+      id: userRecord.id,
+      name: userRecord.name,
+      email: userRecord.email,
+      image: userRecord.image,
+      createdAt: userRecord.createdAt,
+      hasPassword: !!credentialAccount,
+    };
+  }),
+
+  updateProfile: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(1).max(100).optional(),
+        image: z.string().url().optional().nullable(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const updates: { name?: string; image?: string | null } = {};
+      if (input.name !== undefined) updates.name = input.name;
+      if (input.image !== undefined) updates.image = input.image;
+
+      const [updated] = await ctx.db
+        .update(user)
+        .set(updates)
+        .where(eq(user.id, ctx.user.id))
+        .returning();
+
+      if (!updated) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
+      return {
+        id: updated.id,
+        name: updated.name,
+        email: updated.email,
+        image: updated.image,
       };
     }),
 });

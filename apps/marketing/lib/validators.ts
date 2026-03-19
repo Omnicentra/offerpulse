@@ -31,7 +31,7 @@ export const offerSnapshotPreviewSchema = z.object({
   url: z
     .string()
     .min(1, "URL is required")
-    .transform((val) => (val.startsWith("http") ? val : `https://${val}`))
+    .transform((val) => (val.startsWith("http://") || val.startsWith("https://") ? val : `https://${val}`))
     .refine(isValidStoreUrl, { message: "Invalid URL format" }),
   prompt: z
     .string()
