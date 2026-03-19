@@ -52,7 +52,7 @@ export default function ShopifyOnboardingPage() {
     // Check if onboarding intent exists, redirect to overview if not
     const intent = getOnboardingIntent();
     if (!intent) {
-      router.replace("/overview");
+      router.replace("/");
     }
   }, [session?.user, isPending, router]);
 
@@ -127,7 +127,7 @@ export default function ShopifyOnboardingPage() {
       const intent = getOnboardingIntent();
       
       if (!intent) {
-        router.push("/overview?welcome=1");
+        router.push("/?welcome=1");
         return;
       }
 
@@ -195,7 +195,7 @@ export default function ShopifyOnboardingPage() {
         // No competitor URL, just go to overview
         clearOnboardingIntent();
         setConnectDialogOpen(false);
-        router.push("/overview?welcome=1");
+        router.push("/?welcome=1");
       }
     } catch (error) {
       setProvisioningStep("error");
@@ -369,7 +369,7 @@ export default function ShopifyOnboardingPage() {
                   <Button variant="outline" onClick={handleRetry} className="flex-1">
                     Try Again
                   </Button>
-                  <Button onClick={() => router.push("/overview")} className="flex-1">
+                  <Button onClick={() => router.push("/")} className="flex-1">
                     Go to Dashboard
                   </Button>
                 </div>

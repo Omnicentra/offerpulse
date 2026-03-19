@@ -19,6 +19,7 @@ import {
   ArrowRight,
   Plus,
 } from "lucide-react";
+
 // Date formatting helper
 const formatDistanceToNow = (date: Date) => {
   const now = new Date();
@@ -30,7 +31,7 @@ const formatDistanceToNow = (date: Date) => {
   return `${Math.floor(diffInSeconds / 86400)} days ago`;
 };
 
-export default function OverviewPage() {
+export default function HomePage() {
   const router = useRouter();
   const { workspaceId } = useWorkspace();
   const trpc = useTRPC();

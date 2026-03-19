@@ -85,7 +85,7 @@ function SignupForm() {
       if (intent) {
         router.push("/onboarding/shopify");
       } else {
-        router.push("/overview");
+        router.push("/");
       }
     } catch (error) {
       posthog.capture("signup_error", {
@@ -107,7 +107,7 @@ function SignupForm() {
     
     // Check if user has onboarding intent
     const intent = getOnboardingIntent();
-    const callbackURL = intent ? "/onboarding/shopify" : "/overview";
+    const callbackURL = intent ? "/onboarding/shopify" : "/";
     
     try {
       const { error } = await signIn.social({

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -89,7 +88,8 @@ export default function AlertsPage() {
   const publicChannels = channels.filter((ch) => !ch.is_private);
   const privateChannels = channels.filter((ch) => ch.is_private);
 
-  const [localSettings, setLocalSettings] = useState(settings);
+  const [localSettings, setLocalSettings] = useState<typeof settings>(undefined);
+  const currentSettings = localSettings ?? settings;
 
   const disconnectMutation = useMutation(
     trpc.alerts.disconnectSlack.mutationOptions({
@@ -123,13 +123,6 @@ export default function AlertsPage() {
       },
     })
   );
-
-  // Update local settings when data loads
-  useEffect(() => {
-    if (settings) {
-      setLocalSettings(settings);
-    }
-  }, [settings]);
 
   // Toast for OAuth callback result
   useEffect(() => {
@@ -189,17 +182,17 @@ export default function AlertsPage() {
   );
 
   const handleSave = () => {
-    if (!localSettings || !workspaceId) return;
+    if (!currentSettings || !workspaceId) return;
     updateMutation.mutate({
       workspaceId,
-      emailEnabled: localSettings.emailEnabled,
-      slackEnabled: localSettings.slackEnabled,
-      slackWebhookUrl: localSettings.slackWebhookUrl ?? undefined,
-      slackChannel: localSettings.slackChannel ?? undefined,
-      slackChannelName: localSettings.slackChannelName ?? undefined,
-      captureNotificationsEnabled: localSettings.captureNotificationsEnabled,
-      eventTypes: localSettings.eventTypes ?? undefined,
-      minConfidence: localSettings.minConfidence,
+      emailEnabled: currentSettings.emailEnabled,
+      slackEnabled: currentSettings.slackEnabled,
+      slackWebhookUrl: currentSettings.slackWebhookUrl ?? undefined,
+      slackChannel: currentSettings.slackChannel ?? undefined,
+      slackChannelName: currentSettings.slackChannelName ?? undefined,
+      captureNotificationsEnabled: currentSettings.captureNotificationsEnabled,
+      eventTypes: currentSettings.eventTypes ?? undefined,
+      minConfidence: currentSettings.minConfidence,
     });
   };
 
@@ -221,7 +214,7 @@ export default function AlertsPage() {
     DELIVERY_RETURNS: "Delivery & Returns",
   };
 
-  if (isLoading || !localSettings) {
+  if (isLoading || !currentSettings) {
     return (
       <div>
         <PageHeader title="Alerts" />
@@ -249,9 +242,9 @@ export default function AlertsPage() {
           <label className="relative inline-flex cursor-pointer items-center">
             <input
               type="checkbox"
-              checked={localSettings.emailEnabled}
+              checked={currentSettings.emailEnabled}
               onChange={(e) =>
-                setLocalSettings({ ...localSettings, emailEnabled: e.target.checked })
+                setLocalSettings({ ...currentSettings, emailEnabled: e.target.checked })
               }
               className="peer sr-only"
             />
@@ -259,7 +252,7 @@ export default function AlertsPage() {
           </label>
         </div>
 
-        {localSettings.emailEnabled && (
+        {currentSettings.emailEnabled && (
           <div className="mt-4 rounded-lg bg-blue-50 p-4">
             <p className="text-sm text-blue-900">
               Alerts will be sent to your registered email
@@ -280,9 +273,9 @@ export default function AlertsPage() {
           <label className="relative inline-flex cursor-pointer items-center">
             <input
               type="checkbox"
-              checked={localSettings.slackEnabled}
+              checked={currentSettings.slackEnabled}
               onChange={(e) =>
-                setLocalSettings({ ...localSettings, slackEnabled: e.target.checked })
+                setLocalSettings({ ...currentSettings, slackEnabled: e.target.checked })
               }
               className="peer sr-only"
             />
@@ -290,9 +283,9 @@ export default function AlertsPage() {
           </label>
         </div>
 
-        {localSettings.slackEnabled && (
+        {currentSettings.slackEnabled && (
           <div className="mt-4 space-y-3">
-            {!localSettings.slackTeamName ? (
+            {!currentSettings.slackTeamName ? (
               <>
                 <Button
                   type="button"
@@ -312,11 +305,11 @@ export default function AlertsPage() {
                 <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4">
                   <div>
                     <p className="text-sm font-medium text-slate-900">
-                      Connected to {localSettings.slackTeamName}
+                      Connected to {currentSettings.slackTeamName}
                     </p>
-                    {localSettings.slackChannelName && (
+                    {currentSettings.slackChannelName && (
                       <p className="mt-0.5 text-xs text-slate-600">
-                        Channel: #{localSettings.slackChannelName}
+                        Channel: #{currentSettings.slackChannelName}
                       </p>
                     )}
                   </div>
@@ -335,11 +328,11 @@ export default function AlertsPage() {
                 <div>
                   <Label htmlFor="slack-channel">Notification Channel</Label>
                   <Select
-                    value={localSettings.slackChannel ?? ""}
+                    value={currentSettings.slackChannel ?? ""}
                     onValueChange={(channelId) => {
                       const ch = channels.find((c) => c.id === channelId);
                       setLocalSettings({
-                        ...localSettings,
+                        ...currentSettings,
                         slackChannel: channelId || null,
                         slackChannelName: ch?.name ?? null,
                       });
@@ -399,13 +392,13 @@ export default function AlertsPage() {
             >
               <input
                 type="checkbox"
-                checked={localSettings.eventTypes?.includes(type) || false}
+                checked={currentSettings.eventTypes?.includes(type) || false}
                 onChange={(e) => {
-                  const currentTypes = localSettings.eventTypes || [];
+                  const currentTypes = currentSettings.eventTypes || [];
                   const newTypes = e.target.checked
                     ? [...currentTypes, type]
                     : currentTypes.filter((t) => t !== type);
-                  setLocalSettings({ ...localSettings, eventTypes: newTypes });
+                  setLocalSettings({ ...currentSettings, eventTypes: newTypes });
                 }}
                 className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
               />
@@ -429,7 +422,7 @@ export default function AlertsPage() {
             <label
               key={level}
               className={`flex cursor-pointer flex-col rounded-xl border-2 p-4 transition-colors ${
-                localSettings.minConfidence === level
+                currentSettings.minConfidence === level
                   ? "border-blue-600 bg-blue-50"
                   : "border-slate-200 hover:border-slate-300"
               }`}
@@ -438,10 +431,10 @@ export default function AlertsPage() {
                 type="radio"
                 name="confidence"
                 value={level}
-                checked={localSettings.minConfidence === level}
+                checked={currentSettings.minConfidence === level}
                 onChange={(e) =>
                   setLocalSettings({
-                    ...localSettings,
+                    ...currentSettings,
                     minConfidence: e.target.value as "low" | "medium" | "high",
                   })
                 }
@@ -476,10 +469,10 @@ export default function AlertsPage() {
           <label className="relative inline-flex cursor-pointer items-center">
             <input
               type="checkbox"
-              checked={localSettings.captureNotificationsEnabled ?? false}
+              checked={currentSettings.captureNotificationsEnabled ?? false}
               onChange={(e) =>
                 setLocalSettings({
-                  ...localSettings,
+                  ...currentSettings,
                   captureNotificationsEnabled: e.target.checked,
                 })
               }
@@ -511,7 +504,7 @@ export default function AlertsPage() {
 
       <div className="flex justify-end gap-3">
         <Button
-          onClick={() => setLocalSettings(settings)}
+          onClick={() => setLocalSettings(undefined)}
           variant="outline"
           disabled={updateMutation.isPending}
         >
