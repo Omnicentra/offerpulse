@@ -9,6 +9,9 @@ import { Redis } from "@upstash/redis";
 import { env } from "@/env";
 import { logger } from "@/lib/logger";
 
+const RATE_LIMIT = 3;
+const RATE_WINDOW_MS = 15 * 60 * 1000;
+
 // Initialize Upstash Redis client
 const redis = new Redis({
   url: env.UPSTASH_REDIS_REST_URL,
@@ -18,7 +21,7 @@ const redis = new Redis({
 // Create rate limiter: 3 requests per 15 minutes
 const ratelimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(3, "15 m"),
+  limiter: Ratelimit.slidingWindow(RATE_LIMIT, "15 m"),
   analytics: true,
   prefix: "@offerpulse/marketing",
 });
@@ -30,6 +33,17 @@ export interface RateLimitResult {
   reset: number;
 }
 
+function buildAllowedHeaders(): Omit<RateLimitResult, "success"> {
+  // Upstash's `remaining` is expected to reflect the quota after this request.
+  // Since fail-open/dev shortcuts don't consume a Redis token, we model the
+  // current allowed request as already accounted for (remaining = limit - 1).
+  return {
+    limit: RATE_LIMIT,
+    remaining: Math.max(RATE_LIMIT - 1, 0),
+    reset: Date.now() + RATE_WINDOW_MS,
+  };
+}
+
 export const rateLimiter = {
   async checkLimit(identifier: string): Promise<RateLimitResult> {
     try {
@@ -37,9 +51,7 @@ export const rateLimiter = {
       if (process.env.NODE_ENV === "development") {
         return {
           success: true,
-          limit: 5,
-          remaining: 5,
-          reset: Date.now() + 15 * 60 * 1000,
+          ...buildAllowedHeaders(),
         };
       }
       const result = await ratelimit.limit(identifier);
@@ -54,9 +66,7 @@ export const rateLimiter = {
       // Fail open: if rate limiter is down, allow request
       return {
         success: true,
-        limit: 5,
-        remaining: 5,
-        reset: Date.now() + 15 * 60 * 1000,
+        ...buildAllowedHeaders(),
       };
     }
   },
