@@ -55,8 +55,11 @@ export const env = createEnv({
       .default("read_products,read_inventory,read_price_rules,read_discounts"),
     SENTRY_DSN: z.url().optional(),
     SENTRY_AUTH_TOKEN: z.string().optional(),
+    TAWK_WEBHOOK_SECRET: z.string().optional(),
   },
   client: {
+    NEXT_PUBLIC_TAWK_PROPERTY_ID: z.string().optional().default("69bd4b8c26d3ea1c304ac05b"),
+    NEXT_PUBLIC_TAWK_WIDGET_ID: z.string().optional().default("1jk5mu7n3"),
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z
       .string()
       .min(1, "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is required")
@@ -110,6 +113,9 @@ export const env = createEnv({
     SHOPIFY_SCOPES: process.env.SHOPIFY_SCOPES,
     SENTRY_DSN: process.env.SENTRY_DSN,
     SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
+    TAWK_WEBHOOK_SECRET: process.env.TAWK_WEBHOOK_SECRET,
+    NEXT_PUBLIC_TAWK_PROPERTY_ID: process.env.NEXT_PUBLIC_TAWK_PROPERTY_ID,
+    NEXT_PUBLIC_TAWK_WIDGET_ID: process.env.NEXT_PUBLIC_TAWK_WIDGET_ID,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,

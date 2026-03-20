@@ -41,7 +41,10 @@
     "SENTRY_DSN",
     "SENTRY_AUTH_TOKEN",
     "NEXT_PUBLIC_SENTRY_DSN",
-    "LOG_LEVEL"
+    "LOG_LEVEL",
+    "TAWK_WEBHOOK_SECRET",
+    "NEXT_PUBLIC_TAWK_PROPERTY_ID",
+    "NEXT_PUBLIC_TAWK_WIDGET_ID"
   ],
   "tasks": {
     "build": {

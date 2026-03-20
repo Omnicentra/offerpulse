@@ -67,6 +67,8 @@ export const env = createEnv({
   },
   clientPrefix: "NEXT_PUBLIC_",
   client: {
+    NEXT_PUBLIC_TAWK_PROPERTY_ID: z.string().optional().default("69bd4eba44c8da1c38385036"),
+    NEXT_PUBLIC_TAWK_WIDGET_ID: z.string().optional().default("1jk5mu7n3"),
     NEXT_PUBLIC_MARKETING_APP_URL: z
       .string()
       .min(1, "NEXT_PUBLIC_MARKETING_APP_URL is required")
@@ -100,6 +102,8 @@ export const env = createEnv({
     FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+    NEXT_PUBLIC_TAWK_PROPERTY_ID: process.env.NEXT_PUBLIC_TAWK_PROPERTY_ID,
+    NEXT_PUBLIC_TAWK_WIDGET_ID: process.env.NEXT_PUBLIC_TAWK_WIDGET_ID,
     NEXT_PUBLIC_MARKETING_APP_URL: process.env.NEXT_PUBLIC_MARKETING_APP_URL,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,

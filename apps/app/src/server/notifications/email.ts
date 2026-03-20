@@ -6,6 +6,7 @@ import { ChangeAlertEmail } from "./emails/change-alert-email";
 import { WeeklyPulseEmail } from "./emails/weekly-pulse-email";
 import { CaptureCompleteEmail } from "./emails/capture-complete-email";
 import { ResetPasswordEmail } from "./emails/reset-password-email";
+import { NewChatEmail } from "./emails/new-chat-email";
 import { logger } from "@offerpulse/lib";
 
 const resend = new Resend(env.RESEND_API_KEY);
@@ -280,6 +281,64 @@ export async function sendResetPasswordEmail(
     return { success: true, messageId: result.data.id };
   } catch (error) {
     logger.error("Reset password email failed", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+export interface TawkNewChatEmailData {
+  visitorName: string;
+  visitorEmail?: string | null;
+  chatId: string;
+  propertyName: string;
+  tawkInboxUrl?: string;
+}
+
+/**
+ * Send internal notification email when a new tawk.to chat starts.
+ * Delivers to ALERT_EMAIL via Resend.
+ */
+export async function sendTawkNewChatEmail(
+  data: TawkNewChatEmailData
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!env.ALERT_EMAIL) {
+      logger.debug("Skipping tawk new-chat email: ALERT_EMAIL not configured", { chatId: data.chatId });
+      return { success: true };
+    }
+
+    const logoUrl = `${env.NEXT_PUBLIC_MARKETING_APP_URL}/favicon/favicon-96x96.png`;
+    logger.info("Sending tawk.to new chat notification", { chatId: data.chatId, visitorName: data.visitorName });
+
+    const html = await render(
+      NewChatEmail({
+        ...data,
+        logoUrl,
+      })
+    );
+
+    const result: ResendEmailResult = await resend.emails.send({
+      from: WELCOME_FROM,
+      to: env.ALERT_EMAIL,
+      subject: `💬 New chat: ${data.visitorName} on ${data.propertyName}`,
+      html,
+    });
+
+    if (result.error) {
+      const errorMessage =
+        typeof result.error === "string"
+          ? result.error
+          : result.error?.message ?? "Email API error";
+      logger.error("tawk new-chat email failed via Resend", { chatId: data.chatId, error: result.error });
+      return { success: false, error: errorMessage };
+    }
+
+    logger.info("tawk new-chat notification sent", { chatId: data.chatId });
+    return { success: true };
+  } catch (error) {
+    logger.error("tawk new-chat email failed", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

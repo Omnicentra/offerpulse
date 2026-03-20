@@ -3,8 +3,10 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
 import MetaPixel from "@/components/MetaPixel"
+import { TawkWidget } from "@/components/tawk-widget"
 import { Analytics } from "@vercel/analytics/next"
 import { CANONICAL_BASE_URL, SITE_CONFIG, ORGANIZATION, SOCIAL_LINKS } from "@/lib/seo/config"
+import { env } from "@/env"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -133,6 +135,10 @@ export default function RootLayout({
         {children}
         <Toaster />
         <Analytics />
+        <TawkWidget
+          propertyId={env.NEXT_PUBLIC_TAWK_PROPERTY_ID}
+          widgetId={env.NEXT_PUBLIC_TAWK_WIDGET_ID}
+        />
       </body>
     </html>
   )
