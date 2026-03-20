@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useTRPC } from "@/src/lib/trpc/client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import {
   Select,
@@ -15,42 +15,39 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { RouterOutputs } from "@/src/server/trpc/routers/root";
 
 const CURRENCIES = ["GBP", "USD", "EUR"] as const;
 
 interface StoreDetailsFormProps {
   workspaceId: string;
-  initialStoreName: string;
-  initialStoreUrl: string | null;
-  initialCurrency: string;
+  initialStore: RouterOutputs["ownStore"]["get"];
+  store: RouterOutputs["ownStore"]["get"] | undefined;
+  isFetching: boolean;
 }
 
 export function StoreDetailsForm({
   workspaceId,
-  initialStoreName,
-  initialStoreUrl,
-  initialCurrency,
+  initialStore,
+  store,
+  isFetching,
 }: StoreDetailsFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const trpc = useTRPC();
 
-  const [storeName, setStoreName] = useState(initialStoreName);
-  const [storeUrl, setStoreUrl] = useState(initialStoreUrl ?? "");
-  const [currency, setCurrency] = useState(initialCurrency);
+  const resolved = store ?? initialStore;
 
-  const { data: store } = useQuery({
-    ...trpc.ownStore.get.queryOptions({ workspaceId }),
-    enabled: !!workspaceId,
-  });
+  const [storeName, setStoreName] = useState(resolved.storeName);
+  const [storeUrl, setStoreUrl] = useState(resolved.storeUrl ?? "");
+  const [currency, setCurrency] = useState(resolved.currency);
 
   useEffect(() => {
-    if (store) {
-      setStoreName(store.storeName);
-      setStoreUrl(store.storeUrl ?? "");
-      setCurrency(store.currency);
-    }
-  }, [store]);
+    const next = store ?? initialStore;
+    setStoreName(next.storeName);
+    setStoreUrl(next.storeUrl ?? "");
+    setCurrency(next.currency);
+  }, [store, initialStore]);
 
   const updateMutation = useMutation(
     trpc.ownStore.update.mutationOptions({
@@ -83,9 +80,9 @@ export function StoreDetailsForm({
   };
 
   const hasChanges =
-    storeName !== (store?.storeName ?? initialStoreName) ||
-    (storeUrl || "") !== (store?.storeUrl ?? initialStoreUrl ?? "") ||
-    currency !== (store?.currency ?? initialCurrency);
+    storeName !== resolved.storeName ||
+    (storeUrl || "") !== (resolved.storeUrl ?? "") ||
+    currency !== resolved.currency;
 
   return (
     <div className="space-y-6">
@@ -98,6 +95,7 @@ export function StoreDetailsForm({
           value={storeName}
           onChange={(e) => setStoreName(e.target.value)}
           placeholder="My Store"
+          disabled={isFetching}
         />
       </div>
       <div>
@@ -110,13 +108,14 @@ export function StoreDetailsForm({
           value={storeUrl}
           onChange={(e) => setStoreUrl(e.target.value)}
           placeholder="https://yourstore.com"
+          disabled={isFetching}
         />
       </div>
       <div>
         <Label htmlFor="currency" className="mb-2 block">
           Currency
         </Label>
-        <Select value={currency} onValueChange={setCurrency}>
+        <Select value={currency} onValueChange={setCurrency} disabled={isFetching}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -132,7 +131,7 @@ export function StoreDetailsForm({
       <div className="flex justify-end">
         <Button
           onClick={handleSave}
-          disabled={!hasChanges || updateMutation.isPending}
+          disabled={!hasChanges || updateMutation.isPending || isFetching}
         >
           {updateMutation.isPending ? "Saving..." : "Save Changes"}
         </Button>

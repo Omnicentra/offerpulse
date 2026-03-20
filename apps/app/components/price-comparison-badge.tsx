@@ -13,7 +13,7 @@ export function PriceComparisonBadge({
 }: PriceComparisonBadgeProps) {
   if (yourPrice === theirPrice) return null;
 
-  const diff = yourPrice - theirPrice;
+  const diff = theirPrice - yourPrice;
   const pct = yourPrice > 0 ? ((diff / yourPrice) * 100).toFixed(0) : "0";
   const isCheaper = diff > 0;
 
@@ -35,7 +35,7 @@ export function PriceComparisonBadge({
 
   return (
     <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-800">
-      {pct}% more vs competitor
+      {Math.abs(Number(pct))}% more vs competitor
     </span>
   );
 }

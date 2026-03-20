@@ -15,7 +15,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import type { RouterOutputs } from "@/src/server/trpc/routers/root";
 
 function SyncNowButton({ workspaceId }: { workspaceId: string }) {
@@ -61,7 +61,7 @@ export function StoreClient({ workspaceId, initialStore, planId, isAdmin, embedd
   const trpc = useTRPC();
   const [shopInput, setShopInput] = useState("");
 
-  const { data: store } = useQuery({
+  const { data: store, isFetching } = useQuery({
     ...trpc.ownStore.get.queryOptions({ workspaceId }),
     initialData: initialStore,
     enabled: !!workspaceId,
@@ -179,12 +179,17 @@ export function StoreClient({ workspaceId, initialStore, planId, isAdmin, embedd
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-6 text-lg font-semibold text-slate-900">Store details</h2>
+        <h2 className="mb-6 flex items-center gap-2 text-lg font-semibold text-slate-900">
+          Store details
+          {isFetching ? (
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-slate-500" aria-hidden />
+          ) : null}
+        </h2>
         <StoreDetailsForm
           workspaceId={workspaceId}
-          initialStoreName={initialStore.storeName}
-          initialStoreUrl={initialStore.storeUrl}
-          initialCurrency={initialStore.currency}
+          initialStore={initialStore}
+          store={store}
+          isFetching={isFetching}
         />
       </div>
 

@@ -19,12 +19,15 @@ export interface PriceRulesResponse {
   price_rules: PriceRule[];
 }
 
+const MAX_RETRIES = 5;
+
 export async function fetchPriceRules(
   shopDomain: string,
   accessToken: string
 ): Promise<PriceRule[]> {
   const allRules: PriceRule[] = [];
   let url: string | null = `https://${shopDomain}/admin/api/2024-01/price_rules.json?limit=250`;
+  let retryCount = 0;
 
   while (url) {
     const res: Response = await fetch(url, {
@@ -45,8 +48,16 @@ export async function fetchPriceRules(
 
     if (!res.ok) {
       if (res.status === 429) {
+        retryCount++;
+        if (retryCount > MAX_RETRIES) {
+          throw new Error(
+            `Price rules fetch failed: rate limited (HTTP 429) after ${MAX_RETRIES} retries for ${shopDomain}`
+          );
+        }
         const retryAfter = res.headers.get("Retry-After");
-        await new Promise((r) => setTimeout(r, (parseInt(retryAfter ?? "60", 10) * 1000)));
+        await new Promise((r) =>
+          setTimeout(r, parseInt(retryAfter ?? "60", 10) * 1000)
+        );
         continue;
       }
       
@@ -62,6 +73,8 @@ export async function fetchPriceRules(
         `Content-Type: ${contentType}. Body preview: ${bodyPreview.slice(0, 100)}`
       );
     }
+
+    retryCount = 0;
 
     if (!contentType.includes("application/json")) {
       const bodyPreview = await res.text();

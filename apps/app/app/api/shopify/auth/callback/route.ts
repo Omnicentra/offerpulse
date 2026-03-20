@@ -171,12 +171,25 @@ export async function GET(request: NextRequest) {
       workspaceId: oauthState.workspaceId,
       shop,
     });
-    await inngest.send({
-      name: "shopify/store.sync",
-      data: {
-        workspaceId: oauthState.workspaceId,
-      },
-    });
+    try {
+      await inngest.send({
+        name: "shopify/store.sync",
+        data: {
+          workspaceId: oauthState.workspaceId,
+        },
+      });
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error(
+        "[shopify/auth/callback] Failed to enqueue shopify/store.sync (non-fatal; OAuth continues)",
+        {
+          workspaceId: oauthState.workspaceId,
+          shop,
+          INNGEST_EVENT_KEY_CONFIGURED: Boolean(env.INNGEST_EVENT_KEY),
+        },
+        error
+      );
+    }
   } else {
     logger.debug("[shopify/auth/callback] Skipping sync (non-production)", {
       NODE_ENV: env.NODE_ENV,

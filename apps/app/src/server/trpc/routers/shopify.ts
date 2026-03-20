@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ownStores } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { inngest } from "../../jobs/client";
+import { TRPCError } from "@trpc/server";
 
 export const shopifyRouter = router({
   triggerSync: shopifyIntegrationProcedure
@@ -28,6 +29,14 @@ export const shopifyRouter = router({
   disconnect: workspaceProcedure
     .input(z.object({ workspaceId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const role = ctx.workspaceMembership?.role;
+      if (!["owner", "admin"].includes(role)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only workspace owners or admins can disconnect Shopify",
+        });
+      }
+
       const [store] = await ctx.db
         .select()
         .from(ownStores)

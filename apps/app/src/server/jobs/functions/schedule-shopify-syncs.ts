@@ -1,7 +1,7 @@
 import { inngest } from "../client";
 import { db } from "../../db";
 import { ownStores, workspaceMembers, subscriptions } from "../../db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { getPlanById } from "@offerpulse/lib/pricing";
 import { logger } from "@offerpulse/lib";
 
@@ -34,18 +34,28 @@ export const scheduleShopifySyncsJob = inngest.createFunction(
     for (const store of stores) {
       if (store.syncStatus === "syncing") continue;
 
-      const [member] = await db
+      const [ownerMember] = await db
         .select({ userId: workspaceMembers.userId })
         .from(workspaceMembers)
-        .where(eq(workspaceMembers.workspaceId, store.workspaceId))
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, store.workspaceId),
+            eq(workspaceMembers.role, "owner")
+          )
+        )
         .limit(1);
 
-      if (!member) continue;
+      if (!ownerMember) continue;
 
       const [subscription] = await db
         .select()
         .from(subscriptions)
-        .where(eq(subscriptions.userId, member.userId));
+        .where(
+          and(
+            eq(subscriptions.userId, ownerMember.userId),
+            inArray(subscriptions.status, ["active", "trialing"])
+          )
+        );
 
       const planId = subscription?.planId as string | undefined;
       const plan = planId ? getPlanById(planId as "starter" | "growth" | "agency") : undefined;
