@@ -29,101 +29,138 @@ export const syncShopifyStoreJob = inngest.createFunction(
   async ({ event, step }) => {
     const { workspaceId } = event.data;
 
-    const store = await step.run("fetch-store", async () => {
-      const [s] = await db
-        .select()
-        .from(ownStores)
-        .where(eq(ownStores.workspaceId, workspaceId));
+    logger.debug("[sync-shopify-store] job started", { workspaceId });
 
-      if (!s || s.platform !== "shopify" || !s.shopifyAccessToken || !s.shopifyShopDomain) {
-        throw new Error("Store not found or not connected to Shopify");
-      }
-
-      await db
-        .update(ownStores)
-        .set({ syncStatus: "syncing", syncError: null })
-        .where(eq(ownStores.id, s.id));
-
-      return s;
-    });
-
-    if (!store) throw new Error("Store not found");
-
-    let accessToken: string;
     try {
-      accessToken = decryptToken(store.shopifyAccessToken!, env.BETTER_AUTH_SECRET);
-    } catch (err) {
-      logger.error("[sync-shopify-store] Token decryption failed", { workspaceId });
-      await db
-        .update(ownStores)
-        .set({
-          syncStatus: "error",
-          syncError: "Invalid access token",
-        })
-        .where(eq(ownStores.id, store.id));
-      throw err;
-    }
+      const store = await step.run("fetch-store", async () => {
+        const [s] = await db
+          .select()
+          .from(ownStores)
+          .where(eq(ownStores.workspaceId, workspaceId));
 
-    const products = await step.run("fetch-products", async () => {
-      return fetchAllProductsJson(store.shopifyShopDomain!);
-    });
+        if (!s || s.platform !== "shopify" || !s.shopifyAccessToken || !s.shopifyShopDomain) {
+          throw new Error("Store not found or not connected to Shopify");
+        }
 
-    const priceRules = await step.run("fetch-promos", async () => {
+        await db
+          .update(ownStores)
+          .set({ syncStatus: "syncing", syncError: null })
+          .where(eq(ownStores.id, s.id));
+
+        return s;
+      });
+
+      if (!store) throw new Error("Store not found");
+
+      let accessToken: string;
       try {
-        return await fetchPriceRules(store.shopifyShopDomain!, accessToken);
+        accessToken = decryptToken(store.shopifyAccessToken!, env.BETTER_AUTH_SECRET);
       } catch (err) {
-        logger.warn("[sync-shopify-store] Price rules fetch failed, continuing without", err);
-        return [];
+        logger.error("[sync-shopify-store] Token decryption failed", { workspaceId });
+        await db
+          .update(ownStores)
+          .set({
+            syncStatus: "error",
+            syncError: "Invalid access token",
+          })
+          .where(eq(ownStores.id, store.id));
+        throw err;
       }
-    });
 
-    await step.run("update-database", async () => {
-      const transformedProducts = products.flatMap(transformProduct);
-      const transformedPromos = priceRules.map(transformPriceRule);
+      const products = await step.run("fetch-products", async () => {
+        try {
+          logger.debug("[sync-shopify-store] fetching products", {
+            shopDomain: store.shopifyShopDomain,
+          });
+          return await fetchAllProductsJson(store.shopifyShopDomain!);
+        } catch (err) {
+          logger.error("[sync-shopify-store] Products fetch failed", {
+            shopDomain: store.shopifyShopDomain,
+            error: err instanceof Error ? err.message : String(err),
+          });
+          throw err;
+        }
+      });
 
-      const existingProducts = await db
-        .select()
-        .from(storeProducts)
-        .where(eq(storeProducts.ownStoreId, store.id));
+      const priceRules = await step.run("fetch-promos", async () => {
+        try {
+          logger.debug("[sync-shopify-store] fetching price rules", {
+            shopDomain: store.shopifyShopDomain,
+          });
+          return await fetchPriceRules(store.shopifyShopDomain!, accessToken);
+        } catch (err) {
+          logger.warn("[sync-shopify-store] Price rules fetch failed, continuing without", {
+            shopDomain: store.shopifyShopDomain,
+            error: err instanceof Error ? err.message : String(err),
+          });
+          return [];
+        }
+      });
 
-      const existingByExternalId = new Map(existingProducts.map((p) => [p.externalId, p]));
-      const incomingExternalIds = new Set(transformedProducts.map((p) => p.externalId));
+      await step.run("update-database", async () => {
+        const transformedProducts = products.flatMap(transformProduct);
+        const transformedPromos = priceRules.map(transformPriceRule);
 
-      for (const p of transformedProducts) {
-        const existing = existingByExternalId.get(p.externalId);
-        if (existing) {
-          const changes = detectProductChanges(
-            {
-              id: existing.id,
-              externalId: existing.externalId,
-              price: existing.price,
-              compareAtPrice: existing.compareAtPrice,
-              available: existing.available,
-              variants: (existing.variants as unknown[]) ?? [],
-            },
-            {
-              externalId: p.externalId,
-              price: p.price,
-              compareAtPrice: p.compareAtPrice,
-              available: p.available,
-              variants: p.variants,
-            }
-          );
-          if (changes.length > 0) {
-            await db.insert(storeProductHistory).values(
-              changes.map((c) => ({
-                id: `hist_${nanoid()}`,
-                storeProductId: existing.id,
-                fieldChanged: c.field as "price" | "compareAtPrice" | "available" | "variants",
-                oldValue: c.oldValue,
-                newValue: c.newValue,
-                detectedBy: "sync" as const,
-              }))
+        const existingProducts = await db
+          .select()
+          .from(storeProducts)
+          .where(eq(storeProducts.ownStoreId, store.id));
+
+        const existingByExternalId = new Map(existingProducts.map((p) => [p.externalId, p]));
+        const incomingExternalIds = new Set(transformedProducts.map((p) => p.externalId));
+
+        for (const p of transformedProducts) {
+          const existing = existingByExternalId.get(p.externalId);
+          if (existing) {
+            const changes = detectProductChanges(
+              {
+                id: existing.id,
+                externalId: existing.externalId,
+                price: existing.price,
+                compareAtPrice: existing.compareAtPrice,
+                available: existing.available,
+                variants: (existing.variants as unknown[]) ?? [],
+              },
+              {
+                externalId: p.externalId,
+                price: p.price,
+                compareAtPrice: p.compareAtPrice,
+                available: p.available,
+                variants: p.variants,
+              }
             );
-          }
-          await db
-            .update(storeProducts)
-            .set({
+            if (changes.length > 0) {
+              await db.insert(storeProductHistory).values(
+                changes.map((c) => ({
+                  id: `hist_${nanoid()}`,
+                  storeProductId: existing.id,
+                  fieldChanged: c.field as "price" | "compareAtPrice" | "available" | "variants",
+                  oldValue: c.oldValue,
+                  newValue: c.newValue,
+                  detectedBy: "sync" as const,
+                }))
+              );
+            }
+            await db
+              .update(storeProducts)
+              .set({
+                name: p.name,
+                description: p.description,
+                price: p.price,
+                compareAtPrice: p.compareAtPrice,
+                available: p.available,
+                variants: p.variants,
+                images: p.images,
+                tags: p.tags,
+                productType: p.productType,
+                vendor: p.vendor,
+              })
+              .where(eq(storeProducts.id, existing.id));
+          } else {
+            await db.insert(storeProducts).values({
+              id: `prod_${nanoid()}`,
+              ownStoreId: store.id,
+              externalId: p.externalId,
               name: p.name,
               description: p.description,
               price: p.price,
@@ -134,65 +171,79 @@ export const syncShopifyStoreJob = inngest.createFunction(
               tags: p.tags,
               productType: p.productType,
               vendor: p.vendor,
+            });
+          }
+        }
+
+        for (const existing of existingProducts) {
+          if (!incomingExternalIds.has(existing.externalId)) {
+            await db.delete(storeProducts).where(eq(storeProducts.id, existing.id));
+          }
+        }
+
+        await db.delete(storePromos).where(eq(storePromos.ownStoreId, store.id));
+        if (transformedPromos.length > 0) {
+          await db.insert(storePromos).values(
+            transformedPromos.map((p) => ({
+              id: `promo_${nanoid()}`,
+              ownStoreId: store.id,
+              name: p.name,
+              discountType: p.discountType,
+              discountValue: p.discountValue,
+              startDate: p.startDate,
+              endDate: p.endDate,
+              active: p.active,
+            }))
+          );
+        }
+
+        await db
+          .update(ownStores)
+          .set({
+            syncStatus: "idle",
+            syncError: null,
+            lastSyncedAt: new Date(),
+          })
+          .where(eq(ownStores.id, store.id));
+      });
+
+      logger.info("[sync-shopify-store] Sync completed", {
+        workspaceId,
+        productCount: products.flatMap(transformProduct).length,
+        promoCount: priceRules.length,
+      });
+
+      return { success: true };
+    } catch (error) {
+      logger.error("[sync-shopify-store] job failed", {
+        workspaceId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      try {
+        const [store] = await db
+          .select()
+          .from(ownStores)
+          .where(eq(ownStores.workspaceId, workspaceId));
+
+        if (store) {
+          await db
+            .update(ownStores)
+            .set({
+              syncStatus: "error",
+              syncError: error instanceof Error ? error.message : "Unknown sync error",
             })
-            .where(eq(storeProducts.id, existing.id));
-        } else {
-          await db.insert(storeProducts).values({
-            id: `prod_${nanoid()}`,
-            ownStoreId: store.id,
-            externalId: p.externalId,
-            name: p.name,
-            description: p.description,
-            price: p.price,
-            compareAtPrice: p.compareAtPrice,
-            available: p.available,
-            variants: p.variants,
-            images: p.images,
-            tags: p.tags,
-            productType: p.productType,
-            vendor: p.vendor,
-          });
+            .where(eq(ownStores.id, store.id));
         }
+      } catch (updateErr) {
+        logger.error("[sync-shopify-store] failed to update error status", {
+          workspaceId,
+          error: updateErr instanceof Error ? updateErr.message : String(updateErr),
+        });
       }
 
-      for (const existing of existingProducts) {
-        if (!incomingExternalIds.has(existing.externalId)) {
-          await db.delete(storeProducts).where(eq(storeProducts.id, existing.id));
-        }
-      }
-
-      await db.delete(storePromos).where(eq(storePromos.ownStoreId, store.id));
-      if (transformedPromos.length > 0) {
-        await db.insert(storePromos).values(
-          transformedPromos.map((p) => ({
-            id: `promo_${nanoid()}`,
-            ownStoreId: store.id,
-            name: p.name,
-            discountType: p.discountType,
-            discountValue: p.discountValue,
-            startDate: p.startDate,
-            endDate: p.endDate,
-            active: p.active,
-          }))
-        );
-      }
-
-      await db
-        .update(ownStores)
-        .set({
-          syncStatus: "idle",
-          syncError: null,
-          lastSyncedAt: new Date(),
-        })
-        .where(eq(ownStores.id, store.id));
-    });
-
-    logger.info("[sync-shopify-store] Sync completed", {
-      workspaceId,
-      productCount: products.flatMap(transformProduct).length,
-      promoCount: priceRules.length,
-    });
-
-    return { success: true };
+      throw error;
+    }
   }
 );

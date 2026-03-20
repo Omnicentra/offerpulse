@@ -2,6 +2,8 @@
  * Fetch price rules from Shopify Admin REST API.
  */
 
+import { logger } from "@offerpulse/lib";
+
 export interface PriceRule {
   id: number;
   title: string;
@@ -32,13 +34,47 @@ export async function fetchPriceRules(
       },
     });
 
+    const contentType = res.headers.get("content-type") || "";
+    
+    logger.debug("[fetchPriceRules] response received", {
+      shopDomain,
+      status: res.status,
+      statusText: res.statusText,
+      contentType,
+    });
+
     if (!res.ok) {
       if (res.status === 429) {
         const retryAfter = res.headers.get("Retry-After");
         await new Promise((r) => setTimeout(r, (parseInt(retryAfter ?? "60", 10) * 1000)));
         continue;
       }
-      throw new Error(`Price rules fetch failed: ${res.status} ${res.statusText}`);
+      
+      const bodyPreview = await res.text();
+      logger.error("[fetchPriceRules] non-ok response", {
+        shopDomain,
+        status: res.status,
+        contentType,
+        bodyPreview: bodyPreview.slice(0, 200),
+      });
+      throw new Error(
+        `Price rules fetch failed: ${res.status} ${res.statusText}. ` +
+        `Content-Type: ${contentType}. Body preview: ${bodyPreview.slice(0, 100)}`
+      );
+    }
+
+    if (!contentType.includes("application/json")) {
+      const bodyPreview = await res.text();
+      logger.error("[fetchPriceRules] non-JSON response", {
+        shopDomain,
+        contentType,
+        bodyPreview: bodyPreview.slice(0, 200),
+      });
+      throw new Error(
+        `Expected JSON but got ${contentType}. ` +
+        `This may indicate an invalid access token, incorrect shop domain, or API endpoint issue. ` +
+        `Body preview: ${bodyPreview.slice(0, 100)}`
+      );
     }
 
     const data = (await res.json()) as PriceRulesResponse;

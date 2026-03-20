@@ -3,6 +3,8 @@
  * No auth required - public storefront data.
  */
 
+import { logger } from "@offerpulse/lib";
+
 export interface ProductsJsonVariant {
   id: number;
   product_id: number;
@@ -46,8 +48,42 @@ export async function fetchAllProductsJson(
     const url = `https://${shopDomain}/products.json?limit=${LIMIT}&page=${page}`;
     const response = await fetch(url);
 
+    const contentType = response.headers.get("content-type") || "";
+    
+    logger.debug("[fetchAllProductsJson] response received", {
+      shopDomain,
+      page,
+      status: response.status,
+      statusText: response.statusText,
+      contentType,
+    });
+
     if (!response.ok) {
-      throw new Error(`Products.json fetch failed: ${response.status} ${response.statusText}`);
+      const bodyPreview = await response.text();
+      logger.error("[fetchAllProductsJson] non-ok response", {
+        shopDomain,
+        status: response.status,
+        contentType,
+        bodyPreview: bodyPreview.slice(0, 200),
+      });
+      throw new Error(
+        `Products.json fetch failed: ${response.status} ${response.statusText}. ` +
+        `Content-Type: ${contentType}. Body preview: ${bodyPreview.slice(0, 100)}`
+      );
+    }
+
+    if (!contentType.includes("application/json")) {
+      const bodyPreview = await response.text();
+      logger.error("[fetchAllProductsJson] non-JSON response", {
+        shopDomain,
+        contentType,
+        bodyPreview: bodyPreview.slice(0, 200),
+      });
+      throw new Error(
+        `Expected JSON but got ${contentType}. ` +
+        `This usually means the store is password-protected, doesn't exist, or is in maintenance mode. ` +
+        `Body preview: ${bodyPreview.slice(0, 100)}`
+      );
     }
 
     const data = (await response.json()) as ProductsJsonResponse;
