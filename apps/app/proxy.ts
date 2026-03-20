@@ -26,7 +26,7 @@ export async function proxy(request: NextRequest) {
   // Redirect logic
   if (isAuthPage && isAuthenticated) {
     // Already logged in, redirect to dashboard
-    return NextResponse.redirect(new URL("/overview", request.url));
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   // Allow onboarding pages for authenticated users
@@ -35,7 +35,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/signup", request.url));
   }
 
-  if (!isAuthPage && !isOnboardingPage && !isAuthenticated && pathname !== "/") {
+  if (!isAuthPage && !isOnboardingPage && !isAuthenticated) {
     // Not logged in, redirect to login
     return NextResponse.redirect(new URL("/login", request.url));
   }

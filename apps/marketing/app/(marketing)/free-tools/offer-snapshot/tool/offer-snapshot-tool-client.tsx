@@ -114,7 +114,6 @@ export function OfferSnapshotToolClient({
         has_shipping: !!data.offers.shippingThreshold,
         has_bundles: data.offers.bundles.length > 0,
         has_gifts: data.offers.gifts.length > 0,
-        cached: data.cached ?? false,
       });
     } catch (err) {
       const errorMessage =
@@ -715,14 +714,6 @@ export function OfferSnapshotToolClient({
                           <span className="truncate">{result.url}</span>
                         </CardDescription>
                       </div>
-                      {result.cached && (
-                        <Badge
-                          variant="outline"
-                          className="text-xs flex-shrink-0"
-                        >
-                          Cached
-                        </Badge>
-                      )}
                     </div>
                   </CardHeader>
                   <CardContent>

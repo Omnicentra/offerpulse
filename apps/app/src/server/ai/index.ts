@@ -3,6 +3,13 @@ import { logger } from "@offerpulse/lib";
 import { ChangeDetectionResult } from "../change-detection";
 import { DEFAULT_OPENROUTER_MODEL } from "@offerpulse/lib/constants";
 
+export interface StoreContext {
+  storeName: string;
+  currency: string;
+  products: Array<{ name: string; price: number; compareAtPrice?: number }>;
+  promos: Array<{ name: string; discountType: string; discountValue: number }>;
+}
+
 export interface RecommendationInput {
   competitorName: string;
   competitorUrl: string;
@@ -11,6 +18,7 @@ export interface RecommendationInput {
   beforeSignals: unknown;
   afterSignals: unknown;
   detectionResult: ChangeDetectionResult;
+  storeContext?: StoreContext | null;
 }
 
 export interface RecommendationOutput {
@@ -114,10 +122,27 @@ When a competitor makes a change to their offers (promotions, shipping, bundles,
 
 Be specific, practical, and focused on conversion impact. Think like a savvy e-commerce operator, not a generic consultant.`;
 
+  const storeContextBlock = input.storeContext
+    ? `
+
+YOUR STORE CONTEXT:
+Store: ${input.storeContext.storeName}
+Currency: ${input.storeContext.currency}
+
+Your Current Products & Pricing:
+${input.storeContext.products.map((p) => `- ${p.name}: ${p.price}${p.compareAtPrice ? ` (was ${p.compareAtPrice})` : ""}`).join("\n")}
+
+Your Active Promotions:
+${input.storeContext.promos.map((p) => `- ${p.name}: ${p.discountType} ${p.discountValue}`).join("\n")}
+
+Generate recommendations that SPECIFICALLY compare the competitor's offers against YOUR STORE'S pricing and suggest concrete price adjustments or promotional responses.`
+    : "";
+
   const userPrompt = `Competitor: ${input.competitorName} (${input.competitorUrl})
 
 Change Type: ${input.changeType}
 Summary: ${input.changeSummary}
+${storeContextBlock}
 
 Before:
 ${JSON.stringify(input.beforeSignals, null, 2)}

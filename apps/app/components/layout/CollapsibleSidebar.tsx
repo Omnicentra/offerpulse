@@ -33,7 +33,7 @@ interface CollapsibleSidebarProps {
 }
 
 const navigation = [
-  { name: "Overview", href: "/overview", icon: LayoutDashboard },
+  { name: "Overview", href: "/", icon: LayoutDashboard },
   { name: "Competitors", href: "/competitors", icon: Users },
   { name: "Changes", href: "/changes", icon: TrendingUp },
   { name: "Snapshots", href: "/snapshots", icon: Camera },
@@ -85,7 +85,7 @@ export function CollapsibleSidebar({ isOpen = true, onClose, isMobile = false }:
         "flex h-16 items-center border-b border-slate-200 transition-all",
         isCollapsed ? "justify-center px-4" : "justify-between px-6"
       )}>
-        <Link href="/overview" className={cn("flex items-center gap-2", isCollapsed && "justify-center")}>
+        <Link href="/" className={cn("flex items-center gap-2", isCollapsed && "justify-center")}>
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600">
             <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />

@@ -29,6 +29,8 @@ export interface PricingPlan {
     historyDays: number;
     seats: number;
     alerts: string[];
+    shopifyIntegration: boolean;
+    syncFrequencyHours: number | null;
   };
 }
 
@@ -60,6 +62,8 @@ export const PRICING_PLANS: PricingPlan[] = [
       historyDays: 30,
       seats: 1,
       alerts: ["email"],
+      shopifyIntegration: false,
+      syncFrequencyHours: null,
     },
   },
   {
@@ -88,6 +92,8 @@ export const PRICING_PLANS: PricingPlan[] = [
       historyDays: 90,
       seats: 2,
       alerts: ["email", "slack"],
+      shopifyIntegration: true,
+      syncFrequencyHours: 6,
     },
   },
   {
@@ -116,6 +122,8 @@ export const PRICING_PLANS: PricingPlan[] = [
       historyDays: 90,
       seats: 5,
       alerts: ["email", "slack"],
+      shopifyIntegration: true,
+      syncFrequencyHours: 3,
     },
   },
 ];

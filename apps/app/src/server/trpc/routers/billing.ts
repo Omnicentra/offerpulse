@@ -78,7 +78,7 @@ export const billingRouter = router({
           customer_email: ctx.user.email,
           metadata: { userId: ctx.user.id, lookupKey: input.lookupKey },
           success_url:
-            input.successUrl ?? `${baseUrl}/overview?checkout=success`,
+            input.successUrl ?? `${baseUrl}?checkout=success`,
           cancel_url:
             input.cancelUrl ?? `${baseUrl}/signup?checkout=cancelled`,
           allow_promotion_codes: true,

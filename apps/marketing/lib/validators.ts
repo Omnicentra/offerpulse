@@ -1,4 +1,5 @@
-import { z } from "zod"
+import { z } from "zod";
+import { isValidStoreUrl } from "./tools/scraper";
 
 /**
  * Offer Snapshot request validation
@@ -22,6 +23,24 @@ export const offerSnapshotSchema = z.object({
 })
 
 export type OfferSnapshotInput = z.infer<typeof offerSnapshotSchema>
+
+/**
+ * Offer Snapshot preview (crawl actions) request validation
+ */
+export const offerSnapshotPreviewSchema = z.object({
+  url: z
+    .string()
+    .min(1, "URL is required")
+    .transform((val) => (val.startsWith("http://") || val.startsWith("https://") ? val : `https://${val}`))
+    .refine(isValidStoreUrl, { message: "Invalid URL format" }),
+  prompt: z
+    .string()
+    .min(1, "Prompt is required for preview")
+    .transform((s) => s.trim())
+    .refine((s) => s.length > 0, "Prompt cannot be empty"),
+});
+
+export type OfferSnapshotPreviewInput = z.infer<typeof offerSnapshotPreviewSchema>
 
 /**
  * Sign up form validation

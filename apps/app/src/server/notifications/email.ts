@@ -28,6 +28,50 @@ export interface EmailAlertData {
 
 const WELCOME_FROM = `OfferPulse <${env.RESEND_FROM_EMAIL}>`;
 
+export async function sendInternalAlertEmail(
+  subject: string,
+  html: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (env.NODE_ENV !== "production" || !env.ALERT_EMAIL) {
+      logger.debug("Skipping internal alert email", {
+        subject,
+        hasAlertEmailConfigured: Boolean(env.ALERT_EMAIL),
+        nodeEnv: env.NODE_ENV,
+      });
+      return { success: true };
+    }
+
+    const result: ResendEmailResult = await resend.emails.send({
+      from: WELCOME_FROM,
+      to: env.ALERT_EMAIL,
+      subject,
+      html,
+    });
+
+    if (result.error) {
+      const errorMessage =
+        typeof result.error === "string"
+          ? result.error
+          : result.error?.message ?? "Email API error";
+      logger.error("Internal alert email send failed via Resend", {
+        subject,
+        to: env.ALERT_EMAIL,
+        error: result.error,
+      });
+      return { success: false, error: errorMessage };
+    }
+
+    return { success: true };
+  } catch (error) {
+    logger.error("Internal alert email send failed", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
 /**
  * Send welcome email to new signups. Uses React Email template.
  * Skips sending if RESEND_API_KEY is not configured.

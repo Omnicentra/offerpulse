@@ -1,4 +1,5 @@
 export {
+  sendInternalAlertEmail,
   sendChangeAlertEmail,
   sendWeeklyPulseEmail,
   sendWelcomeEmail,

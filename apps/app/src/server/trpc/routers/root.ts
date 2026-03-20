@@ -11,6 +11,8 @@ import { alertsRouter } from "./alerts";
 import { weeklyPulseRouter } from "./weekly-pulse";
 import { usersRouter } from "./users";
 import { workspaceSettingsRouter } from "./workspace-settings";
+import { ownStoreRouter } from "./own-store";
+import { shopifyRouter } from "./shopify";
 
 export const appRouter = router({
   auth: authRouter,
@@ -24,6 +26,8 @@ export const appRouter = router({
   weeklyPulse: weeklyPulseRouter,
   users: usersRouter,
   workspaceSettings: workspaceSettingsRouter,
+  ownStore: ownStoreRouter,
+  shopify: shopifyRouter,
 });
 
 export type AppRouter = typeof appRouter;

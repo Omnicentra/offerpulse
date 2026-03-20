@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  decimal,
   index,
   integer,
   jsonb,
@@ -55,6 +56,25 @@ export const firecrawlVisibilityEnum = pgEnum("firecrawl_visibility", [
   "hidden",
 ]);
 export const diffTypeEnum = pgEnum("diff_type", ["git-diff", "json", "manual"]);
+export const storePlatformEnum = pgEnum("store_platform", ["shopify", "manual"]);
+export const storeSyncStatusEnum = pgEnum("store_sync_status", [
+  "idle",
+  "syncing",
+  "error",
+]);
+export const discountTypeEnum = pgEnum("discount_type", [
+  "percentage",
+  "fixed",
+  "bogo",
+  "bundle",
+]);
+export const historyFieldEnum = pgEnum("history_field", [
+  "price",
+  "compareAtPrice",
+  "available",
+  "variants",
+]);
+export const historySourceEnum = pgEnum("history_source", ["sync", "manual"]);
 
 // ============================================================================
 // AUTH TABLES (Better-auth)
@@ -66,6 +86,11 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false),
   image: text("image"),
+  // Better-auth admin plugin fields
+  role: text("role").notNull().default("user"),
+  banned: boolean("banned").notNull().default(false),
+  banReason: text("ban_reason"),
+  banExpires: timestamp("ban_expires"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -82,6 +107,8 @@ export const session = pgTable("session", {
   expiresAt: timestamp("expires_at").notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
+  // Better-auth admin plugin field
+  impersonatedBy: text("impersonated_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -522,6 +549,133 @@ export const scrapeJobs = pgTable(
 );
 
 // ============================================================================
+// OWN STORE TABLES
+// ============================================================================
+
+export const ownStores = pgTable(
+  "own_stores",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" })
+      .unique(),
+    platform: storePlatformEnum("platform").notNull().default("manual"),
+    storeUrl: text("store_url"),
+    storeName: text("store_name").notNull().default("My Store"),
+    currency: text("currency").notNull().default("GBP"),
+    shopifyAccessToken: text("shopify_access_token"),
+    shopifyShopDomain: text("shopify_shop_domain"),
+    lastSyncedAt: timestamp("last_synced_at"),
+    syncStatus: storeSyncStatusEnum("sync_status"),
+    syncError: text("sync_error"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index("own_stores_workspace_idx").on(table.workspaceId),
+    index("own_stores_platform_idx").on(table.platform),
+  ]
+);
+
+export const storeProducts = pgTable(
+  "store_products",
+  {
+    id: text("id").primaryKey(),
+    ownStoreId: text("own_store_id")
+      .notNull()
+      .references(() => ownStores.id, { onDelete: "cascade" }),
+    externalId: text("external_id").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    price: decimal("price", { precision: 12, scale: 2 }).notNull(),
+    compareAtPrice: decimal("compare_at_price", { precision: 12, scale: 2 }),
+    available: boolean("available").notNull().default(true),
+    variants: jsonb("variants").$type<Record<string, unknown>[]>().default([]),
+    images: jsonb("images").$type<Array<{ src: string; alt?: string }>>().default([]),
+    tags: text("tags").array().default([]),
+    productType: text("product_type"),
+    vendor: text("vendor"),
+    rawData: jsonb("raw_data").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index("store_products_own_store_idx").on(table.ownStoreId),
+    index("store_products_external_id_idx").on(table.ownStoreId, table.externalId),
+  ]
+);
+
+export const storePromos = pgTable(
+  "store_promos",
+  {
+    id: text("id").primaryKey(),
+    ownStoreId: text("own_store_id")
+      .notNull()
+      .references(() => ownStores.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    discountType: discountTypeEnum("discount_type").notNull(),
+    discountValue: decimal("discount_value", { precision: 12, scale: 2 }),
+    conditions: jsonb("conditions").$type<Record<string, unknown>>(),
+    startDate: timestamp("start_date"),
+    endDate: timestamp("end_date"),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index("store_promos_own_store_idx").on(table.ownStoreId),
+    index("store_promos_active_idx").on(table.active),
+  ]
+);
+
+export const shopifyOauthStates = pgTable(
+  "shopify_oauth_states",
+  {
+    state: text("state").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    shop: text("shop").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("shopify_oauth_states_expires_idx").on(table.expiresAt),
+  ]
+);
+
+export const storeProductHistory = pgTable(
+  "store_product_history",
+  {
+    id: text("id").primaryKey(),
+    storeProductId: text("store_product_id")
+      .notNull()
+      .references(() => storeProducts.id, { onDelete: "cascade" }),
+    fieldChanged: historyFieldEnum("field_changed").notNull(),
+    oldValue: jsonb("old_value").$type<unknown>(),
+    newValue: jsonb("new_value").$type<unknown>(),
+    changedAt: timestamp("changed_at").defaultNow().notNull(),
+    detectedBy: historySourceEnum("detected_by").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("store_product_history_product_idx").on(table.storeProductId),
+    index("store_product_history_changed_at_idx").on(table.changedAt),
+  ]
+);
+
+// ============================================================================
 // RELATIONS
 // ============================================================================
 
@@ -545,12 +699,13 @@ export const accountRelations = relations(account, ({ one }) => ({
   }),
 }));
 
-export const workspacesRelations = relations(workspaces, ({ many }) => ({
+export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
   members: many(workspaceMembers),
   competitors: many(competitors),
   weeklyPulses: many(weeklyPulses),
   alertSettings: many(alertSettings),
   workspaceSettings: many(workspaceSettings),
+  ownStore: one(ownStores),
 }));
 
 export const workspaceMembersRelations = relations(
@@ -682,3 +837,37 @@ export const scrapeJobsRelations = relations(scrapeJobs, ({ one }) => ({
     references: [snapshots.id],
   }),
 }));
+
+export const ownStoresRelations = relations(ownStores, ({ one, many }) => ({
+  workspace: one(workspaces, {
+    fields: [ownStores.workspaceId],
+    references: [workspaces.id],
+  }),
+  products: many(storeProducts),
+  promos: many(storePromos),
+}));
+
+export const storeProductsRelations = relations(storeProducts, ({ one, many }) => ({
+  ownStore: one(ownStores, {
+    fields: [storeProducts.ownStoreId],
+    references: [ownStores.id],
+  }),
+  history: many(storeProductHistory),
+}));
+
+export const storePromosRelations = relations(storePromos, ({ one }) => ({
+  ownStore: one(ownStores, {
+    fields: [storePromos.ownStoreId],
+    references: [ownStores.id],
+  }),
+}));
+
+export const storeProductHistoryRelations = relations(
+  storeProductHistory,
+  ({ one }) => ({
+    storeProduct: one(storeProducts, {
+      fields: [storeProductHistory.storeProductId],
+      references: [storeProducts.id],
+    }),
+  })
+);

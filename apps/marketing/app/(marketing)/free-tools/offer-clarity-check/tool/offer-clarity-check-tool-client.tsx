@@ -87,7 +87,6 @@ export function OfferClarityCheckToolClient({ urlParam }: OfferClarityCheckToolC
         has_shipping: !!data.offers.shippingThreshold,
         has_bundles: data.offers.bundles.length > 0,
         has_gifts: data.offers.gifts.length > 0,
-        cached: data.cached ?? false,
         clarity_score: data.clarity.score,
         clarity_suggestions_count: data.clarity.suggestions.length,
       });
