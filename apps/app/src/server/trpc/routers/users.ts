@@ -274,6 +274,15 @@ export const usersRouter = router({
       if (input.name !== undefined) updates.name = input.name;
       if (input.image !== undefined) updates.image = input.image;
 
+      if (Object.keys(updates).length === 0) {
+        return {
+          id: ctx.user.id,
+          name: ctx.user.name,
+          email: ctx.user.email,
+          image: ctx.user.image,
+        };
+      }
+
       const [updated] = await ctx.db
         .update(user)
         .set(updates)
