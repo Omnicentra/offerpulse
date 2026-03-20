@@ -10,54 +10,60 @@ const visitorSchema = z.object({
   email: z.string().optional(),
 });
 
-const chatSchema = z.object({
-  id: z.string(),
-  visitor: visitorSchema.optional(),
-});
-
 const propertySchema = z.object({
+  id: z.string().optional(),
   name: z.string().optional(),
 });
 
-const tawkWebhookPayloadSchema = z.object({
-  event: z.string(),
-  chat: chatSchema.optional(),
-  property: propertySchema.optional(),
-});
-
-type TawkWebhookPayload = z.infer<typeof tawkWebhookPayloadSchema>;
-
-function verifySignature(body: string, signature: string | null, secret: string): boolean {
+/**
+ * tawk.to signs webhooks with HMAC-SHA1 over the raw request body.
+ * @see https://developer.tawk.to/webhooks/#verifyingwebhooksignature
+ */
+function verifyTawkSignature(
+  rawBody: string,
+  signature: string | null,
+  secret: string
+): boolean {
   if (!signature) return false;
 
-  const algPrefix = signature.startsWith("sha256=") ? "sha256=" : "sha1=";
-  const alg = algPrefix === "sha256=" ? "sha256" : "sha1";
+  const digest = createHmac("sha1", secret).update(rawBody, "utf8").digest("hex");
 
   try {
-    const expected = `${algPrefix}${createHmac(alg, secret).update(body).digest("hex")}`;
-    return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+    const sigBuf = Buffer.from(signature, "utf8");
+    const digestBuf = Buffer.from(digest, "utf8");
+    if (sigBuf.length !== digestBuf.length) return false;
+    return timingSafeEqual(sigBuf, digestBuf);
   } catch {
     return false;
   }
 }
 
+/**
+ * Common fields across tawk.to webhook events.
+ * chat:start uses top-level `chatId` and `visitor` (not nested `chat`).
+ * @see https://developer.tawk.to/webhooks/
+ */
+const tawkWebhookPayloadSchema = z.object({
+  event: z.string(),
+  chatId: z.string().optional(),
+  visitor: visitorSchema.optional(),
+  property: propertySchema.optional(),
+});
+
 export async function POST(req: Request) {
-  logger.debug("tawk.to webhook POST received");
+  logger.info("tawk.to webhook POST received");
 
   const body = await req.text();
 
   if (env.TAWK_WEBHOOK_SECRET) {
-    const signature =
-      req.headers.get("x-hub-signature-256") ??
-      req.headers.get("x-hub-signature") ??
-      req.headers.get("x-tawk-signature");
+    const signature = req.headers.get("x-tawk-signature");
 
-    if (!verifySignature(body, signature, env.TAWK_WEBHOOK_SECRET)) {
-      logger.warn("tawk.to webhook rejected: invalid or missing signature");
+    if (!verifyTawkSignature(body, signature, env.TAWK_WEBHOOK_SECRET)) {
+      logger.warn("tawk.to webhook rejected: invalid or missing x-tawk-signature");
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    logger.debug("tawk.to webhook signature verified");
+    logger.debug("tawk.to webhook HMAC-SHA1 signature verified");
   }
 
   let rawPayload: unknown;
@@ -74,17 +80,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ received: true });
   }
 
-  const payload: TawkWebhookPayload = parsed.data;
+  const payload = parsed.data;
   logger.debug("tawk.to webhook event received", { event: payload.event });
 
-  if (payload.event === "chat:start" && payload.chat) {
-    const { chat, property } = payload;
-    logger.info("tawk.to new chat started", { chatId: chat.id, visitor: chat.visitor?.name });
+  if (payload.event === "chat:start" && payload.chatId) {
+    const { chatId, visitor, property } = payload;
+    logger.info("tawk.to new chat started", { chatId, visitor: visitor?.name });
 
     await sendTawkNewChatEmail({
-      chatId: chat.id,
-      visitorName: chat.visitor?.name ?? "Anonymous",
-      visitorEmail: chat.visitor?.email ?? null,
+      chatId,
+      visitorName: visitor?.name ?? "Anonymous",
+      visitorEmail: visitor?.email ?? null,
       propertyName: property?.name ?? "OfferPulse",
     });
   }
