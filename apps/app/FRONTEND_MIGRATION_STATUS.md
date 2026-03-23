@@ -72,8 +72,9 @@ All remaining pages follow the exact same pattern demonstrated in the completed 
   - `recommendationsApi.list()` → `trpc.recommendations.list.useQuery({ workspaceId })`
   - Multiple mutations for status updates and checklist items
   
-- [ ] **app/(dashboard)/weekly-pulse/page.tsx** - Weekly reports (5 min)
-  - `weeklyPulseApi.list()` → `trpc.weeklyPulse.list.useQuery({ workspaceId })`
+- [x] **app/(dashboard)/weekly-pulse/page.tsx** - Weekly reports ✅
+  - RSC + `createCaller` prefetch; client uses tRPC with `initialData`
+  - `?week=` search param supported for deep links
   
 - [ ] **app/(dashboard)/settings/page.tsx** - Workspace settings (5 min)
   - `workspaceSettingsApi.get()` → `trpc.workspaceSettings.get.useQuery({ workspaceId })`

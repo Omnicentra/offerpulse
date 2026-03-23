@@ -192,6 +192,7 @@ export default function AlertsPage() {
       slackChannel: currentSettings.slackChannel ?? undefined,
       slackChannelName: currentSettings.slackChannelName ?? undefined,
       captureNotificationsEnabled: currentSettings.captureNotificationsEnabled,
+      weeklyPulseAlertsEnabled: currentSettings.weeklyPulseAlertsEnabled,
       eventTypes: currentSettings.eventTypes ?? undefined,
       minConfidence: currentSettings.minConfidence,
     });
@@ -449,6 +450,33 @@ export default function AlertsPage() {
               </span>
             </label>
           ))}
+        </div>
+      </div>
+
+      {/* Weekly Pulse digest */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold text-slate-900">Weekly Pulse digest</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              When enabled, we email and/or post to Slack each Monday after your weekly report is
+              generated (same channels as above when email/Slack are on).
+            </p>
+          </div>
+          <label className="relative inline-flex cursor-pointer items-center">
+            <input
+              type="checkbox"
+              checked={currentSettings.weeklyPulseAlertsEnabled ?? false}
+              onChange={(e) =>
+                setLocalSettings({
+                  ...currentSettings,
+                  weeklyPulseAlertsEnabled: e.target.checked,
+                })
+              }
+              className="peer sr-only"
+            />
+            <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:ring-2 peer-focus:ring-blue-600"></div>
+          </label>
         </div>
       </div>
 
