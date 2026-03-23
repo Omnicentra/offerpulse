@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useValue } from "@legendapp/state/react";
 import {
   ArrowRight,
   Bell,
@@ -25,6 +26,11 @@ import {
 } from "@/components/ui/command";
 import { useTRPC } from "@/src/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import {
+  paletteRecents$,
+  recordPaletteRecent,
+  type PaletteRecentEntry,
+} from "@/lib/palette-recents-state";
 
 interface QuickActionDef {
   id: string;
@@ -167,7 +173,13 @@ export function CommandPalette({ open, onOpenChange, workspaceId }: CommandPalet
     [qLower]
   );
 
-  const rows = useMemo((): PaletteRow[] => {
+  const storedRecents = useValue(() => {
+    if (!workspaceId) return [] as PaletteRecentEntry[];
+    const byWorkspace = paletteRecents$.byWorkspace.get();
+    return byWorkspace[workspaceId] ?? [];
+  });
+
+  const baseRows = useMemo((): PaletteRow[] => {
     const list: PaletteRow[] = [];
     for (const a of quickFiltered) {
       list.push({
@@ -212,18 +224,36 @@ export function CommandPalette({ open, onOpenChange, workspaceId }: CommandPalet
     return list;
   }, [data, quickFiltered]);
 
+  const recentRows = useMemo(() => {
+    if (debouncedQ.trim() !== "") return [] as PaletteRow[];
+    return storedRecents.map(recentEntryToPaletteRow);
+  }, [debouncedQ, storedRecents]);
+
+  const recentKeySet = useMemo(() => new Set(recentRows.map((r) => r.key)), [recentRows]);
+
+  const rows = useMemo(() => {
+    if (debouncedQ.trim() === "") {
+      return baseRows.filter((r) => !recentKeySet.has(r.key));
+    }
+    return baseRows;
+  }, [baseRows, debouncedQ, recentKeySet]);
+
   const navigateTo = useCallback(
-    (href: string) => {
+    (row: PaletteRow) => {
+      if (workspaceId) {
+        recordPaletteRecent(workspaceId, paletteRowToRecentEntry(row));
+      }
       handleDialogOpenChange(false);
-      router.push(href);
+      router.push(row.href);
     },
-    [handleDialogOpenChange, router]
+    [handleDialogOpenChange, router, workspaceId]
   );
 
   const showSkeleton = isPending && data === undefined && !!workspaceId;
+  const hasResults = recentRows.length > 0 || rows.length > 0;
   const empty =
     !showSkeleton &&
-    rows.length === 0 &&
+    !hasResults &&
     !isFetching &&
     (!workspaceId || data !== undefined);
 
@@ -285,31 +315,38 @@ export function CommandPalette({ open, onOpenChange, workspaceId }: CommandPalet
 
         {!showSkeleton && !empty && (
           <>
+            {recentRows.length > 0 && (
+              <CommandGroup heading="Recent">
+                {recentRows.map((row) => (
+                  <PaletteCommandItem key={row.key} row={row} onSelect={() => navigateTo(row)} />
+                ))}
+              </CommandGroup>
+            )}
             {quickRows.length > 0 && (
               <CommandGroup heading="Quick actions">
                 {quickRows.map((row) => (
-                  <PaletteCommandItem key={row.key} row={row} onSelect={() => navigateTo(row.href)} />
+                  <PaletteCommandItem key={row.key} row={row} onSelect={() => navigateTo(row)} />
                 ))}
               </CommandGroup>
             )}
             {competitorRows.length > 0 && (
               <CommandGroup heading="Competitors">
                 {competitorRows.map((row) => (
-                  <PaletteCommandItem key={row.key} row={row} onSelect={() => navigateTo(row.href)} />
+                  <PaletteCommandItem key={row.key} row={row} onSelect={() => navigateTo(row)} />
                 ))}
               </CommandGroup>
             )}
             {changeRows.length > 0 && (
               <CommandGroup heading="Changes">
                 {changeRows.map((row) => (
-                  <PaletteCommandItem key={row.key} row={row} onSelect={() => navigateTo(row.href)} />
+                  <PaletteCommandItem key={row.key} row={row} onSelect={() => navigateTo(row)} />
                 ))}
               </CommandGroup>
             )}
             {recommendationRows.length > 0 && (
               <CommandGroup heading="Recommendations">
                 {recommendationRows.map((row) => (
-                  <PaletteCommandItem key={row.key} row={row} onSelect={() => navigateTo(row.href)} />
+                  <PaletteCommandItem key={row.key} row={row} onSelect={() => navigateTo(row)} />
                 ))}
               </CommandGroup>
             )}
@@ -350,6 +387,87 @@ function PaletteCommandItem({
       <ArrowRight className="mt-0.5 shrink-0 text-slate-300" aria-hidden />
     </CommandItem>
   );
+}
+
+function recentEntryToPaletteRow(entry: PaletteRecentEntry): PaletteRow {
+  switch (entry.entity) {
+    case "quick": {
+      const qa = QUICK_ACTIONS.find((a) => a.id === entry.id);
+      const Icon = qa?.Icon ?? Building2;
+      return {
+        key: `q-${entry.id}`,
+        kind: "quick",
+        label: entry.label,
+        sub: entry.sub,
+        href: entry.href,
+        Icon,
+      };
+    }
+    case "competitor":
+      return {
+        key: `c-${entry.id}`,
+        kind: "competitor",
+        label: entry.label,
+        sub: entry.sub ?? "",
+        href: entry.href,
+        Icon: Building2,
+      };
+    case "changeEvent":
+      return {
+        key: `e-${entry.id}`,
+        kind: "change",
+        label: entry.label,
+        sub: entry.sub ?? "",
+        href: entry.href,
+        Icon: Zap,
+      };
+    case "recommendation":
+      return {
+        key: `r-${entry.id}`,
+        kind: "recommendation",
+        label: entry.label,
+        sub: entry.sub ?? "",
+        href: entry.href,
+        Icon: Lightbulb,
+      };
+  }
+}
+
+function paletteRowToRecentEntry(row: PaletteRow): Omit<PaletteRecentEntry, "visitedAt"> {
+  switch (row.kind) {
+    case "quick":
+      return {
+        entity: "quick",
+        id: row.key.replace(/^q-/, ""),
+        href: row.href,
+        label: row.label,
+        sub: row.sub,
+      };
+    case "competitor":
+      return {
+        entity: "competitor",
+        id: row.key.replace(/^c-/, ""),
+        href: row.href,
+        label: row.label,
+        sub: row.sub,
+      };
+    case "change":
+      return {
+        entity: "changeEvent",
+        id: row.key.replace(/^e-/, ""),
+        href: row.href,
+        label: row.label,
+        sub: row.sub,
+      };
+    case "recommendation":
+      return {
+        entity: "recommendation",
+        id: row.key.replace(/^r-/, ""),
+        href: row.href,
+        label: row.label,
+        sub: row.sub,
+      };
+  }
 }
 
 export function useCommandPaletteHotkeys(options: {

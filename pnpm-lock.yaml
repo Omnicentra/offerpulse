@@ -30,8 +30,8 @@ importers:
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.2(react@18.3.1))
       '@legendapp/state':
-        specifier: ^2.1.15
-        version: 2.1.15(react@18.3.1)
+        specifier: 3.0.0-beta.46
+        version: 3.0.0-beta.46(react@18.3.1)
       '@mendable/firecrawl-js':
         specifier: ^4.13.2
         version: 4.15.1
@@ -1505,12 +1505,12 @@ packages:
   '@js-sdsl/ordered-map@4.4.2':
     resolution: {integrity: sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==}
 
-  '@legendapp/state@2.1.15':
-    resolution: {integrity: sha512-7/8Rgg7m38eznupr36QJeSkrtbhVxaRtQvRMjdBigSm+HW3ZIFgMtUX1DqZ2hJxbPqqAJamw5s+TLs8dRstUNw==}
+  '@legendapp/state@3.0.0-beta.46':
+    resolution: {integrity: sha512-TcCabsE9jPW2r0sKQbUet46L0hbWiupKoun9UUkcHyF/6Jec1RyJCmLrdgFPnYZ9HwupJKIRxJVlxNrg2tG3SQ==}
     peerDependencies:
-      react: '>=16.8.0'
+      expo-sqlite: ^15.0.0
     peerDependenciesMeta:
-      react:
+      expo-sqlite:
         optional: true
 
   '@mendable/firecrawl-js@4.15.1':
@@ -8548,11 +8548,11 @@ snapshots:
 
   '@js-sdsl/ordered-map@4.4.2': {}
 
-  '@legendapp/state@2.1.15(react@18.3.1)':
+  '@legendapp/state@3.0.0-beta.46(react@18.3.1)':
     dependencies:
       use-sync-external-store: 1.6.0(react@18.3.1)
-    optionalDependencies:
-      react: 18.3.1
+    transitivePeerDependencies:
+      - react
 
   '@mendable/firecrawl-js@4.15.1':
     dependencies:
