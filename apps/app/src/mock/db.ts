@@ -1,3 +1,4 @@
+import { RecommendationStrategy } from "@offerpulse/lib/constants";
 import type { MockDatabase } from "./types";
 
 const STORAGE_KEY = "offerpulse_mock_db";
@@ -5,7 +6,6 @@ const STORAGE_KEY = "offerpulse_mock_db";
 // Seed data generator
 export function generateSeedData(): MockDatabase {
   const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
   const competitors = [
@@ -371,7 +371,7 @@ export function generateSeedData(): MockDatabase {
       id: "rec-1",
       changeEventId: "change-1",
       competitorId: "comp-1",
-      strategy: "MATCH" as const,
+      strategy: RecommendationStrategy.MATCH,
       impact: 8,
       effort: 3,
       title: "Match competitor's 20% discount",
@@ -389,7 +389,7 @@ export function generateSeedData(): MockDatabase {
       id: "rec-2",
       changeEventId: "change-2",
       competitorId: "comp-1",
-      strategy: "COUNTER" as const,
+      strategy: RecommendationStrategy.COUNTER,
       impact: 7,
       effort: 2,
       title: "Counter with free shipping on all orders",
@@ -406,7 +406,7 @@ export function generateSeedData(): MockDatabase {
       id: "rec-3",
       changeEventId: "change-3",
       competitorId: "comp-2",
-      strategy: "IGNORE" as const,
+      strategy: RecommendationStrategy.IGNORE,
       impact: 4,
       effort: 5,
       title: "Monitor bundle offer performance",
@@ -422,7 +422,7 @@ export function generateSeedData(): MockDatabase {
       id: "rec-4",
       changeEventId: "change-4",
       competitorId: "comp-3",
-      strategy: "TEST" as const,
+      strategy: RecommendationStrategy.TEST,
       impact: 9,
       effort: 4,
       title: "Test flash sale strategy",
@@ -440,7 +440,7 @@ export function generateSeedData(): MockDatabase {
       id: "rec-5",
       changeEventId: "change-5",
       competitorId: "comp-3",
-      strategy: "COUNTER" as const,
+      strategy: RecommendationStrategy.COUNTER,
       impact: 8,
       effort: 7,
       title: "Differentiate with premium delivery options",
@@ -457,7 +457,7 @@ export function generateSeedData(): MockDatabase {
       id: "rec-6",
       changeEventId: "change-6",
       competitorId: "comp-4",
-      strategy: "MATCH" as const,
+      strategy: RecommendationStrategy.MATCH,
       impact: 9,
       effort: 2,
       title: "Upgrade to 2-day shipping",
@@ -474,7 +474,7 @@ export function generateSeedData(): MockDatabase {
       id: "rec-7",
       changeEventId: "change-7",
       competitorId: "comp-4",
-      strategy: "MATCH" as const,
+      strategy: RecommendationStrategy.MATCH,
       impact: 6,
       effort: 3,
       title: "Add cart incentive samples",
@@ -491,7 +491,7 @@ export function generateSeedData(): MockDatabase {
       id: "rec-8",
       changeEventId: "change-8",
       competitorId: "comp-2",
-      strategy: "TEST" as const,
+      strategy: RecommendationStrategy.TEST,
       impact: 7,
       effort: 3,
       title: "Test cart progress bar with gift unlock",
@@ -508,7 +508,7 @@ export function generateSeedData(): MockDatabase {
       id: "rec-9",
       changeEventId: "change-9",
       competitorId: "comp-1",
-      strategy: "IGNORE" as const,
+      strategy: RecommendationStrategy.IGNORE,
       impact: 5,
       effort: 4,
       title: "Consider new customer discount later",
@@ -525,7 +525,7 @@ export function generateSeedData(): MockDatabase {
       id: "rec-10",
       changeEventId: "change-10",
       competitorId: "comp-5",
-      strategy: "IGNORE" as const,
+      strategy: RecommendationStrategy.IGNORE,
       impact: 3,
       effort: 8,
       title: "Monitor outdoor competitor strategy",
@@ -537,7 +537,6 @@ export function generateSeedData(): MockDatabase {
   ];
 
   const lastWeekDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const twoWeeksAgoDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
   const weeklyPulses = [
     {

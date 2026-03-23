@@ -8,9 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   StrategyBadge,
-  RECOMMENDATION_STRATEGY_LABELS,
-  type RecommendationStrategy,
 } from "@/components/ui/strategy-badge";
+import { RECOMMENDATION_STRATEGY_LABELS, RecommendationStrategy } from "@offerpulse/lib/constants";
 import {
   Select,
   SelectContent,
@@ -74,7 +73,13 @@ function getEffortBadgeClass(effort: number) {
   return "border-red-200 bg-red-50 text-red-800";
 }
 
-const STRATEGY_FILTERS = ["all", "MATCH", "COUNTER", "IGNORE", "TEST"] as const;
+const STRATEGY_FILTERS = [
+  "all",
+  RecommendationStrategy.MATCH,
+  RecommendationStrategy.COUNTER,
+  RecommendationStrategy.IGNORE,
+  RecommendationStrategy.TEST,
+] as const;
 type StrategyFilterValue = (typeof STRATEGY_FILTERS)[number];
 const snoozeDaysSchema = z.coerce.number().int().min(1);
 
@@ -160,10 +165,10 @@ export function RecommendationsPageClient({
   const strategyCounts = useMemo(() => {
     const counts: Record<StrategyFilterValue, number> = {
       all: afterStatusFilter.length,
-      MATCH: 0,
-      COUNTER: 0,
-      IGNORE: 0,
-      TEST: 0,
+      [RecommendationStrategy.MATCH]: 0,
+      [RecommendationStrategy.COUNTER]: 0,
+      [RecommendationStrategy.IGNORE]: 0,
+      [RecommendationStrategy.TEST]: 0,
     };
     for (const rec of afterStatusFilter) {
       counts[rec.strategy as RecommendationStrategy] += 1;

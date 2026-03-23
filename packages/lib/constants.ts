@@ -54,13 +54,18 @@ export const STRATEGY_LABELS: Record<StrategyType, string> = {
 /**
  * Recommendation strategies (matches DB `recommendation_strategy`)
  */
-export type RecommendationStrategy = "MATCH" | "COUNTER" | "IGNORE" | "TEST";
+export enum RecommendationStrategy {
+  MATCH = "MATCH",
+  COUNTER = "COUNTER",
+  IGNORE = "IGNORE",
+  TEST = "TEST",
+}
 
 export const RECOMMENDATION_STRATEGY_LABELS: Record<RecommendationStrategy, string> = {
-  MATCH: "Match",
-  COUNTER: "Counter",
-  IGNORE: "Ignore",
-  TEST: "Test",
+  [RecommendationStrategy.MATCH]: "Match",
+  [RecommendationStrategy.COUNTER]: "Counter",
+  [RecommendationStrategy.IGNORE]: "Ignore",
+  [RecommendationStrategy.TEST]: "Test",
 };
 
 /**
