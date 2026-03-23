@@ -36,6 +36,7 @@ export const alertsRouter = router({
               "DELIVERY_RETURNS",
             ],
             minConfidence: "medium",
+            weeklyPulseAlertsEnabled: false,
           })
           .returning();
       }
@@ -72,6 +73,7 @@ export const alertsRouter = router({
         slackChannel: z.string().optional(),
         slackChannelName: z.string().optional(),
         captureNotificationsEnabled: z.boolean().optional(),
+        weeklyPulseAlertsEnabled: z.boolean().optional(),
         eventTypes: z.array(z.string()).optional(),
         minConfidence: z.enum(["low", "medium", "high"]).optional(),
       })
@@ -117,6 +119,7 @@ export const alertsRouter = router({
               "DELIVERY_RETURNS",
             ],
             minConfidence: data.minConfidence ?? "medium",
+            weeklyPulseAlertsEnabled: data.weeklyPulseAlertsEnabled ?? false,
           })
           .returning();
 

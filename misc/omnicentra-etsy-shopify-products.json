@@ -1,0 +1,950 @@
+{
+    "products": [
+      {
+        "id": 9935642624328,
+        "title": "Ceramic Succulent Planter",
+        "handle": "ceramic-succulent-planter",
+        "body_html": "\u003Cp\u003ESmall ceramic pot with drainage hole. Ideal for succulents and cacti. Modern shape, matte finish.\u003C/p\u003E",
+        "published_at": "2026-03-13T12:30:40+00:00",
+        "created_at": "2026-03-13T12:30:40+00:00",
+        "updated_at": "2026-03-23T11:43:51+00:00",
+        "vendor": "Omnicentra Etsy",
+        "product_type": "Planter",
+        "tags": [
+          "Ceramic",
+          "Planter",
+          "Succulent"
+        ],
+        "variants": [
+          {
+            "id": 52649730474312,
+            "title": "Terracotta",
+            "option1": "Terracotta",
+            "option2": null,
+            "option3": null,
+            "sku": "CSP-TER",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "15.99",
+            "grams": 290,
+            "compare_at_price": null,
+            "position": 1,
+            "product_id": 9935642624328,
+            "created_at": "2026-03-13T12:58:44+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          },
+          {
+            "id": 52649730507080,
+            "title": "White",
+            "option1": "White",
+            "option2": null,
+            "option3": null,
+            "sku": "CSP-WHT",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "15.99",
+            "grams": 290,
+            "compare_at_price": null,
+            "position": 2,
+            "product_id": 9935642624328,
+            "created_at": "2026-03-13T12:58:44+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          }
+        ],
+        "images": [
+          {
+            "id": 76750908391752,
+            "created_at": "2026-03-13T12:58:44+00:00",
+            "position": 1,
+            "updated_at": "2026-03-13T12:58:48+00:00",
+            "product_id": 9935642624328,
+            "variant_ids": [],
+            "src": "https://cdn.shopify.com/s/files/1/0955/5214/3688/files/potted-succulent-on-pink-background.jpg?v=1773406728",
+            "width": 1000,
+            "height": 1307
+          }
+        ],
+        "options": [
+          {
+            "name": "Color",
+            "position": 1,
+            "values": [
+              "Terracotta",
+              "White"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9935642558792,
+        "title": "Herb Garden Starter Kit",
+        "handle": "herb-garden-starter-kit",
+        "body_html": "\u003Cp\u003EGrow basil,parsley and chives at home. Includes seeds, peat pots, soil discs and instructions. Perfect for windowsills.\u003C/p\u003E",
+        "published_at": "2026-03-13T12:30:39+00:00",
+        "created_at": "2026-03-13T12:30:39+00:00",
+        "updated_at": "2026-03-23T11:43:51+00:00",
+        "vendor": "Omnicentra Etsy",
+        "product_type": "Kit",
+        "tags": [
+          "Garden",
+          "Gift",
+          "Herb",
+          "Seeds"
+        ],
+        "variants": [
+          {
+            "id": 52649730277704,
+            "title": "Default Title",
+            "option1": "Default Title",
+            "option2": null,
+            "option3": null,
+            "sku": "HGS-1",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "18.00",
+            "grams": 420,
+            "compare_at_price": null,
+            "position": 1,
+            "product_id": 9935642558792,
+            "created_at": "2026-03-13T12:58:43+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          }
+        ],
+        "images": [
+          {
+            "id": 76750908227912,
+            "created_at": "2026-03-13T12:58:43+00:00",
+            "position": 1,
+            "updated_at": "2026-03-13T12:58:45+00:00",
+            "product_id": 9935642558792,
+            "variant_ids": [],
+            "src": "https://cdn.shopify.com/s/files/1/0955/5214/3688/files/photo-1634582872934-be411573f235.jpg?v=1773406725",
+            "width": 1000,
+            "height": 1500
+          }
+        ],
+        "options": [
+          {
+            "name": "Title",
+            "position": 1,
+            "values": [
+              "Default Title"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9935642526024,
+        "title": "Bee Print Canvas Art",
+        "handle": "bee-print-canvas-art",
+        "body_html": "\u003Cp\u003EGallery-quality canvas print of our Magical Bees illustration. Stretched on wooden frame. Ready to hang.\u003C/p\u003E",
+        "published_at": "2026-03-13T12:30:38+00:00",
+        "created_at": "2026-03-13T12:30:38+00:00",
+        "updated_at": "2026-03-23T11:43:51+00:00",
+        "vendor": "Omnicentra Etsy",
+        "product_type": "Art Print",
+        "tags": [
+          "Bee",
+          "Canvas",
+          "Wall Art"
+        ],
+        "variants": [
+          {
+            "id": 52649730048328,
+            "title": "8x10",
+            "option1": "8x10",
+            "option2": null,
+            "option3": null,
+            "sku": "BPC-810",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "29.99",
+            "grams": 380,
+            "compare_at_price": null,
+            "position": 1,
+            "product_id": 9935642526024,
+            "created_at": "2026-03-13T12:58:42+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          },
+          {
+            "id": 52649730081096,
+            "title": "12x16",
+            "option1": "12x16",
+            "option2": null,
+            "option3": null,
+            "sku": "BPC-1216",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "39.99",
+            "grams": 620,
+            "compare_at_price": null,
+            "position": 2,
+            "product_id": 9935642526024,
+            "created_at": "2026-03-13T12:58:42+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          }
+        ],
+        "images": [
+          {
+            "id": 76355063972168,
+            "created_at": "2026-03-04T17:12:02+00:00",
+            "position": 1,
+            "updated_at": "2026-03-04T17:12:05+00:00",
+            "product_id": 9935642526024,
+            "variant_ids": [],
+            "src": "https://cdn.shopify.com/s/files/1/0955/5214/3688/files/b733e8c4-il_fullxfull.7714321588_1jm9.jpg?v=1772644325",
+            "width": 2816,
+            "height": 1536
+          }
+        ],
+        "options": [
+          {
+            "name": "Size",
+            "position": 1,
+            "values": [
+              "8x10",
+              "12x16"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9935642460488,
+        "title": "Honey Dipper Stick",
+        "handle": "honey-dipper-stick",
+        "body_html": "\u003Cp\u003EWooden honey dipper for drizzling honey without mess. Food-safe wood, easy to clean. Ideal for tea and breakfast lovers.\u003C/p\u003E",
+        "published_at": "2026-03-13T12:30:37+00:00",
+        "created_at": "2026-03-13T12:30:37+00:00",
+        "updated_at": "2026-03-23T11:43:51+00:00",
+        "vendor": "Omnicentra Etsy",
+        "product_type": "Utensil",
+        "tags": [
+          "Honey",
+          "Kitchen",
+          "Wood"
+        ],
+        "variants": [
+          {
+            "id": 52649729851720,
+            "title": "Default Title",
+            "option1": "Default Title",
+            "option2": null,
+            "option3": null,
+            "sku": "HDS-1",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "8.99",
+            "grams": 45,
+            "compare_at_price": null,
+            "position": 1,
+            "product_id": 9935642460488,
+            "created_at": "2026-03-13T12:58:41+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          }
+        ],
+        "images": [
+          {
+            "id": 76750907998536,
+            "created_at": "2026-03-13T12:58:41+00:00",
+            "position": 1,
+            "updated_at": "2026-03-13T12:58:43+00:00",
+            "product_id": 9935642460488,
+            "variant_ids": [],
+            "src": "https://cdn.shopify.com/s/files/1/0955/5214/3688/files/photo-1506280851383-12729ce453ac.jpg?v=1773406723",
+            "width": 1000,
+            "height": 1500
+          }
+        ],
+        "options": [
+          {
+            "name": "Title",
+            "position": 1,
+            "values": [
+              "Default Title"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9935642362184,
+        "title": "Beeswax Pillar Candle",
+        "handle": "beeswax-pillar-candle",
+        "body_html": "\u003Cp\u003EPure beeswax candle with a subtle honey scent. Long burn time. Natural golden colour. Supports sustainable beekeeping.\u003C/p\u003E",
+        "published_at": "2026-03-13T12:30:36+00:00",
+        "created_at": "2026-03-13T12:30:36+00:00",
+        "updated_at": "2026-03-23T11:43:51+00:00",
+        "vendor": "Omnicentra Etsy",
+        "product_type": "Candle",
+        "tags": [
+          "Bee",
+          "Beeswax",
+          "Natural"
+        ],
+        "variants": [
+          {
+            "id": 52649729786184,
+            "title": "Default Title",
+            "option1": "Default Title",
+            "option2": null,
+            "option3": null,
+            "sku": "BWC-1",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "16.00",
+            "grams": 310,
+            "compare_at_price": null,
+            "position": 1,
+            "product_id": 9935642362184,
+            "created_at": "2026-03-13T12:58:40+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          }
+        ],
+        "images": [
+          {
+            "id": 76750907801928,
+            "created_at": "2026-03-13T12:58:40+00:00",
+            "position": 1,
+            "updated_at": "2026-03-13T12:58:43+00:00",
+            "product_id": 9935642362184,
+            "variant_ids": [],
+            "src": "https://cdn.shopify.com/s/files/1/0955/5214/3688/files/candle-light.jpg?v=1773406723",
+            "width": 1000,
+            "height": 1500
+          }
+        ],
+        "options": [
+          {
+            "name": "Title",
+            "position": 1,
+            "values": [
+              "Default Title"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9935642231112,
+        "title": "Linen Throw Pillow Cover",
+        "handle": "linen-throw-pillow-cover",
+        "body_html": "\u003Cp\u003ELinen blend cushion cover with hidden zip. 45x45 cm. Soft, durable, machine washable. Insert not included.\u003C/p\u003E",
+        "published_at": "2026-03-13T12:30:35+00:00",
+        "created_at": "2026-03-13T12:30:35+00:00",
+        "updated_at": "2026-03-23T11:43:51+00:00",
+        "vendor": "Omnicentra Etsy",
+        "product_type": "Pillow",
+        "tags": [
+          "Home",
+          "Linen",
+          "Pillow"
+        ],
+        "variants": [
+          {
+            "id": 52649729622344,
+            "title": "Sage",
+            "option1": "Sage",
+            "option2": null,
+            "option3": null,
+            "sku": "LTP-SAG",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "24.99",
+            "grams": 260,
+            "compare_at_price": null,
+            "position": 1,
+            "product_id": 9935642231112,
+            "created_at": "2026-03-13T12:58:39+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          },
+          {
+            "id": 52649729655112,
+            "title": "Cream",
+            "option1": "Cream",
+            "option2": null,
+            "option3": null,
+            "sku": "LTP-CRM",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "24.99",
+            "grams": 260,
+            "compare_at_price": null,
+            "position": 2,
+            "product_id": 9935642231112,
+            "created_at": "2026-03-13T12:58:39+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          }
+        ],
+        "images": [
+          {
+            "id": 76750907638088,
+            "created_at": "2026-03-13T12:58:39+00:00",
+            "position": 1,
+            "updated_at": "2026-03-13T12:58:44+00:00",
+            "product_id": 9935642231112,
+            "variant_ids": [],
+            "src": "https://cdn.shopify.com/s/files/1/0955/5214/3688/files/white-pillows-and-sheets-on-an-unmade-bed.jpg?v=1773406724",
+            "width": 1000,
+            "height": 1321
+          }
+        ],
+        "options": [
+          {
+            "name": "Color",
+            "position": 1,
+            "values": [
+              "Sage",
+              "Cream"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9935642165576,
+        "title": "Minimalist Ceramic Vase",
+        "handle": "minimalist-ceramic-vase",
+        "body_html": "\u003Cp\u003EHand-thrown ceramic vase with matte glaze. Perfect for a single stem or dried flowers. Lead-free, dishwasher safe.\u003C/p\u003E",
+        "published_at": "2026-03-13T12:30:34+00:00",
+        "created_at": "2026-03-13T12:30:34+00:00",
+        "updated_at": "2026-03-23T11:43:51+00:00",
+        "vendor": "Omnicentra Etsy",
+        "product_type": "Vase",
+        "tags": [
+          "Ceramic",
+          "Home",
+          "Minimal"
+        ],
+        "variants": [
+          {
+            "id": 52649729392968,
+            "title": "S",
+            "option1": "S",
+            "option2": null,
+            "option3": null,
+            "sku": "MCV-S",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "28.00",
+            "grams": 400,
+            "compare_at_price": "32.00",
+            "position": 1,
+            "product_id": 9935642165576,
+            "created_at": "2026-03-13T12:58:38+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          },
+          {
+            "id": 52649729425736,
+            "title": "M",
+            "option1": "M",
+            "option2": null,
+            "option3": null,
+            "sku": "MCV-M",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "35.00",
+            "grams": 580,
+            "compare_at_price": "40.00",
+            "position": 2,
+            "product_id": 9935642165576,
+            "created_at": "2026-03-13T12:58:38+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          },
+          {
+            "id": 52649729458504,
+            "title": "L",
+            "option1": "L",
+            "option2": null,
+            "option3": null,
+            "sku": "MCV-L",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "42.00",
+            "grams": 750,
+            "compare_at_price": "48.00",
+            "position": 3,
+            "product_id": 9935642165576,
+            "created_at": "2026-03-13T12:58:38+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          }
+        ],
+        "images": [
+          {
+            "id": 76750907507016,
+            "created_at": "2026-03-13T12:58:38+00:00",
+            "position": 1,
+            "updated_at": "2026-03-13T12:58:41+00:00",
+            "product_id": 9935642165576,
+            "variant_ids": [],
+            "src": "https://cdn.shopify.com/s/files/1/0955/5214/3688/files/vase-with-small-dried-flowers.jpg?v=1773406721",
+            "width": 1000,
+            "height": 1500
+          }
+        ],
+        "options": [
+          {
+            "name": "Size",
+            "position": 1,
+            "values": [
+              "S",
+              "M",
+              "L"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9935642067272,
+        "title": "Wooden Phone Stand",
+        "handle": "wooden-phone-stand",
+        "body_html": "\u003Cp\u003ESolid wood desk stand for phone or tablet. Angled for viewing. Non-slip base. Fits most phones. Minimal design.\u003C/p\u003E",
+        "published_at": "2026-03-13T12:30:33+00:00",
+        "created_at": "2026-03-13T12:30:33+00:00",
+        "updated_at": "2026-03-23T11:43:51+00:00",
+        "vendor": "Omnicentra Etsy",
+        "product_type": "Stand",
+        "tags": [
+          "Desk",
+          "Minimal",
+          "Phone",
+          "Wood"
+        ],
+        "variants": [
+          {
+            "id": 52649729130824,
+            "title": "Oak",
+            "option1": "Oak",
+            "option2": null,
+            "option3": null,
+            "sku": "WPS-OAK",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "19.99",
+            "grams": 320,
+            "compare_at_price": null,
+            "position": 1,
+            "product_id": 9935642067272,
+            "created_at": "2026-03-13T12:58:37+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          },
+          {
+            "id": 52649729163592,
+            "title": "Walnut",
+            "option1": "Walnut",
+            "option2": null,
+            "option3": null,
+            "sku": "WPS-WAL",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "19.99",
+            "grams": 320,
+            "compare_at_price": null,
+            "position": 2,
+            "product_id": 9935642067272,
+            "created_at": "2026-03-13T12:58:37+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          }
+        ],
+        "images": [
+          {
+            "id": 76750907343176,
+            "created_at": "2026-03-13T12:58:36+00:00",
+            "position": 1,
+            "updated_at": "2026-03-13T12:58:40+00:00",
+            "product_id": 9935642067272,
+            "variant_ids": [],
+            "src": "https://cdn.shopify.com/s/files/1/0955/5214/3688/files/photo-1742527937026-92ba2b7e5cef.jpg?v=1773406720",
+            "width": 1000,
+            "height": 1500
+          }
+        ],
+        "options": [
+          {
+            "name": "Wood",
+            "position": 1,
+            "values": [
+              "Oak",
+              "Walnut"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9935641968968,
+        "title": "Handmade Honey & Oat Soap Set",
+        "handle": "handmade-honey-oat-soap-set",
+        "body_html": "\u003Cp\u003ESet of three bars: Honey &amp; Oat, Lavender, and Unscented. Gentle,moisturising formula. No parabens or sulphates. Wrapped in recyclable paper. Great gift.\u003C/p\u003E",
+        "published_at": "2026-03-13T12:30:32+00:00",
+        "created_at": "2026-03-13T12:30:32+00:00",
+        "updated_at": "2026-03-23T11:43:51+00:00",
+        "vendor": "Omnicentra Etsy",
+        "product_type": "Soap",
+        "tags": [
+          "Gift",
+          "Handmade",
+          "Natural",
+          "Soap"
+        ],
+        "variants": [
+          {
+            "id": 52649728934216,
+            "title": "Default Title",
+            "option1": "Default Title",
+            "option2": null,
+            "option3": null,
+            "sku": "HOS-SET",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "14.50",
+            "grams": 220,
+            "compare_at_price": null,
+            "position": 1,
+            "product_id": 9935641968968,
+            "created_at": "2026-03-13T12:58:35+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          }
+        ],
+        "images": [
+          {
+            "id": 76750907277640,
+            "created_at": "2026-03-13T12:58:35+00:00",
+            "position": 1,
+            "updated_at": "2026-03-13T12:58:41+00:00",
+            "product_id": 9935641968968,
+            "variant_ids": [],
+            "src": "https://cdn.shopify.com/s/files/1/0955/5214/3688/files/handmade-natural-soap-with-ingredients.jpg?v=1773406721",
+            "width": 1000,
+            "height": 667
+          }
+        ],
+        "options": [
+          {
+            "name": "Title",
+            "position": 1,
+            "values": [
+              "Default Title"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9935641870664,
+        "title": "Botanical Print Tote Bag",
+        "handle": "botanical-print-tote-bag",
+        "body_html": "\u003Cp\u003ESpacious canvas tote with botanical illustration print. Reinforced handles, interior pocket. Ideal for market runs, beach, or everyday carry. 100% cotton,machine washable.\u003C/p\u003E",
+        "published_at": "2026-03-13T12:30:31+00:00",
+        "created_at": "2026-03-13T12:30:31+00:00",
+        "updated_at": "2026-03-23T11:43:51+00:00",
+        "vendor": "Omnicentra Etsy",
+        "product_type": "Tote",
+        "tags": [
+          "Botanical",
+          "Cotton",
+          "Eco",
+          "Tote"
+        ],
+        "variants": [
+          {
+            "id": 52649728835912,
+            "title": "Natural",
+            "option1": "Natural",
+            "option2": null,
+            "option3": null,
+            "sku": "BOT-NAT",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "22.00",
+            "grams": 280,
+            "compare_at_price": null,
+            "position": 1,
+            "product_id": 9935641870664,
+            "created_at": "2026-03-13T12:58:34+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          },
+          {
+            "id": 52649728868680,
+            "title": "Black",
+            "option1": "Black",
+            "option2": null,
+            "option3": null,
+            "sku": "BOT-BLK",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "22.00",
+            "grams": 280,
+            "compare_at_price": null,
+            "position": 2,
+            "product_id": 9935641870664,
+            "created_at": "2026-03-13T12:58:34+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          }
+        ],
+        "images": [
+          {
+            "id": 76750906982728,
+            "created_at": "2026-03-13T12:58:34+00:00",
+            "position": 1,
+            "updated_at": "2026-03-13T12:58:38+00:00",
+            "product_id": 9935641870664,
+            "variant_ids": [],
+            "src": "https://cdn.shopify.com/s/files/1/0955/5214/3688/files/leather-handbag-on-bed.jpg?v=1773406718",
+            "width": 1000,
+            "height": 667
+          }
+        ],
+        "options": [
+          {
+            "name": "Color",
+            "position": 1,
+            "values": [
+              "Natural",
+              "Black"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9935641706824,
+        "title": "Lavender Dream Scented Candle",
+        "handle": "lavender-dream-scented-candle",
+        "body_html": "\u003Cp\u003EHand-poured soy candle with calming lavender and a hint of vanilla. Burns clean for up to 40 hours. Perfect for bedrooms and relaxation. 100% natural soy wax,cotton wick.\u003C/p\u003E",
+        "published_at": "2026-03-13T12:30:30+00:00",
+        "created_at": "2026-03-13T12:30:30+00:00",
+        "updated_at": "2026-03-23T11:43:51+00:00",
+        "vendor": "Omnicentra Etsy",
+        "product_type": "Candle",
+        "tags": [
+          "Gift",
+          "Home",
+          "Lavender",
+          "Soy"
+        ],
+        "variants": [
+          {
+            "id": 52649728573768,
+            "title": "Small",
+            "option1": "Small",
+            "option2": null,
+            "option3": null,
+            "sku": "LVD-SM",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "12.99",
+            "grams": 180,
+            "compare_at_price": "15.99",
+            "position": 1,
+            "product_id": 9935641706824,
+            "created_at": "2026-03-13T12:58:33+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          },
+          {
+            "id": 52649728606536,
+            "title": "Medium",
+            "option1": "Medium",
+            "option2": null,
+            "option3": null,
+            "sku": "LVD-MD",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "18.99",
+            "grams": 350,
+            "compare_at_price": "22.99",
+            "position": 2,
+            "product_id": 9935641706824,
+            "created_at": "2026-03-13T12:58:33+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          },
+          {
+            "id": 52649728639304,
+            "title": "Large",
+            "option1": "Large",
+            "option2": null,
+            "option3": null,
+            "sku": "LVD-LG",
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": true,
+            "price": "24.99",
+            "grams": 520,
+            "compare_at_price": "29.99",
+            "position": 3,
+            "product_id": 9935641706824,
+            "created_at": "2026-03-13T12:58:33+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          }
+        ],
+        "images": [
+          {
+            "id": 76750906786120,
+            "created_at": "2026-03-13T12:58:33+00:00",
+            "position": 1,
+            "updated_at": "2026-03-13T12:58:36+00:00",
+            "product_id": 9935641706824,
+            "variant_ids": [],
+            "src": "https://cdn.shopify.com/s/files/1/0955/5214/3688/files/mini-jar-candle.jpg?v=1773406716",
+            "width": 1000,
+            "height": 667
+          }
+        ],
+        "options": [
+          {
+            "name": "Size",
+            "position": 1,
+            "values": [
+              "Small",
+              "Medium",
+              "Large"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9920400818504,
+        "title": "Magical Bees Ceramic Mug - 11oz Cute Coffee Cup",
+        "handle": "magical-bees-ceramic-mug-11oz-cute-coffee-cup",
+        "body_html": "\u003Cp\u003EStart your day with a little magic. This adorable 11oz 'Magical Bees' ceramic mug features a sweet bee illustration that's perfect for coffee, tea, or a cosy hot chocolate break.  - 11oz standard size - great for your morning brew or afternoon pick-me-up - Durable ceramic with white glossy glaze - Vibrant sublimation print on both sides of the mug - Lead-free, BPA-free materials - Dishwasher and microwave safe for everyday use  This cute bee mug makes a lovely gift for nature lovers, bee fans, or anyone who enjoys whimsical kitchenware. Ideal for birthdays, thank-you gifts, or as a cheerful treat for yourself, it's designed to brighten your desk, kitchen, or home office with every sip.\u003C/p\u003E",
+        "published_at": "2026-03-04T17:18:01+00:00",
+        "created_at": "2026-03-04T17:12:02+00:00",
+        "updated_at": "2026-03-23T11:43:51+00:00",
+        "vendor": "Omnicentra Etsy",
+        "product_type": "",
+        "tags": [
+          "Ceramic"
+        ],
+        "variants": [
+          {
+            "id": 52587409146184,
+            "title": "Brown",
+            "option1": "Brown",
+            "option2": null,
+            "option3": null,
+            "sku": null,
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": false,
+            "price": "6.00",
+            "grams": 0,
+            "compare_at_price": null,
+            "position": 1,
+            "product_id": 9920400818504,
+            "created_at": "2026-03-04T17:12:02+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          }
+        ],
+        "images": [
+          {
+            "id": 76355063906632,
+            "created_at": "2026-03-04T17:12:02+00:00",
+            "position": 1,
+            "updated_at": "2026-03-04T17:12:04+00:00",
+            "product_id": 9920400818504,
+            "variant_ids": [],
+            "src": "https://cdn.shopify.com/s/files/1/0955/5214/3688/files/0748b63d-il_fullxfull.7737539336_7h8w.jpg?v=1772644324",
+            "width": 1024,
+            "height": 1024
+          }
+        ],
+        "options": [
+          {
+            "name": "Primary colour",
+            "position": 1,
+            "values": [
+              "Brown"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9920400785736,
+        "title": "Magical Bees Digital Art",
+        "handle": "magical-bees-digital-art",
+        "body_html": "\u003Cp\u003EMagical Bees is a whimsical digital illustration of glowing bees dancing through an enchanted moonlit forest,perfect for wall art,prints,or screensavers. Each bee leaves a sparkling golden trail as it hovers around luminous flowers and an ancient tree stump,creating a soft,dreamlike glow that feels both calming and magical.\u003C/p\u003E",
+        "published_at": "2026-03-04T17:17:11+00:00",
+        "created_at": "2026-03-04T17:12:02+00:00",
+        "updated_at": "2026-03-23T11:43:51+00:00",
+        "vendor": "Omnicentra Etsy",
+        "product_type": "",
+        "tags": [],
+        "variants": [
+          {
+            "id": 52649728377160,
+            "title": "Default Title",
+            "option1": "Default Title",
+            "option2": null,
+            "option3": null,
+            "sku": null,
+            "requires_shipping": true,
+            "taxable": true,
+            "featured_image": null,
+            "available": false,
+            "price": "4.00",
+            "grams": 0,
+            "compare_at_price": null,
+            "position": 1,
+            "product_id": 9920400785736,
+            "created_at": "2026-03-13T12:58:32+00:00",
+            "updated_at": "2026-03-23T11:43:51+00:00"
+          }
+        ],
+        "images": [
+          {
+            "id": 76355063972168,
+            "created_at": "2026-03-04T17:12:02+00:00",
+            "position": 1,
+            "updated_at": "2026-03-04T17:12:05+00:00",
+            "product_id": 9920400785736,
+            "variant_ids": [],
+            "src": "https://cdn.shopify.com/s/files/1/0955/5214/3688/files/b733e8c4-il_fullxfull.7714321588_1jm9.jpg?v=1772644325",
+            "width": 2816,
+            "height": 1536
+          }
+        ],
+        "options": [
+          {
+            "name": "Title",
+            "position": 1,
+            "values": [
+              "Default Title"
+            ]
+          }
+        ]
+      }
+    ]
+  }

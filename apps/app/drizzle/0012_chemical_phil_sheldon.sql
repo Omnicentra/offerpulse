@@ -1,0 +1,1 @@
+ALTER TABLE "alert_settings" ADD COLUMN "weekly_pulse_alerts_enabled" boolean DEFAULT false NOT NULL;

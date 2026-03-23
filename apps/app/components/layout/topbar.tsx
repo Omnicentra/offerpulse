@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
 import Image from "next/image";
@@ -33,10 +33,29 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
   const user = session?.user ?? null;
   const { workspace, workspaces, setWorkspaceId, isLoading: isLoadingWorkspace } = useWorkspace();
   const { subscription, isTrialing } = useSubscription();
+  const trialEnd = subscription?.trialEnd;
+  const needsTrialCountdown = isTrialing && trialEnd != null;
+  const [daysRemaining, setDaysRemaining] = useState(0);
 
-  const daysRemaining = isTrialing && subscription?.trialEnd
-    ? Math.max(0, Math.ceil((new Date(subscription.trialEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-    : 0;
+  useEffect(() => {
+    if (!needsTrialCountdown || !trialEnd) {
+      return;
+    }
+
+    const trialEndMs = new Date(trialEnd).getTime();
+
+    function refreshDaysRemaining() {
+      setDaysRemaining(
+        Math.max(0, Math.ceil((trialEndMs - Date.now()) / (1000 * 60 * 60 * 24))),
+      );
+    }
+
+    queueMicrotask(refreshDaysRemaining);
+    const intervalId = window.setInterval(refreshDaysRemaining, 60_000);
+    return () => window.clearInterval(intervalId);
+  }, [needsTrialCountdown, trialEnd]);
+
+  const displayDaysRemaining = needsTrialCountdown ? daysRemaining : 0;
 
   const handleLogout = async () => {
     await signOut();
@@ -115,13 +134,13 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
         </div>
 
         {/* Trial indicator */}
-        {isTrialing && daysRemaining > 0 && (
+        {isTrialing && displayDaysRemaining > 0 && (
           <button
             onClick={() => router.push("/settings/billing")}
             className="hidden items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-900 transition-colors hover:bg-amber-100 lg:flex"
           >
             <Clock className="h-3.5 w-3.5" />
-            {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} left in trial
+            {displayDaysRemaining} day{displayDaysRemaining !== 1 ? "s" : ""} left in trial
           </button>
         )}
 

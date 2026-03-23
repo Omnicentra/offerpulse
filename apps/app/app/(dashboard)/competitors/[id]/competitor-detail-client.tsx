@@ -229,6 +229,27 @@ export function CompetitorDetailClient({
     setTempFrequency(null);
   };
 
+  const openCompetitorSite = (baseUrl: string) => {
+    try {
+      const sanitizedUrl = new URL(baseUrl);
+      if (sanitizedUrl.protocol !== "http:" && sanitizedUrl.protocol !== "https:") {
+        toast({
+          title: "Invalid URL",
+          description: "Only HTTP and HTTPS URLs are allowed.",
+          variant: "destructive",
+        });
+        return;
+      }
+      window.open(sanitizedUrl.toString(), "_blank", "noopener,noreferrer");
+    } catch {
+      toast({
+        title: "Invalid URL",
+        description: "Could not open competitor website.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!competitor) {
     return (
       <EmptyState
@@ -285,7 +306,7 @@ export function CompetitorDetailClient({
           <div className="flex gap-2">
             <Button
               variant="outline"
-              onClick={() => window.open(competitor.baseUrl, "_blank")}
+              onClick={() => openCompetitorSite(competitor.baseUrl)}
               className="gap-2"
             >
               <ExternalLink className="h-4 w-4" />

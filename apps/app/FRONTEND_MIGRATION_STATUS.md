@@ -2,14 +2,22 @@
 
 ## ✅ Migration Pattern Established & Core Pages Migrated
 
-### Completed Migrations (6 pages)
+### Completed migrations (routes & layout)
 - ✅ WorkspaceProvider created
 - ✅ Dashboard layout updated with WorkspaceProvider
 - ✅ **alerts/page.tsx** - Reference implementation
 - ✅ **overview/page.tsx** - Dashboard with stats
 - ✅ **competitors/page.tsx** - List with filters
 - ✅ **competitors/new/page.tsx** - Create form
+- ✅ **competitors/[id]/page.tsx** - Detail (RSC + `createCaller`, client via tRPC)
 - ✅ **login & signup pages** - Better-auth integration
+- ✅ **changes/page.tsx** - Changes list (`trpc.changeEvents`, `trpc.competitors`)
+- ✅ **snapshots/page.tsx** - Snapshots list
+- ✅ **snapshots/[id]/page.tsx** - Snapshot detail (RSC + `createCaller`)
+- ✅ **recommendations/page.tsx** - List, filters, status & checklist via tRPC
+- ✅ **weekly-pulse/page.tsx** - RSC + tRPC client with prefetch / `initialData`
+- ✅ **components/layout/topbar.tsx** - Session + workspace (no mock API)
+- ✅ **components/layout/CollapsibleSidebar.tsx** - Auth + nav (no mock API)
 
 ### Pattern Status: ✅ ESTABLISHED AND PROVEN
 
@@ -50,45 +58,18 @@ const mutation = trpc.alerts.update.useMutation({
 });
 ```
 
-## Remaining Pages (10 files - Straightforward to Migrate)
+## Remaining mock API cleanup (2 runtime files)
 
-All remaining pages follow the exact same pattern demonstrated in the completed migrations.
+Almost all dashboard routes use tRPC. **`@/src/mock/api` is still imported in only two places** under `app/` (verify with ripgrep: `mock/api`).
 
-### Dashboard Pages (8 files)
-- [ ] **app/(dashboard)/competitors/[id]/page.tsx** - Detail view (5 min)
-  - `competitorsApi.get(id)` → `trpc.competitors.get.useQuery({ id })`
-  
-- [x] **app/(dashboard)/changes/page.tsx** - Changes list ✅
-  - Migrated to tRPC (`trpc.changeEvents.list`, `trpc.competitors.list`)
-  - Fixed `useSearchParams()` Suspense boundary for static generation
-  
-- [x] **app/(dashboard)/snapshots/page.tsx** - Snapshots list ✅
-  - Migrated to tRPC (`trpc.snapshots.list`)
-  
-- [ ] **app/(dashboard)/snapshots/[id]/page.tsx** - Snapshot detail (5 min)
-  - `snapshotsApi.get(id)` → `trpc.snapshots.get.useQuery({ id })`
-  
-- [ ] **app/(dashboard)/recommendations/page.tsx** - Recommendations (10 min)
-  - `recommendationsApi.list()` → `trpc.recommendations.list.useQuery({ workspaceId })`
-  - Multiple mutations for status updates and checklist items
-  
-- [ ] **app/(dashboard)/weekly-pulse/page.tsx** - Weekly reports (5 min)
-  - `weeklyPulseApi.list()` → `trpc.weeklyPulse.list.useQuery({ workspaceId })`
-  
-- [ ] **app/(dashboard)/settings/page.tsx** - Workspace settings (5 min)
-  - `workspaceSettingsApi.get()` → `trpc.workspaceSettings.get.useQuery({ workspaceId })`
-  
-- [ ] **app/(dashboard)/settings/members/page.tsx** - Team members (optional)
+### Must migrate
+- [ ] **app/(dashboard)/settings/settings-client.tsx** — still uses `resetApi` from `@/src/mock/api` for demo reset. **Parent `settings/page.tsx` already prefetches via tRPC** (`workspaceSettings`, `users`, `ownStore`, etc.).
+- [ ] **app/(dashboard)/settings/members/page.tsx** — still uses `usersApi` from `@/src/mock/api`; replace with `trpc.users.*` (or patterns used on `settings/page.tsx`).
 
-### Layout Components (2 files)
-- [ ] **components/layout/topbar.tsx** - User menu (5 min)
-  - `usersApi.getCurrent()` → `trpc.users.getCurrent.useQuery()`
-  - `authApi.signOut()` → Better-auth `signOut()`
-  
-- [ ] **components/layout/CollapsibleSidebar.tsx** - Sidebar (2 min)
-  - Add workspace context for workspace name
+### Optional cleanup
+- [ ] **components/ui/change-type-badge.tsx** — imports `ChangeEventType` from `@/src/mock/types`; move the type to `@offerpulse/lib` or a local `types` module so UI does not depend on the mock package.
 
-**Estimated time to complete: 45-60 minutes**
+**Estimated time to complete: ~15–25 minutes**
 
 ## Key Changes Needed
 
@@ -121,10 +102,10 @@ All remaining pages follow the exact same pattern demonstrated in the completed 
 ✅ Background jobs (Inngest) configured  
 ✅ AI recommendations integrated  
 ✅ Notifications (email/Slack) ready  
-✅ Migration pattern proven across 5 diverse pages  
+✅ Migration pattern proven across dashboard routes; layout shells do not use the mock API  
 
 ### What's Remaining
-The remaining 10 pages are mechanical migrations following the exact established pattern. Each takes 5-10 minutes.
+Two files still call `@/src/mock/api` at runtime; removing those imports completes mock removal for `app/` UI. Optional: decouple `change-type-badge` from `@/src/mock/types`.
 
 ### Quick Reference
 - All pages require workspaceId from `useWorkspace()` hook

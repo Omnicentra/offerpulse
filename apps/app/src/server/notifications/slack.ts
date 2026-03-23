@@ -1,4 +1,5 @@
 import { WebClient } from "@slack/web-api";
+import { logger } from "@offerpulse/lib";
 import { EmailAlertData } from "./email";
 
 export type SlackAlertData = EmailAlertData;
@@ -260,7 +261,7 @@ export async function sendSlackWeeklyPulse(
 
     return { success: true };
   } catch (error) {
-    console.error("Slack weekly pulse send failed:", error);
+    logger.error("Slack weekly pulse send failed", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

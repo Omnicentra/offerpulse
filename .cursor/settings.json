@@ -8,6 +8,9 @@
     },
     "firecrawl": {
       "enabled": true
+    },
+    "sentry": {
+      "enabled": true
     }
   }
 }

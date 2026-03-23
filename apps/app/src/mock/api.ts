@@ -1,3 +1,4 @@
+import { RecommendationStrategy } from "@offerpulse/lib/constants";
 import { mockDB } from "./db";
 import type {
   Competitor,
@@ -219,8 +220,13 @@ export const snapshotsApi = {
 
       // Generate recommendation (70% chance)
       if (Math.random() > 0.3) {
-        const strategies = ["MATCH", "COUNTER", "IGNORE", "TEST"] as const;
-        const strategy = strategies[Math.floor(Math.random() * strategies.length)];
+        const strategies = [
+          RecommendationStrategy.MATCH,
+          RecommendationStrategy.COUNTER,
+          RecommendationStrategy.IGNORE,
+          RecommendationStrategy.TEST,
+        ];
+        const strategy = strategies[Math.floor(Math.random() * strategies.length)]!;
 
         newRecommendation = {
           id: `rec-${Date.now()}`,

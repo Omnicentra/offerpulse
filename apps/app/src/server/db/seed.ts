@@ -25,6 +25,7 @@ import {
 import { nanoid } from "nanoid";
 import * as bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
+import { RecommendationStrategy } from "@offerpulse/lib/constants";
 
 // Fixed IDs so phases can be re-run or run in isolation when dependencies exist
 const DEMO_USER_ID = "CQzZVW2af4cRJo5fGyDFbRgRfq7zv8ts";
@@ -256,7 +257,7 @@ async function seedSnapshots(): Promise<void> {
         id: `rec_${nanoid()}`,
         changeEventId: changeEvent.id,
         competitorId,
-        strategy: "MATCH",
+        strategy: RecommendationStrategy.MATCH,
         impact: 8,
         effort: 4,
         title: "Consider matching competitor's improved offer",

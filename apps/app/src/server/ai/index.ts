@@ -1,7 +1,7 @@
 import { env } from "@/env";
 import { logger } from "@offerpulse/lib";
 import { ChangeDetectionResult } from "../change-detection";
-import { DEFAULT_OPENROUTER_MODEL } from "@offerpulse/lib/constants";
+import { DEFAULT_OPENROUTER_MODEL, RecommendationStrategy } from "@offerpulse/lib/constants";
 
 export interface StoreContext {
   storeName: string;
@@ -22,7 +22,7 @@ export interface RecommendationInput {
 }
 
 export interface RecommendationOutput {
-  strategy: "MATCH" | "COUNTER" | "IGNORE" | "TEST";
+  strategy: RecommendationStrategy;
   impact: number; // 1-10
   effort: number; // 1-10
   title: string;
@@ -175,7 +175,7 @@ Provide a strategic recommendation in the following JSON format:
 
     // Validate and return
     return {
-      strategy: parsed.strategy || "TEST",
+      strategy: parseRecommendationStrategy(parsed.strategy),
       impact: Math.min(10, Math.max(1, parseInt(parsed.impact) || 5)),
       effort: Math.min(10, Math.max(1, parseInt(parsed.effort) || 5)),
       title: parsed.title || "Review competitor change",
@@ -194,6 +194,12 @@ Provide a strategic recommendation in the following JSON format:
   }
 }
 
+function parseRecommendationStrategy(raw: unknown): RecommendationStrategy {
+  if (typeof raw !== "string") return RecommendationStrategy.TEST;
+  const allowed = Object.values(RecommendationStrategy) as string[];
+  return allowed.includes(raw) ? (raw as RecommendationStrategy) : RecommendationStrategy.TEST;
+}
+
 /**
  * Fallback rule-based recommendation when AI is unavailable
  */
@@ -201,7 +207,7 @@ function generateFallbackRecommendation(input: RecommendationInput): Recommendat
   const { changeType, detectionResult } = input;
 
   // Simple rule-based strategy
-  let strategy: RecommendationOutput["strategy"] = "TEST";
+  let strategy: RecommendationStrategy = RecommendationStrategy.TEST;
   let impact = 5;
   let effort = 5;
   let title = `Review ${changeType.toLowerCase()} change`;
@@ -217,7 +223,7 @@ function generateFallbackRecommendation(input: RecommendationInput): Recommendat
   if (changeType === "PROMO" || changeType === "SHIPPING") {
     impact = 7;
     effort = 4;
-    strategy = "MATCH";
+    strategy = RecommendationStrategy.MATCH;
     title = `Consider matching competitor's ${changeType.toLowerCase()} offer`;
     rationale = `${changeType === "PROMO" ? "Promotional" : "Shipping"} changes typically have high conversion impact and are relatively easy to implement.`;
     actionSteps = [
@@ -229,7 +235,7 @@ function generateFallbackRecommendation(input: RecommendationInput): Recommendat
   } else if (changeType === "BUNDLE") {
     impact = 6;
     effort = 6;
-    strategy = "COUNTER";
+    strategy = RecommendationStrategy.COUNTER;
     title = "Consider alternative bundle strategy";
     rationale = "Bundle changes can be countered with different but equally compelling offers.";
     actionSteps = [

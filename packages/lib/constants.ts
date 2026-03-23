@@ -52,6 +52,23 @@ export const STRATEGY_LABELS: Record<StrategyType, string> = {
 };
 
 /**
+ * Recommendation strategies (matches DB `recommendation_strategy`)
+ */
+export enum RecommendationStrategy {
+  MATCH = "MATCH",
+  COUNTER = "COUNTER",
+  IGNORE = "IGNORE",
+  TEST = "TEST",
+}
+
+export const RECOMMENDATION_STRATEGY_LABELS: Record<RecommendationStrategy, string> = {
+  [RecommendationStrategy.MATCH]: "Match",
+  [RecommendationStrategy.COUNTER]: "Counter",
+  [RecommendationStrategy.IGNORE]: "Ignore",
+  [RecommendationStrategy.TEST]: "Test",
+};
+
+/**
  * Workspace member roles
  */
 export enum WorkspaceRole {

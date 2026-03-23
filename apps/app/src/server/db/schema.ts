@@ -442,6 +442,10 @@ export const alertSettings = pgTable("alert_settings", {
   captureNotificationsEnabled: boolean("capture_notifications_enabled")
     .notNull()
     .default(false),
+  /** When true, send the weekly pulse digest via email/Slack when the job runs (Mon). */
+  weeklyPulseAlertsEnabled: boolean("weekly_pulse_alerts_enabled")
+    .notNull()
+    .default(false),
   eventTypes: jsonb("event_types")
     .$type<string[]>()
     .default(["PROMO", "SHIPPING", "BUNDLE", "CART_INCENTIVE", "DELIVERY_RETURNS"]),

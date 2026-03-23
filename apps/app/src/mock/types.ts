@@ -1,3 +1,5 @@
+import type { RecommendationStrategy } from "@offerpulse/lib/constants";
+
 export interface Workspace {
   id: string;
   name: string;
@@ -75,7 +77,6 @@ export interface ChangeEvent {
   snapshotAfterId?: string;
 }
 
-export type RecommendationStrategy = "MATCH" | "COUNTER" | "IGNORE" | "TEST";
 export type RecommendationStatus = "open" | "done" | "snoozed";
 
 export interface RecommendationChecklistItem {
