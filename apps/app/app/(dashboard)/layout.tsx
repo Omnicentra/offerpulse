@@ -21,7 +21,6 @@ export default function DashboardLayout({
 
   const tawkPropertyId = env.NEXT_PUBLIC_TAWK_PROPERTY_ID;
   const tawkWidgetId = env.NEXT_PUBLIC_TAWK_WIDGET_ID;
-  console.log("[tawk.to] tawkPropertyId", tawkPropertyId);
   // Single identify for all auth methods (email/password + OAuth). Uses non-PII user id only.
   useEffect(() => {
     if (!user) return;

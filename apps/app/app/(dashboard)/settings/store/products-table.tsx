@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTRPC } from "@/src/lib/trpc/client";
 import type { RouterOutputs } from "@/src/server/trpc/routers/root";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { FileJson, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,
@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ProductDialog } from "./product-dialog";
+import { JsonImportDialog } from "./json-import-dialog";
 
 interface ProductsTableProps {
   workspaceId: string;
@@ -43,6 +44,7 @@ export function ProductsTable({ workspaceId }: ProductsTableProps) {
   const [productToDelete, setProductToDelete] = useState<
     RouterOutputs["ownStore"]["products"]["list"][number] | null
   >(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const { data: products = [], isLoading } = useQuery({
     ...trpc.ownStore.products.list.queryOptions({ workspaceId }),
@@ -108,14 +110,30 @@ export function ProductsTable({ workspaceId }: ProductsTableProps) {
         <EmptyState
           icon={Plus}
           title="No products yet"
-          description="Add products to compare your pricing against competitor offers."
+          description="Add products manually or import them from your Shopify store."
           action={{ label: "Add product", onClick: handleAdd }}
         />
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setImportDialogOpen(true)}
+            className="gap-2 text-slate-600"
+          >
+            <FileJson className="h-4 w-4" />
+            Import from JSON
+          </Button>
+        </div>
         <ProductDialog
           workspaceId={workspaceId}
           open={productDialogOpen}
           onOpenChange={handleProductDialogClose}
           product={editingProduct}
+        />
+        <JsonImportDialog
+          workspaceId={workspaceId}
+          open={importDialogOpen}
+          onOpenChange={setImportDialogOpen}
         />
       </div>
     );
@@ -123,7 +141,15 @@ export function ProductsTable({ workspaceId }: ProductsTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-2">
+        <Button
+          variant="outline"
+          onClick={() => setImportDialogOpen(true)}
+          className="gap-2"
+        >
+          <FileJson className="h-4 w-4" />
+          Import from JSON
+        </Button>
         <Button onClick={handleAdd}>
           <Plus className="mr-2 h-4 w-4" />
           Add product
@@ -217,6 +243,12 @@ export function ProductsTable({ workspaceId }: ProductsTableProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <JsonImportDialog
+        workspaceId={workspaceId}
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+      />
     </div>
   );
 }
