@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -8,32 +8,47 @@ import {
   Bell,
   Building2,
   CalendarClock,
+  CreditCard,
   Lightbulb,
-  Search,
-  Settings,
+  Store,
   TrendingUp,
   UserPlus,
   Zap,
 } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { useTRPC } from "@/src/lib/trpc/client";
 import { cn } from "@/lib/utils";
+
 interface QuickActionDef {
   id: string;
   label: string;
   href: string;
   keywords: string[];
-  Icon: typeof Settings;
+  Icon: typeof CreditCard;
 }
 
 const QUICK_ACTIONS: QuickActionDef[] = [
-  { id: "qa-settings", label: "Settings", href: "/settings", keywords: ["settings", "config", "account"], Icon: Settings },
+  {
+    id: "qa-billing",
+    label: "Billing",
+    href: "/settings/billing",
+    keywords: ["billing", "plan", "subscription", "invoice", "payment", "trial", "stripe"],
+    Icon: CreditCard,
+  },
+  {
+    id: "qa-store",
+    label: "My Store",
+    href: "/settings/store",
+    keywords: ["store", "my store", "shop", "products", "promos", "import", "shopify"],
+    Icon: Store,
+  },
   { id: "qa-alerts", label: "Alerts", href: "/alerts", keywords: ["alerts", "notifications"], Icon: Bell },
   {
     id: "qa-digests",
@@ -80,7 +95,7 @@ const QUICK_ACTIONS: QuickActionDef[] = [
 ];
 
 type PaletteRow =
-  | { key: string; kind: "quick"; label: string; sub?: string; href: string; Icon: typeof Settings }
+  | { key: string; kind: "quick"; label: string; sub?: string; href: string; Icon: typeof CreditCard }
   | { key: string; kind: "competitor"; label: string; sub: string; href: string; Icon: typeof Building2 }
   | { key: string; kind: "change"; label: string; sub: string; href: string; Icon: typeof Zap }
   | { key: string; kind: "recommendation"; label: string; sub: string; href: string; Icon: typeof Lightbulb };
@@ -109,17 +124,13 @@ export function CommandPalette({ open, onOpenChange, workspaceId }: CommandPalet
   const router = useRouter();
   const trpc = useTRPC();
   const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const rowRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
   const [query, setQuery] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
-  const [selectedIndex, setSelectedIndex] = useState(0);
 
   useEffect(() => {
     const t = window.setTimeout(() => {
       setDebouncedQ(query);
-      setSelectedIndex(0);
     }, 200);
     return () => window.clearTimeout(t);
   }, [query]);
@@ -130,17 +141,15 @@ export function CommandPalette({ open, onOpenChange, workspaceId }: CommandPalet
         setQuery("");
         setDebouncedQ("");
       }
-      setSelectedIndex(0);
       onOpenChange(next);
     },
     [onOpenChange]
   );
 
   useEffect(() => {
-    if (open) {
-      const id = window.requestAnimationFrame(() => inputRef.current?.focus());
-      return () => window.cancelAnimationFrame(id);
-    }
+    if (!open) return;
+    const id = window.requestAnimationFrame(() => inputRef.current?.focus());
+    return () => window.cancelAnimationFrame(id);
   }, [open]);
 
   const { data, isFetching, isPending } = useQuery({
@@ -203,15 +212,6 @@ export function CommandPalette({ open, onOpenChange, workspaceId }: CommandPalet
     return list;
   }, [data, quickFiltered]);
 
-  const safeIndex = rows.length === 0 ? -1 : Math.min(selectedIndex, rows.length - 1);
-  const selectedKey = safeIndex >= 0 ? rows[safeIndex]!.key : null;
-
-  useLayoutEffect(() => {
-    if (!selectedKey || !listRef.current) return;
-    const el = rowRefs.current.get(selectedKey);
-    el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [selectedKey]);
-
   const navigateTo = useCallback(
     (href: string) => {
       handleDialogOpenChange(false);
@@ -220,37 +220,6 @@ export function CommandPalette({ open, onOpenChange, workspaceId }: CommandPalet
     [handleDialogOpenChange, router]
   );
 
-  const rowCount = rows.length;
-  const moveSelection = useCallback(
-    (delta: number) => {
-      setSelectedIndex((prev) => {
-        if (rowCount === 0) return 0;
-        const idx = Math.min(prev, rowCount - 1);
-        return Math.max(0, Math.min(rowCount - 1, idx + delta));
-      });
-    },
-    [rowCount]
-  );
-
-  const onInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      moveSelection(1);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      moveSelection(-1);
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (safeIndex >= 0) navigateTo(rows[safeIndex]!.href);
-    } else if (e.key === "Home") {
-      e.preventDefault();
-      setSelectedIndex(0);
-    } else if (e.key === "End") {
-      e.preventDefault();
-      if (rows.length > 0) setSelectedIndex(rows.length - 1);
-    }
-  };
-
   const showSkeleton = isPending && data === undefined && !!workspaceId;
   const empty =
     !showSkeleton &&
@@ -258,190 +227,128 @@ export function CommandPalette({ open, onOpenChange, workspaceId }: CommandPalet
     !isFetching &&
     (!workspaceId || data !== undefined);
 
+  const quickRows = rows.filter((r) => r.kind === "quick");
+  const competitorRows = rows.filter((r) => r.kind === "competitor");
+  const changeRows = rows.filter((r) => r.kind === "change");
+  const recommendationRows = rows.filter((r) => r.kind === "recommendation");
+
+  const footer = (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-slate-100 px-4 py-2 text-xs text-slate-400">
+      <span>
+        <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-mono">⌘K</kbd> /{" "}
+        <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-mono">/</kbd> open
+      </span>
+      <span>
+        <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-mono">↑</kbd>{" "}
+        <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-mono">↓</kbd> navigate
+      </span>
+      <span>
+        <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-mono">↵</kbd> open
+      </span>
+      <span>
+        <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-mono">esc</kbd> close
+      </span>
+    </div>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-      <DialogContent
-        showClose
-        className={cn(
-          "flex max-h-[min(80vh,560px)] w-[calc(100vw-2rem)] max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:left-[50%] sm:top-[50%] sm:max-h-[min(80vh,560px)] sm:w-full sm:translate-x-[-50%] sm:translate-y-[-50%]",
-          "max-md:fixed max-md:inset-x-4 max-md:top-[max(1rem,env(safe-area-inset-top))] max-md:max-h-[min(85dvh,640px)] max-md:translate-x-0 max-md:translate-y-0"
+    <CommandDialog
+      open={open}
+      onOpenChange={handleDialogOpenChange}
+      ariaDescription="Search competitors, changes, and recommendations, or jump to a page."
+      commandProps={{ shouldFilter: false }}
+      dialogContentClassName={cn(
+        "max-h-[min(80vh,560px)] w-[calc(100vw-2rem)] max-w-2xl sm:left-[50%] sm:top-[50%] sm:max-h-[min(80vh,560px)] sm:w-full sm:translate-x-[-50%] sm:translate-y-[-50%]",
+        "max-md:fixed max-md:inset-x-4 max-md:top-[max(1rem,env(safe-area-inset-top))] max-md:max-h-[min(85dvh,640px)] max-md:translate-x-0 max-md:translate-y-0"
+      )}
+      dialogContentProps={{
+        onOpenAutoFocus: (e) => e.preventDefault(),
+      }}
+      footer={footer}
+    >
+      <CommandInput
+        ref={inputRef}
+        value={query}
+        onValueChange={setQuery}
+        placeholder="Search or jump to…"
+      />
+      <CommandList>
+        {showSkeleton && (
+          <div className="space-y-2 px-2 py-3" aria-busy="true">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-11 animate-pulse rounded-lg bg-slate-100" />
+            ))}
+          </div>
         )}
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
-        <DialogTitle className="sr-only">Command menu</DialogTitle>
-        <DialogDescription className="sr-only">
-          Search competitors, changes, and recommendations, or jump to a page.
-        </DialogDescription>
 
-        <div className="flex items-center gap-3 border-b border-slate-200 px-4 py-3">
-          <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
-          <Input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={onInputKeyDown}
-            placeholder="Search or jump to…"
-            className="h-10 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-          />
-        </div>
+        {!showSkeleton && empty && <CommandEmpty>No matches. Try another search.</CommandEmpty>}
 
-        <div
-          ref={listRef}
-          role="listbox"
-          aria-label="Results"
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2"
-        >
-          {showSkeleton && (
-            <div className="space-y-2 px-2 py-3" aria-busy="true">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-11 animate-pulse rounded-lg bg-slate-100"
-                />
-              ))}
-            </div>
-          )}
-
-          {empty && (
-            <p className="px-3 py-8 text-center text-sm text-slate-500">
-              No matches. Try another search.
-            </p>
-          )}
-
-          {!showSkeleton && rows.length > 0 && (
-            <div className="space-y-4 pb-2">
-              <PaletteSection
-                title="Quick actions"
-                rows={rows.filter((r) => r.kind === "quick")}
-                selectedKey={selectedKey}
-                rowRefs={rowRefs}
-                onSelectKey={(key) => {
-                  const i = rows.findIndex((r) => r.key === key);
-                  if (i >= 0) setSelectedIndex(i);
-                }}
-                onActivate={navigateTo}
-              />
-              <PaletteSection
-                title="Competitors"
-                rows={rows.filter((r) => r.kind === "competitor")}
-                selectedKey={selectedKey}
-                rowRefs={rowRefs}
-                onSelectKey={(key) => {
-                  const i = rows.findIndex((r) => r.key === key);
-                  if (i >= 0) setSelectedIndex(i);
-                }}
-                onActivate={navigateTo}
-              />
-              <PaletteSection
-                title="Changes"
-                rows={rows.filter((r) => r.kind === "change")}
-                selectedKey={selectedKey}
-                rowRefs={rowRefs}
-                onSelectKey={(key) => {
-                  const i = rows.findIndex((r) => r.key === key);
-                  if (i >= 0) setSelectedIndex(i);
-                }}
-                onActivate={navigateTo}
-              />
-              <PaletteSection
-                title="Recommendations"
-                rows={rows.filter((r) => r.kind === "recommendation")}
-                selectedKey={selectedKey}
-                rowRefs={rowRefs}
-                onSelectKey={(key) => {
-                  const i = rows.findIndex((r) => r.key === key);
-                  if (i >= 0) setSelectedIndex(i);
-                }}
-                onActivate={navigateTo}
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-slate-100 px-4 py-2 text-xs text-slate-400">
-          <span>
-            <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-mono">⌘K</kbd> /{" "}
-            <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-mono">/</kbd> open
-          </span>
-          <span>
-            <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-mono">↑</kbd>{" "}
-            <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-mono">↓</kbd>{" "}
-            navigate
-          </span>
-          <span>
-            <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-mono">↵</kbd>{" "}
-            open
-          </span>
-          <span>
-            <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-mono">esc</kbd>{" "}
-            close
-          </span>
-        </div>
-      </DialogContent>
-    </Dialog>
+        {!showSkeleton && !empty && (
+          <>
+            {quickRows.length > 0 && (
+              <CommandGroup heading="Quick actions">
+                {quickRows.map((row) => (
+                  <PaletteCommandItem key={row.key} row={row} onSelect={() => navigateTo(row.href)} />
+                ))}
+              </CommandGroup>
+            )}
+            {competitorRows.length > 0 && (
+              <CommandGroup heading="Competitors">
+                {competitorRows.map((row) => (
+                  <PaletteCommandItem key={row.key} row={row} onSelect={() => navigateTo(row.href)} />
+                ))}
+              </CommandGroup>
+            )}
+            {changeRows.length > 0 && (
+              <CommandGroup heading="Changes">
+                {changeRows.map((row) => (
+                  <PaletteCommandItem key={row.key} row={row} onSelect={() => navigateTo(row.href)} />
+                ))}
+              </CommandGroup>
+            )}
+            {recommendationRows.length > 0 && (
+              <CommandGroup heading="Recommendations">
+                {recommendationRows.map((row) => (
+                  <PaletteCommandItem key={row.key} row={row} onSelect={() => navigateTo(row.href)} />
+                ))}
+              </CommandGroup>
+            )}
+          </>
+        )}
+      </CommandList>
+    </CommandDialog>
   );
 }
 
-interface PaletteSectionProps {
-  title: string;
-  rows: PaletteRow[];
-  selectedKey: string | null;
-  rowRefs: React.MutableRefObject<Map<string, HTMLButtonElement>>;
-  onSelectKey: (key: string) => void;
-  onActivate: (href: string) => void;
-}
-
-function PaletteSection({
-  title,
-  rows,
-  selectedKey,
-  rowRefs,
-  onSelectKey,
-  onActivate,
-}: PaletteSectionProps) {
-  if (rows.length === 0) return null;
+function PaletteCommandItem({
+  row,
+  onSelect,
+}: {
+  row: PaletteRow;
+  onSelect: () => void;
+}) {
+  const Icon = row.Icon;
   return (
-    <div className="space-y-1">
-      <p className="px-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-        {title}
-      </p>
-      <div className="space-y-0.5" role="group" aria-label={title}>
-        {rows.map((row) => {
-          const Icon = row.Icon;
-          const isSelected = row.key === selectedKey;
-          return (
-            <button
-              key={row.key}
-              type="button"
-              role="option"
-              aria-selected={isSelected}
-              ref={(el) => {
-                if (el) rowRefs.current.set(row.key, el);
-                else rowRefs.current.delete(row.key);
-              }}
-              className={cn(
-                "flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
-                isSelected ? "bg-slate-100 text-slate-900" : "text-slate-700 hover:bg-slate-50"
-              )}
-              onMouseEnter={() => onSelectKey(row.key)}
-              onClick={() => onActivate(row.href)}
-            >
-              <Icon className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden />
-              <span className="min-w-0 flex-1">
-                <span className="line-clamp-2 font-medium">{row.label}</span>
-                {row.sub ? (
-                  <span className="mt-0.5 block truncate text-xs text-slate-500">{row.sub}</span>
-                ) : null}
-              </span>
-              <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-slate-300" aria-hidden />
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <CommandItem
+      value={row.key}
+      keywords={
+        row.kind === "quick"
+          ? [
+              row.label,
+              ...(QUICK_ACTIONS.find((a) => row.key === `q-${a.id}`)?.keywords ?? []),
+            ]
+          : [row.label, row.sub ?? ""]
+      }
+      onSelect={onSelect}
+      className="items-start"
+    >
+      <Icon className="mt-0.5 text-slate-400" aria-hidden />
+      <span className="min-w-0 flex-1">
+        <span className="line-clamp-2 font-medium">{row.label}</span>
+        {row.sub ? <span className="mt-0.5 block truncate text-xs text-slate-500">{row.sub}</span> : null}
+      </span>
+      <ArrowRight className="mt-0.5 shrink-0 text-slate-300" aria-hidden />
+    </CommandItem>
   );
 }
 
