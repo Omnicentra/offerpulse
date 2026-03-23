@@ -45,6 +45,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|icon.svg).*)",
+    // Exclude /_px (PostHog rewrites). Auth-gating those URLs redirected /_px/static/*.js to
+    // /login (HTML) and caused SyntaxError: Unexpected token '<' — Sentry OFFERPULSE-6.
+    "/((?!api|_next/static|_next/image|favicon.ico|icon.svg|_px(?:$|/)).*)",
   ],
 };
