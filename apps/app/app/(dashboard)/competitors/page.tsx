@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,7 +19,44 @@ import { useWorkspace } from "@/src/providers/workspace-provider";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Pause, Play, Plus, Search, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
+
+const AVATAR_COLORS = [
+  "from-violet-500 to-purple-700",
+  "from-blue-500 to-cyan-600",
+  "from-emerald-500 to-teal-600",
+  "from-orange-500 to-rose-600",
+  "from-slate-600 to-slate-800",
+];
+
+function getAvatarColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function SkeletonTable() {
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-3">
+        <Skeleton className="h-8 w-56 rounded-lg" />
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="ml-auto h-8 w-32 rounded-lg" />
+      </div>
+      <div className="divide-y divide-slate-100">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4 px-5 py-3.5">
+            <Skeleton className="h-7 w-7 shrink-0 rounded-md" />
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="ml-8 h-4 w-20" />
+            <Skeleton className="ml-auto h-5 w-16 rounded-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function CompetitorsPage() {
   const router = useRouter();
@@ -76,12 +112,8 @@ export default function CompetitorsPage() {
     })
   );
 
-  // Get all unique tags
-  const allTags = Array.from(
-    new Set(competitors?.flatMap((c) => c.tags) || [])
-  ).sort();
+  const allTags = Array.from(new Set(competitors?.flatMap((c) => c.tags) || [])).sort();
 
-  // Filter competitors
   const filteredCompetitors = competitors?.filter((competitor) => {
     const matchesSearch =
       !searchQuery ||
@@ -98,15 +130,18 @@ export default function CompetitorsPage() {
     return matchesSearch && matchesTag && matchesStatus;
   });
 
-  // Get changes count for last 7 days per competitor
-  const getChangesCount = (competitorId: string) => {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    return (
-      allChanges?.filter(
-        (c) => c.competitorId === competitorId && new Date(c.detectedAt) > sevenDaysAgo
-      ).length || 0
-    );
-  };
+  const changesCountByCompetitor = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!allChanges?.length) return map;
+    const cutoff = new Date();
+    cutoff.setTime(cutoff.getTime() - 7 * 24 * 60 * 60 * 1000);
+    for (const c of allChanges) {
+      if (new Date(c.detectedAt) > cutoff) {
+        map.set(c.competitorId, (map.get(c.competitorId) ?? 0) + 1);
+      }
+    }
+    return map;
+  }, [allChanges]);
 
   const formatLastSnapshot = (timestamp?: string) => {
     if (!timestamp) return "Never";
@@ -121,93 +156,22 @@ export default function CompetitorsPage() {
 
   if (isLoading) {
     return (
-      <div>
+      <div className="space-y-6">
         <PageHeader title="Competitors" />
-        <Skeleton className="h-12 w-full rounded-xl" />
-        <div className="mt-6 space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-20 rounded-2xl" />
-          ))}
-        </div>
+        <SkeletonTable />
       </div>
     );
   }
+
+  const activeCount = competitors?.filter((c) => c.isActive).length ?? 0;
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Competitors"
-        description={`Monitoring ${competitors?.filter((c) => c.isActive).length || 0} active competitors`}
-        action={
-          <Button onClick={() => router.push("/competitors/new")} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Competitor
-          </Button>
-        }
+        description={`Monitoring ${activeCount} active competitor${activeCount === 1 ? "" : "s"}`}
       />
 
-      {/* Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input
-            type="search"
-            placeholder="Search competitors..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            variant={statusFilter === "all" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setStatusFilter("all")}
-          >
-            All
-          </Button>
-          <Button
-            variant={statusFilter === "active" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setStatusFilter("active")}
-          >
-            Active
-          </Button>
-          <Button
-            variant={statusFilter === "paused" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setStatusFilter("paused")}
-          >
-            Paused
-          </Button>
-        </div>
-      </div>
-
-      {/* Tags */}
-      {allTags.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={selectedTag === null ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedTag(null)}
-          >
-            All Tags
-          </Button>
-          {allTags.map((tag) => (
-            <Button
-              key={tag}
-              variant={selectedTag === tag ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedTag(tag)}
-            >
-              {tag}
-            </Button>
-          ))}
-        </div>
-      )}
-
-      {/* Competitors List */}
       {filteredCompetitors && filteredCompetitors.length === 0 ? (
         <EmptyState
           icon={Plus}
@@ -218,7 +182,7 @@ export default function CompetitorsPage() {
               : "Add your first competitor to start monitoring offers"
           }
           action={
-            !searchQuery && !selectedTag
+            !searchQuery && !selectedTag && statusFilter === "all"
               ? {
                   label: "Add Competitor",
                   onClick: () => router.push("/competitors/new"),
@@ -227,131 +191,241 @@ export default function CompetitorsPage() {
           }
         />
       ) : (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          {/* Toolbar */}
+          <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="relative w-full sm:w-56">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <Input
+                type="search"
+                placeholder="Search name or domain…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-8 rounded-lg pl-8 text-sm"
+              />
+            </div>
+            <span className="text-xs tabular-nums text-slate-400">
+              {filteredCompetitors?.length ?? 0}{" "}
+              {(filteredCompetitors?.length ?? 0) === 1 ? "competitor" : "competitors"}
+            </span>
+            <div className="flex flex-wrap gap-1.5 sm:ml-2">
+              {(["all", "active", "paused"] as const).map((key) => (
+                <Button
+                  key={key}
+                  variant={statusFilter === key ? "default" : "outline"}
+                  size="sm"
+                  className="h-7 rounded-md px-2.5 text-xs capitalize"
+                  onClick={() => setStatusFilter(key)}
+                >
+                  {key === "all" ? "All" : key === "active" ? "Active" : "Paused"}
+                </Button>
+              ))}
+            </div>
+            <div className="ml-auto flex shrink-0">
+              <Button
+                size="sm"
+                className="h-8 gap-1.5 text-xs"
+                onClick={() => router.push("/competitors/new")}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add Competitor
+              </Button>
+            </div>
+          </div>
+
+          {/* Tag filters */}
+          {allTags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-100 bg-slate-50/40 px-5 py-2.5">
+              <span className="mr-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                Tags
+              </span>
+              <Button
+                variant={selectedTag === null ? "default" : "outline"}
+                size="sm"
+                className="h-6 rounded-md px-2 text-[11px]"
+                onClick={() => setSelectedTag(null)}
+              >
+                All
+              </Button>
+              {allTags.map((tag) => (
+                <Button
+                  key={tag}
+                  variant={selectedTag === tag ? "default" : "outline"}
+                  size="sm"
+                  className="h-6 rounded-md px-2 text-[11px] font-normal"
+                  onClick={() => setSelectedTag(tag)}
+                >
+                  {tag}
+                </Button>
+              ))}
+            </div>
+          )}
+
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b border-slate-200 bg-slate-50/50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-600">
+            <table className="w-full min-w-[860px]">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/50">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-slate-400">
                     Competitor
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-600">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-slate-400">
                     Tags
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-600">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-slate-400">
                     Platform
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-600">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-slate-400">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-600">
-                    Last Snapshot
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+                    Last snapshot
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-600">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-slate-400">
                     Changes (7d)
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-600">
-                    Actions
-                  </th>
+                  <th className="w-28 px-5 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredCompetitors?.map((competitor) => (
-                  <tr
-                    key={competitor.id}
-                    className="cursor-pointer transition-colors hover:bg-slate-50"
-                    onClick={() => router.push(`/competitors/${competitor.id}`)}
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-sm font-semibold text-white">
-                          {competitor.name.charAt(0)}
+                {filteredCompetitors?.map((competitor) => {
+                  const initial = competitor.name.charAt(0).toUpperCase();
+                  const avatarColor = getAvatarColor(competitor.name);
+                  let domainLabel = competitor.domain;
+                  if (!domainLabel) {
+                    try {
+                      domainLabel = new URL(competitor.baseUrl).hostname;
+                    } catch {
+                      domainLabel = competitor.baseUrl;
+                    }
+                  }
+
+                  return (
+                    <tr
+                      key={competitor.id}
+                      className="group cursor-pointer transition-colors hover:bg-slate-50/60"
+                      onClick={() => router.push(`/competitors/${competitor.id}`)}
+                    >
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gradient-to-br ${avatarColor} text-[11px] font-bold text-white shadow-sm`}
+                          >
+                            {initial}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-slate-900">{competitor.name}</p>
+                            <p className="truncate text-xs text-slate-400">{domainLabel}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-slate-900">{competitor.name}</p>
-                          <p className="text-sm text-slate-500">{competitor.domain || new URL(competitor.baseUrl).hostname}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {competitor.tags?.slice(0, 2).map((tag) => (
-                          <Badge key={tag} variant="secondary" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                        {competitor.tags?.length && competitor.tags.length > 2 && (
-                          <Badge variant="secondary" className="text-xs">
-                            +{competitor.tags.length - 2}
-                          </Badge>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge variant="outline" className="text-xs">
-                        {competitor.platformGuess === "shopify" ? "Shopify" : "Other"}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge
-                        variant={competitor.isActive ? "default" : "secondary"}
-                        className="text-xs"
-                      >
-                        {competitor.isActive ? "Active" : "Paused"}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
-                      {formatLastSnapshot(competitor.lastSnapshotAt?.toISOString())}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-medium text-slate-900">
-                        {getChangesCount(competitor.id)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => window.open(competitor.baseUrl, "_blank")}
-                          title="Visit site"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            toggleActiveMutation.mutate({ workspaceId: competitor.workspaceId, id: competitor.id })
-                          }
-                          title={competitor.isActive ? "Pause" : "Resume"}
-                        >
-                          {competitor.isActive ? (
-                            <Pause className="h-4 w-4" />
-                          ) : (
-                            <Play className="h-4 w-4" />
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex max-w-[200px] flex-wrap gap-1">
+                          {competitor.tags?.slice(0, 3).map((tag) => (
+                            <span
+                              key={tag}
+                              className="inline-flex rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                          {competitor.tags && competitor.tags.length > 3 && (
+                            <span className="inline-flex rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-500">
+                              +{competitor.tags.length - 3}
+                            </span>
                           )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setCompetitorToDelete(competitor.id)}
-                          title="Delete"
-                          className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                          {!competitor.tags?.length && (
+                            <span className="text-xs text-slate-300">—</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span
+                          className={cn(
+                            "inline-flex rounded-md px-2 py-0.5 text-xs font-medium",
+                            competitor.platformGuess === "shopify"
+                              ? "bg-violet-50 text-violet-700"
+                              : "bg-slate-100 text-slate-600"
+                          )}
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {competitor.platformGuess === "shopify" ? "Shopify" : "Other"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium",
+                            competitor.isActive ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500"
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "h-1.5 w-1.5 rounded-full",
+                              competitor.isActive ? "bg-green-500" : "bg-slate-400"
+                            )}
+                          />
+                          {competitor.isActive ? "Active" : "Paused"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-sm text-slate-500">
+                        {formatLastSnapshot(competitor.lastSnapshotAt?.toISOString())}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="text-sm font-medium tabular-nums text-slate-900">
+                          {changesCountByCompetitor.get(competitor.id) ?? 0}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div
+                          className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-slate-400 hover:text-slate-700"
+                            onClick={() => window.open(competitor.baseUrl, "_blank")}
+                            title="Visit site"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-slate-400 hover:text-slate-700"
+                            onClick={() =>
+                              toggleActiveMutation.mutate({
+                                workspaceId: competitor.workspaceId,
+                                id: competitor.id,
+                              })
+                            }
+                            title={competitor.isActive ? "Pause" : "Resume"}
+                          >
+                            {competitor.isActive ? (
+                              <Pause className="h-3.5 w-3.5" />
+                            ) : (
+                              <Play className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                            onClick={() => setCompetitorToDelete(competitor.id)}
+                            title="Delete"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={!!competitorToDelete} onOpenChange={() => setCompetitorToDelete(null)}>
         <DialogContent>
           <DialogHeader>
@@ -367,10 +441,13 @@ export default function CompetitorsPage() {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => competitorToDelete && deleteMutation.mutate({ workspaceId: workspaceId!, id: competitorToDelete })}
+              onClick={() =>
+                competitorToDelete &&
+                deleteMutation.mutate({ workspaceId: workspaceId!, id: competitorToDelete })
+              }
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              {deleteMutation.isPending ? "Deleting…" : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>
