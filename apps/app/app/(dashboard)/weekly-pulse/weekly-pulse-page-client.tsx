@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,12 @@ export function WeeklyPulsePageClient({
   const { data: currentPulse, isPending: isPulsePending } = useQuery({
     ...trpc.weeklyPulse.get.queryOptions(
       { workspaceId, weekOf: selectedWeekOf },
-      { enabled: !!workspaceId && !!selectedWeekOf }
+      {
+        enabled: !!workspaceId && !!selectedWeekOf,
+        /** v5: keeps last successful pulse visible while refetching or after a failed fetch for a new key */
+        placeholderData: keepPreviousData,
+        staleTime: 60_000,
+      }
     ),
     initialData:
       selectedWeekOf === initialWeekIso && initialCurrentPulse

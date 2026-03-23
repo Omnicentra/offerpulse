@@ -5,27 +5,17 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ConfidenceBadge } from "@/components/ui/confidence-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AVATAR_COLORS,
+  getAvatarColor,
+  SkeletonTable,
+} from "@/components/ui/dashboard-table-helpers";
 import { useTRPC } from "@/src/lib/trpc/client";
 import { useWorkspace } from "@/src/providers/workspace-provider";
 import { Camera, Search, ArrowUpRight } from "lucide-react";
-
-const AVATAR_COLORS = [
-  "from-violet-500 to-purple-700",
-  "from-blue-500 to-cyan-600",
-  "from-emerald-500 to-teal-600",
-  "from-orange-500 to-rose-600",
-  "from-slate-600 to-slate-800",
-];
-
-function getAvatarColor(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
 
 function formatTime(timestamp: string) {
   return new Date(timestamp).toLocaleString("en-US", {
@@ -35,26 +25,6 @@ function formatTime(timestamp: string) {
     hour: "numeric",
     minute: "2-digit",
   });
-}
-
-function SkeletonTable() {
-  return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-100 bg-slate-50/60 px-5 py-3">
-        <Skeleton className="h-7 w-56 rounded-lg" />
-      </div>
-      <div className="divide-y divide-slate-100">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 px-5 py-3.5">
-            <Skeleton className="h-7 w-7 shrink-0 rounded-md" />
-            <Skeleton className="h-4 w-36" />
-            <Skeleton className="ml-8 h-4 w-28" />
-            <Skeleton className="ml-auto h-5 w-16 rounded-full" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 export default function SnapshotsPage() {
@@ -154,7 +124,7 @@ export default function SnapshotsPage() {
                   const confidence = signals?.confidence ?? "low";
                   const name = competitor?.name ?? "Unknown";
                   const initial = name.charAt(0).toUpperCase();
-                  const avatarColor = getAvatarColor(name);
+                  const avatarColor = name ? getAvatarColor(name) : AVATAR_COLORS[0];
 
                   return (
                     <tr

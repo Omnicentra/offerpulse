@@ -105,7 +105,7 @@ export default function CompetitorsPage() {
   );
 
   const toggleActiveMutation = useMutation(
-    trpc.competitors.toggleStatus.mutationOptions({
+    trpc.competitors.update.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries(trpc.competitors.list.queryFilter());
       },
@@ -152,6 +152,27 @@ export default function CompetitorsPage() {
     if (diffInHours < 1) return "Just now";
     if (diffInHours < 24) return `${Math.floor(diffInHours)}h ago`;
     return `${Math.floor(diffInHours / 24)}d ago`;
+  };
+
+  const openCompetitorSite = (baseUrl: string) => {
+    try {
+      const sanitizedUrl = new URL(baseUrl);
+      if (!["http:", "https:"].includes(sanitizedUrl.protocol)) {
+        toast({
+          title: "Invalid URL",
+          description: "Only HTTP and HTTPS URLs are allowed.",
+          variant: "destructive",
+        });
+        return;
+      }
+      window.open(sanitizedUrl.toString(), "_blank", "noopener,noreferrer");
+    } catch {
+      toast({
+        title: "Invalid URL",
+        description: "Could not open competitor website.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -383,7 +404,7 @@ export default function CompetitorsPage() {
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 text-slate-400 hover:text-slate-700"
-                            onClick={() => window.open(competitor.baseUrl, "_blank")}
+                            onClick={() => openCompetitorSite(competitor.baseUrl)}
                             title="Visit site"
                           >
                             <ExternalLink className="h-3.5 w-3.5" />
@@ -392,12 +413,16 @@ export default function CompetitorsPage() {
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 text-slate-400 hover:text-slate-700"
-                            onClick={() =>
+                            onClick={() => {
+                              if (toggleActiveMutation.isPending) return;
                               toggleActiveMutation.mutate({
                                 workspaceId: competitor.workspaceId,
                                 id: competitor.id,
-                              })
-                            }
+                                isActive: !competitor.isActive,
+                              });
+                            }}
+                            disabled={toggleActiveMutation.isPending}
+                            aria-disabled={toggleActiveMutation.isPending}
                             title={competitor.isActive ? "Pause" : "Resume"}
                           >
                             {competitor.isActive ? (

@@ -46,6 +46,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import type { RouterOutputs } from "@/src/server/trpc/routers/root";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
 
 type RecommendationsList = RouterOutputs["recommendations"]["list"];
 type Recommendation = RecommendationsList[number];
@@ -75,6 +76,7 @@ function getEffortBadgeClass(effort: number) {
 
 const STRATEGY_FILTERS = ["all", "MATCH", "COUNTER", "IGNORE", "TEST"] as const;
 type StrategyFilterValue = (typeof STRATEGY_FILTERS)[number];
+const snoozeDaysSchema = z.coerce.number().int().min(1);
 
 function checklistProgress(rec: Recommendation) {
   const total = rec.checklistItems.length;
@@ -197,7 +199,16 @@ export function RecommendationsPageClient({
 
   const handleSnooze = () => {
     if (!selectedRec) return;
-    const days = parseInt(snoozeDays, 10);
+    const parsedDays = snoozeDaysSchema.safeParse(snoozeDays);
+    if (!parsedDays.success) {
+      toast({
+        title: "Invalid snooze duration",
+        description: "Enter a whole number of days greater than 0.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const days = parsedDays.data;
     const snoozedUntil = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
     updateStatusMutation.mutate({
       workspaceId,
@@ -240,7 +251,6 @@ export function RecommendationsPageClient({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <div
-            role="tablist"
             aria-label="Filter by status"
             className="inline-flex h-auto flex-wrap gap-1 rounded-xl border border-slate-200/80 bg-slate-50/80 p-1"
           >
@@ -248,8 +258,7 @@ export function RecommendationsPageClient({
               <button
                 key={status}
                 type="button"
-                role="tab"
-                aria-selected={statusFilter === status}
+                aria-pressed={statusFilter === status}
                 onClick={() => setStatusFilter(status)}
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
