@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
 import Image from "next/image";
 import { Search, Plus, Menu, LogOut, User as UserIcon, ChevronDown, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { signOut, useSession } from "@/src/server/auth/client";
 import { useWorkspace } from "@/src/providers/workspace-provider";
 import { useSubscription } from "@/src/providers/subscription-provider";
+import { CommandPalette, useCommandPaletteHotkeys } from "@/components/command-palette";
 
 interface TopbarProps {
   onMenuClick?: () => void;
@@ -29,9 +29,13 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
   const { toast } = useToast();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const { data: session } = useSession();
   const user = session?.user ?? null;
   const { workspace, workspaces, setWorkspaceId, isLoading: isLoadingWorkspace } = useWorkspace();
+
+  const openCommandPalette = useCallback(() => setCommandPaletteOpen(true), []);
+  useCommandPaletteHotkeys({ onOpen: openCommandPalette });
   const { subscription, isTrialing } = useSubscription();
   const trialEnd = subscription?.trialEnd;
   const needsTrialCountdown = isTrialing && trialEnd != null;
@@ -68,6 +72,7 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
   };
 
   return (
+    <>
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 lg:px-6">
       {/* Left section */}
       <div className="flex items-center gap-4">
@@ -78,6 +83,15 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
           aria-label="Open menu"
         >
           <Menu className="h-5 w-5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCommandPaletteOpen(true)}
+          className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 md:hidden"
+          aria-label="Open command menu"
+        >
+          <Search className="h-5 w-5" />
         </button>
 
         {/* Workspace selector */}
@@ -144,15 +158,18 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
           </button>
         )}
 
-        {/* Search */}
+        {/* Command palette */}
         <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input
-            type="search"
-            placeholder="Search competitors, changes..."
-            className="h-10 w-64 pl-9 lg:w-80"
-          />
-          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs text-slate-500">
+          <button
+            type="button"
+            onClick={() => setCommandPaletteOpen(true)}
+            className="flex h-10 w-64 items-center gap-2 rounded-md border border-slate-200 bg-white pl-9 pr-10 text-left text-sm text-slate-500 shadow-sm transition-colors hover:bg-slate-50 lg:w-80"
+            aria-label="Open command menu"
+          >
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <span className="truncate">Search or jump to…</span>
+          </button>
+          <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs text-slate-500">
             /
           </kbd>
         </div>
@@ -242,5 +259,11 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
         </Dialog>
       </div>
     </header>
+    <CommandPalette
+      open={commandPaletteOpen}
+      onOpenChange={setCommandPaletteOpen}
+      workspaceId={workspace?.id}
+    />
+    </>
   );
 }

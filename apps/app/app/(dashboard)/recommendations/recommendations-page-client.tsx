@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -94,6 +95,10 @@ export function RecommendationsPageClient({
   workspaceId,
   initialRecommendations,
 }: RecommendationsPageClientProps) {
+  const searchParams = useSearchParams();
+  const selectedFromUrl = searchParams.get("selected");
+  const appliedUrlSelectionRef = useRef<string | null>(null);
+
   const { toast } = useToast();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -110,6 +115,21 @@ export function RecommendationsPageClient({
     initialData: initialRecommendations,
     enabled: !!workspaceId,
   });
+
+  useEffect(() => {
+    if (!selectedFromUrl || !recommendations?.length) return;
+    if (appliedUrlSelectionRef.current === selectedFromUrl) return;
+    const rec = recommendations.find((r) => r.id === selectedFromUrl);
+    if (!rec) return;
+    appliedUrlSelectionRef.current = selectedFromUrl;
+    queueMicrotask(() => {
+      setStatusFilter("all");
+      setStrategyFilter("all");
+      setOpenAccordionIds((prev) =>
+        prev.includes(selectedFromUrl) ? prev : [...prev, selectedFromUrl]
+      );
+    });
+  }, [selectedFromUrl, recommendations]);
 
   const updateStatusMutation = useMutation(
     trpc.recommendations.updateStatus.mutationOptions({

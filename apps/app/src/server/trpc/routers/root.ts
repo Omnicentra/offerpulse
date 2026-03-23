@@ -13,6 +13,7 @@ import { usersRouter } from "./users";
 import { workspaceSettingsRouter } from "./workspace-settings";
 import { ownStoreRouter } from "./own-store";
 import { shopifyRouter } from "./shopify";
+import { searchRouter } from "./search";
 
 export const appRouter = router({
   auth: authRouter,
@@ -28,6 +29,7 @@ export const appRouter = router({
   workspaceSettings: workspaceSettingsRouter,
   ownStore: ownStoreRouter,
   shopify: shopifyRouter,
+  search: searchRouter,
 });
 
 export type AppRouter = typeof appRouter;
