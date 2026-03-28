@@ -133,14 +133,6 @@ export function BillingTab() {
               <div className="mb-3 flex items-center gap-2">
                 <Badge>Current Plan</Badge>
                 <Badge variant={statusInfo?.variant}>{statusInfo?.label}</Badge>
-                {subscription.cancelAtPeriodEnd && (
-                  <Badge
-                    variant="outline"
-                    className="border-amber-300 text-amber-700"
-                  >
-                    Cancelling
-                  </Badge>
-                )}
               </div>
               <h2 className="text-3xl font-bold text-slate-900">
                 {subscription.plan?.name ?? subscription.planId}

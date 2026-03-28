@@ -67,7 +67,7 @@ export function StoreClient({ workspaceId, initialStore, planId, isAdmin, embedd
     enabled: !!workspaceId,
   });
 
-  const canUseShopify = isAdmin || planId === "growth" || planId === "agency";
+  const canUseShopify = isAdmin || ["growth", "agency"].includes(planId);
   const isShopifyConnected = (store?.platform ?? initialStore.platform) === "shopify";
 
   const disconnectMutation = useMutation(

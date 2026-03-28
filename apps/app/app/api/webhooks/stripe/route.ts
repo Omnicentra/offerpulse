@@ -78,7 +78,8 @@ export async function POST(req: Request) {
           subId: sub.id,
           status: sub.status,
         });
-        await upsertSubscription(userId, sub);
+        const hasTrial = Boolean(sub.trial_end && sub.trial_end && sub.status === "trialing");
+        await upsertSubscription(userId, sub, hasTrial);
         logger.info("customer.subscription.created processed", {
           userId,
           subscriptionId: sub.id,
@@ -351,7 +352,8 @@ async function getSubscriptionPeriod(
 
 async function upsertSubscription(
   userId: string,
-  sub: Stripe.Subscription
+  sub: Stripe.Subscription,
+  hasTrial: boolean = false
 ) {
   logger.debug("upsertSubscription start", { userId, subId: sub.id, status: sub.status });
   const priceItem = sub.items.data[0];
@@ -375,7 +377,7 @@ async function upsertSubscription(
     planId: parsed?.planId ?? "starter",
     interval: parsed?.interval ?? "month",
     status: mapStripeStatus(sub.status),
-    cancelAtPeriodEnd: sub.cancel_at_period_end,
+    cancelAtPeriodEnd: hasTrial || sub.cancel_at_period_end,
     currentPeriodStart: period.currentPeriodStart,
     currentPeriodEnd: period.currentPeriodEnd,
     trialStart: sub.trial_start ? new Date(sub.trial_start * 1000) : null,
