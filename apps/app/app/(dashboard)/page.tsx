@@ -1,87 +1,72 @@
-"use client";
-
-import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { createCaller } from "@/src/lib/trpc/server";
+import { auth } from "@/src/server/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ChangeTypeBadge } from "@/components/ui/change-type-badge";
 import { ConfidenceBadge } from "@/components/ui/confidence-badge";
 import { Button } from "@/components/ui/button";
-import { useTRPC } from "@/src/lib/trpc/client";
-import { useWorkspace } from "@/src/providers/workspace-provider";
-import { 
-  TrendingUp, 
-  Users, 
-  Lightbulb, 
-  AlertCircle, 
+import {
+  TrendingUp,
+  Users,
+  Lightbulb,
+  AlertCircle,
   ArrowRight,
   Plus,
 } from "lucide-react";
 
-// Date formatting helper
-const formatDistanceToNow = (date: Date) => {
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
-  if (diffInSeconds < 60) return 'just now';
+function formatDistanceToNow(date: Date): string {
+  const diffInSeconds = Math.floor((Date.now() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return "just now";
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
   return `${Math.floor(diffInSeconds / 86400)} days ago`;
-};
+}
 
-export default function HomePage() {
-  const router = useRouter();
-  const { workspaceId } = useWorkspace();
-  const trpc = useTRPC();
+export default async function HomePage() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  const { data: competitors, isLoading: isLoadingCompetitors } = useQuery(
-    trpc.competitors.list.queryOptions(
-      { workspaceId: workspaceId! },
-      { enabled: !!workspaceId }
-    )
-  );
+  if (!session?.user) {
+    redirect("/login");
+  }
 
-  const {
-    data: changeEvents,
-    isLoading: isLoadingChanges,
-    dataUpdatedAt: changeEventsUpdatedAt,
-  } = useQuery(
-    trpc.changeEvents.list.queryOptions(
-      { workspaceId: workspaceId! },
-      { enabled: !!workspaceId }
-    )
-  );
+  const workspaceId = session.user.workspaceId;
 
-  const { data: recommendations, isLoading: isLoadingRecs } = useQuery(
-    trpc.recommendations.list.queryOptions(
-      { workspaceId: workspaceId! },
-      { enabled: !!workspaceId }
-    )
-  );
+  if (!workspaceId) {
+    redirect("/login");
+  }
 
-  const { data: weeklyPulses } = useQuery(
-    trpc.weeklyPulse.list.queryOptions(
-      { workspaceId: workspaceId! },
-      { enabled: !!workspaceId }
-    )
-  );
+  const caller = await createCaller();
+
+  const [competitors, changeEvents, recommendations, weeklyPulses] =
+    await Promise.all([
+      caller.competitors.list({ workspaceId }),
+      caller.changeEvents.list({ workspaceId }),
+      caller.recommendations.list({ workspaceId }),
+      caller.weeklyPulse.list({ workspaceId }),
+    ]);
 
   // Calculate stats
-  const activeCompetitors = competitors?.filter((c) => c.isActive).length || 0;
-  
-  const refTime = changeEventsUpdatedAt ?? 0;
-  const sevenDaysAgo = new Date(Math.max(0, refTime - 7 * 24 * 60 * 60 * 1000));
-  const fourteenDaysAgo = new Date(Math.max(0, refTime - 14 * 24 * 60 * 60 * 1000));
-  const recentChanges = changeEvents?.filter(
+  const activeCompetitors = competitors.filter((c) => c.isActive).length;
+
+  // eslint-disable-next-line react-hooks/purity -- RSC runs once per request; Date.now() is safe
+  const now = Date.now();
+  const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+  const fourteenDaysAgo = new Date(now - 14 * 24 * 60 * 60 * 1000);
+
+  const recentChanges = changeEvents.filter(
     (e) => new Date(e.detectedAt) > sevenDaysAgo
-  ) || [];
-  const priorPeriodChanges =
-    changeEvents?.filter((e) => {
-      const d = new Date(e.detectedAt);
-      return d > fourteenDaysAgo && d <= sevenDaysAgo;
-    }) || [];
+  );
+  const priorPeriodChanges = changeEvents.filter((e) => {
+    const d = new Date(e.detectedAt);
+    return d > fourteenDaysAgo && d <= sevenDaysAgo;
+  });
 
   const changesTrend =
     priorPeriodChanges.length > 0
@@ -98,29 +83,13 @@ export default function HomePage() {
   const highConfidenceChanges = recentChanges.filter(
     (e) => e.confidence === "high"
   ).length;
-  
-  const openRecommendations = recommendations?.filter(
+
+  const openRecommendations = recommendations.filter(
     (r) => r.status === "open"
-  ).length || 0;
+  ).length;
 
-  const latestChanges = changeEvents?.slice(0, 10) || [];
-  const currentPulse = weeklyPulses?.[0];
-
-  if (isLoadingCompetitors || isLoadingChanges || isLoadingRecs) {
-    return (
-      <div>
-        <PageHeader
-          title="Overview"
-          description="Monitor competitor activity and track key changes"
-        />
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded-2xl" />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const latestChanges = changeEvents.slice(0, 10);
+  const currentPulse = weeklyPulses[0];
 
   return (
     <div className="space-y-8">
@@ -128,9 +97,11 @@ export default function HomePage() {
         title="Overview"
         description="Monitor competitor activity and track key changes"
         action={
-          <Button onClick={() => router.push("/competitors/new")} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Competitor
+          <Button asChild className="gap-2">
+            <Link href="/competitors/new">
+              <Plus className="h-4 w-4" />
+              Add Competitor
+            </Link>
           </Button>
         }
       />
@@ -171,11 +142,13 @@ export default function HomePage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push("/changes")}
+              asChild
               className="gap-1 text-blue-600 hover:text-blue-700"
             >
-              View all
-              <ArrowRight className="h-4 w-4" />
+              <Link href="/changes">
+                View all
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </Button>
           </div>
 
@@ -188,17 +161,19 @@ export default function HomePage() {
                   description="Changes will appear here as we detect them from your competitors"
                   action={{
                     label: "Add Competitor",
-                    onClick: () => router.push("/competitors/new"),
+                    href: "/competitors/new",
                   }}
                 />
               </div>
             ) : (
               latestChanges.map((change) => {
-                const competitor = competitors?.find((c) => c.id === change.competitorId);
+                const competitor = competitors.find(
+                  (c) => c.id === change.competitorId
+                );
                 return (
-                  <button
+                  <Link
                     key={change.id}
-                    onClick={() => router.push(`/changes?selected=${change.id}`)}
+                    href={`/changes?selected=${change.id}`}
                     className="flex w-full items-start gap-4 px-6 py-4 text-left transition-colors hover:bg-slate-50"
                   >
                     <div className="flex-1 min-w-0">
@@ -216,7 +191,7 @@ export default function HomePage() {
                         {formatDistanceToNow(new Date(change.detectedAt))}
                       </p>
                     </div>
-                  </button>
+                  </Link>
                 );
               })
             )}
@@ -226,15 +201,19 @@ export default function HomePage() {
         {/* This Week's Pulse */}
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-            <h2 className="text-lg font-semibold text-slate-900">This Week&apos;s Pulse</h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              This Week&apos;s Pulse
+            </h2>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push("/weekly-pulse")}
+              asChild
               className="gap-1 text-blue-600 hover:text-blue-700"
             >
-              View full report
-              <ArrowRight className="h-4 w-4" />
+              <Link href="/weekly-pulse">
+                View full report
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </Button>
           </div>
 
@@ -260,8 +239,13 @@ export default function HomePage() {
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-slate-900">Key Highlights</h3>
                 {currentPulse.highlights?.slice(0, 3).map((highlight, idx) => (
-                  <div key={idx} className="rounded-xl border border-slate-200 bg-blue-50/50 p-4">
-                    <p className="text-sm font-medium text-slate-900">{highlight.title}</p>
+                  <div
+                    key={idx}
+                    className="rounded-xl border border-slate-200 bg-blue-50/50 p-4"
+                  >
+                    <p className="text-sm font-medium text-slate-900">
+                      {highlight.title}
+                    </p>
                     <p className="mt-1 text-sm text-slate-600">{highlight.detail}</p>
                   </div>
                 ))}
