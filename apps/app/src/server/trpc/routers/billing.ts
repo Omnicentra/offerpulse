@@ -118,8 +118,19 @@ export const billingRouter = router({
       .where(eq(subscriptions.id, ctx.subscription.id));
   }),
 
-  reactivateSubscription: subscribedProcedure.mutation(async ({ ctx }) => {
-    if (!ctx.subscription.cancelAtPeriodEnd) {
+  reactivateSubscription: protectedProcedure.mutation(async ({ ctx }) => {
+    const subscription = await ctx.db.query.subscriptions.findFirst({
+      where: eq(subscriptions.userId, ctx.user.id),
+    });
+
+    if (!subscription) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Subscription not found.",
+      });
+    }
+
+    if (!subscription.cancelAtPeriodEnd) {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Subscription is not pending cancellation.",
@@ -127,13 +138,13 @@ export const billingRouter = router({
     }
 
     await stripe.subscriptions.update(
-      ctx.subscription.stripeSubscriptionId,
+      subscription.stripeSubscriptionId,
       { cancel_at_period_end: false }
     );
 
     await ctx.db
       .update(subscriptions)
       .set({ cancelAtPeriodEnd: false })
-      .where(eq(subscriptions.id, ctx.subscription.id));
+      .where(eq(subscriptions.id, subscription.id));
   }),
 });

@@ -21,6 +21,7 @@ import {
   Calendar,
   Zap,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const STATUS_LABELS: Record<
   string,
@@ -44,6 +45,7 @@ export function BillingSettingsContent({
   header,
   wrapperClassName,
 }: BillingSettingsContentProps) {
+  const router = useRouter();
   const trpc = useTRPC();
   const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
@@ -82,6 +84,7 @@ export function BillingSettingsContent({
           title: "Subscription reactivated",
           description: "Your plan will continue as normal.",
         });
+        router.refresh();
       },
       onError: (err) => {
         toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -127,7 +130,12 @@ export function BillingSettingsContent({
       }
     : null;
 
-  const firstPlan = PRICING_PLANS[0];
+  // Canceled is a terminal state in Stripe — the subscription cannot be updated.
+  // Only active/trialing/past_due subscriptions can be managed or canceled.
+  const isActive =
+    subscription != null &&
+    ["active", "trialing", "past_due"].includes(subscription.status);
+  const isCanceled = subscription?.status === "canceled";
 
   const inner = (
     <div className="space-y-6">
@@ -138,13 +146,21 @@ export function BillingSettingsContent({
         </>
       ) : (
         <>
-          {subscription ? (
+          {isActive ? (
             <div className="rounded-2xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-8">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="mb-3 flex flex-wrap items-center gap-2">
                     <Badge>Current Plan</Badge>
                     <Badge variant={statusInfo?.variant}>{statusInfo?.label}</Badge>
+                    {subscription.cancelAtPeriodEnd && (
+                      <Badge
+                        variant="outline"
+                        className="border-amber-300 text-amber-700"
+                      >
+                        Cancelling
+                      </Badge>
+                    )}
                   </div>
                   <h2 className="text-3xl font-bold text-slate-900">
                     {subscription.plan?.name ?? subscription.planId}
@@ -198,43 +214,31 @@ export function BillingSettingsContent({
               )}
 
               <div className="mt-6 flex flex-wrap gap-3">
-                {subscription.stripeSubscriptionId ? (
-                  <>
-                    <Button variant="outline" onClick={handlePortal}>
-                      Manage payment method
-                    </Button>
-                    {subscription.cancelAtPeriodEnd ? (
-                      <Button
-                        variant="outline"
-                        onClick={() => reactivateMutation.mutate()}
-                        disabled={reactivateMutation.isPending}
-                      >
-                        {reactivateMutation.isPending ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : null}
-                        Reactivate subscription
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        className="text-red-600 hover:text-red-700"
-                        onClick={() => cancelMutation.mutate()}
-                        disabled={cancelMutation.isPending}
-                      >
-                        {cancelMutation.isPending ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : null}
-                        Cancel subscription
-                      </Button>
-                    )}
-                  </>
+                <Button variant="outline" onClick={handlePortal}>
+                  Manage payment method
+                </Button>
+                {subscription.cancelAtPeriodEnd ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => reactivateMutation.mutate()}
+                    disabled={reactivateMutation.isPending}
+                  >
+                    {reactivateMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Reactivate subscription
+                  </Button>
                 ) : (
                   <Button
-                    onClick={() => firstPlan && handleUpgrade(firstPlan)}
-                    disabled={!firstPlan}
+                    variant="outline"
+                    className="text-red-600 hover:text-red-700"
+                    onClick={() => cancelMutation.mutate()}
+                    disabled={cancelMutation.isPending}
                   >
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Subscribe to continue after trial
+                    {cancelMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Cancel subscription
                   </Button>
                 )}
               </div>
@@ -243,15 +247,17 @@ export function BillingSettingsContent({
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center">
               <AlertCircle className="mx-auto h-10 w-10 text-amber-500" />
               <h2 className="mt-4 text-xl font-bold text-slate-900">
-                No active subscription
+                {isCanceled ? "Your subscription has ended" : "No active subscription"}
               </h2>
               <p className="mt-1 text-sm text-slate-600">
-                Choose a plan below to get started.
+                {isCanceled
+                  ? `Your ${subscription.plan?.name ?? subscription.planId} plan has been canceled. Choose a plan below to resubscribe.`
+                  : "Choose a plan below to get started."}
               </p>
             </div>
           )}
 
-          {subscription?.plan && (
+          {isActive && subscription.plan && (
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h3 className="mb-6 text-lg font-semibold text-slate-900">Usage</h3>
               <div className="grid gap-6 sm:grid-cols-2">
@@ -278,7 +284,10 @@ export function BillingSettingsContent({
             <h3 className="text-lg font-semibold text-slate-900">Available Plans</h3>
             <div className="grid gap-6 md:grid-cols-3">
               {PRICING_PLANS.map((plan) => {
-                const isCurrent = subscription?.planId === plan.id;
+                // A plan is only "current" when the subscription is in an active state.
+                // Canceled subscriptions must go through checkout again.
+                const isCurrent = isActive && subscription?.planId === plan.id;
+                const canSubscribe = !isCurrent;
                 return (
                   <div
                     key={plan.id}
@@ -316,9 +325,13 @@ export function BillingSettingsContent({
                       variant={isCurrent ? "outline" : "default"}
                       className="mt-6 w-full"
                       disabled={isCurrent}
-                      onClick={() => !isCurrent && handleUpgrade(plan)}
+                      onClick={() => canSubscribe && handleUpgrade(plan)}
                     >
-                      {isCurrent ? "Current Plan" : "Upgrade"}
+                      {isCurrent
+                        ? "Current Plan"
+                        : isActive
+                          ? "Upgrade"
+                          : "Subscribe"}
                     </Button>
                   </div>
                 );
