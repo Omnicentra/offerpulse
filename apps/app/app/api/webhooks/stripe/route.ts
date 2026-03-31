@@ -395,7 +395,7 @@ async function upsertSubscription(
     })
     .onConflictDoUpdate({
       target: [subscriptions.userId],
-      targetWhere: sql`"status" in ('active', 'trialing')`,
+      targetWhere: sql`"status" in ('active', 'trialing', 'canceled', 'past_due')`,
       set: values,
     });
 
