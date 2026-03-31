@@ -30,6 +30,7 @@ lerna-debug.log*
 # Cache
 .cache
 .parcel-cache
+.pnpm-store
 
 # Old backups
 _old_*
