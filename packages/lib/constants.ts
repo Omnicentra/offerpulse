@@ -113,6 +113,19 @@ export const PLAN_LABELS: Record<PlanType, string> = {
   [PlanType.PRO]: "Pro",
 };
 
+/**
+ * Stripe subscription statuses that still allow dashboard / workspace access
+ * (includes grace period while payment is retried).
+ */
+export const SUBSCRIBED_ACCESS_STATUSES = ["active", "trialing", "past_due"] as const;
+
+export function hasSubscribedWorkspaceAccess(
+  status: string | null | undefined
+): boolean {
+  if (status == null || status === "") return false;
+  return (SUBSCRIBED_ACCESS_STATUSES as readonly string[]).includes(status);
+}
+
 /** Default OpenRouter model when workspace has no override. Balanced: gpt-4.1-mini; Fast+reasoning: grok-4.1-fast; Best quality: gemini-3.1-pro-preview */
 export const DEFAULT_OPENROUTER_MODEL = "openai/gpt-4.1-mini";
 /** OpenRouter model ID restricted to Growth/Agency plans (Best quality). */

@@ -58,13 +58,22 @@ export default function DashboardError({
     );
   }
 
+  const isProduction = process.env.NODE_ENV === "production";
+
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-6">
       <div className="max-w-md text-center">
         <h1 className="text-2xl font-bold text-slate-900">Something went wrong</h1>
         <p className="mt-2 text-sm text-slate-600">
-          {error.message ?? "An unexpected error occurred."}
+          {isProduction
+            ? "We couldn’t load this page. You can try again. If the problem continues, contact support and share the reference below."
+            : (error.message ?? "An unexpected error occurred.")}
         </p>
+        {isProduction && error.digest ? (
+          <p className="mt-3 font-mono text-xs text-slate-500">
+            Reference: {error.digest}
+          </p>
+        ) : null}
         <Button className="mt-8" onClick={reset}>
           Try again
         </Button>

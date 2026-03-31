@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { hasSubscribedWorkspaceAccess } from "@offerpulse/lib/constants";
 import { createCaller } from "@/src/lib/trpc/server";
 import { StoreClient } from "./store-client";
 import { auth } from "@/src/server/auth";
@@ -21,8 +22,7 @@ export default async function StoreSettingsPage() {
 
   const caller = await createCaller();
   const subscription = await caller.billing.getSubscription();
-  const isActive = ["active", "trialing"].includes(subscription?.status ?? "");
-  if (!subscription || !isActive) {
+  if (!subscription || !hasSubscribedWorkspaceAccess(subscription.status)) {
     redirect("/settings/billing");
   }
 

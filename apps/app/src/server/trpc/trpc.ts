@@ -2,6 +2,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import { type FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import * as Sentry from "@sentry/nextjs";
 import superjson from "superjson";
+import { hasSubscribedWorkspaceAccess } from "@offerpulse/lib/constants";
 import { db } from "../db";
 import { auth } from "../auth";
 import { subscriptions, workspaceMembers } from "../db/schema";
@@ -81,7 +82,7 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
 });
 
 /**
- * Subscribed procedure - requires authentication and an active subscription
+ * Subscribed procedure - requires authentication and a subscription that still has workspace access
  */
 export const subscribedProcedure = protectedProcedure.use(
   async ({ ctx, next }) => {
@@ -89,10 +90,7 @@ export const subscribedProcedure = protectedProcedure.use(
       where: eq(subscriptions.userId, ctx.user.id),
     });
 
-    if (
-      !subscription ||
-      !["active", "trialing"].includes(subscription.status)
-    ) {
+    if (!subscription || !hasSubscribedWorkspaceAccess(subscription.status)) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "An active subscription is required to access this feature.",
