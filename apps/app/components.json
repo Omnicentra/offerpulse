@@ -12,8 +12,8 @@
   },
   "aliases": {
     "components": "@/components",
-    "utils": "@offerpulse/lib/utils",
-    "ui": "@/components/ui",
+    "utils": "@offerpulse/ui/lib/utils",
+    "ui": "@offerpulse/ui/components",
     "lib": "@offerpulse/lib",
     "hooks": "@/hooks"
   },

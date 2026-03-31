@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
-export const baseConfig: Config = {
+/** Shared theme, plugins, and darkMode. Each app supplies its own `content` globs. */
+export const baseConfig: Omit<Config, "content"> = {
   darkMode: ["class"],
   theme: {
     extend: {

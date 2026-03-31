@@ -9,7 +9,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@offerpulse/ui/components/tooltip"
 
 export interface SuggestedAction {
   offerType: "shipping_threshold" | "discount" | "bundle" | "cart_incentive"

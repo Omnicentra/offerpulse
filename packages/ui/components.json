@@ -4,18 +4,18 @@
   "rsc": true,
   "tsx": true,
   "tailwind": {
-    "config": "tailwind.config.ts",
-    "css": "app/globals.css",
+    "config": "../apps/marketing/tailwind.config.ts",
+    "css": "../apps/marketing/app/globals.css",
     "baseColor": "slate",
     "cssVariables": true,
     "prefix": ""
   },
+  "iconLibrary": "lucide",
   "aliases": {
-    "components": "@/components",
+    "components": "@offerpulse/ui/components",
     "utils": "@offerpulse/ui/lib/utils",
     "ui": "@offerpulse/ui/components",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
-  },
-  "iconLibrary": "lucide"
+    "lib": "@offerpulse/ui/lib",
+    "hooks": "@offerpulse/ui/hooks"
+  }
 }

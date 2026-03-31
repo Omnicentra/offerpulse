@@ -2,10 +2,17 @@
   "name": "@offerpulse/config",
   "version": "0.1.0",
   "private": true,
-  "main": "./index.js",
   "files": [
     "eslint",
     "tsconfig",
     "tailwind"
-  ]
+  ],
+  "exports": {
+    "./tailwind/base": "./tailwind/base.ts"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5"
+  }
 }

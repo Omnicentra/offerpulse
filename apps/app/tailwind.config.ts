@@ -1,102 +1,14 @@
 import type { Config } from "tailwindcss";
+import { baseConfig } from "@offerpulse/config/tailwind/base";
 
 const config: Config = {
-  darkMode: ["class"],
+  ...baseConfig,
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "../../packages/ui/**/*.{js,ts,jsx,tsx}",
   ],
-  theme: {
-    extend: {
-      fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
-      },
-      colors: {
-        ink: "hsl(var(--ink))",
-        body: "hsl(var(--body))",
-        bg: "hsl(var(--bg))",
-        surface: "hsl(var(--surface))",
-        "primary-dark": "hsl(var(--primary-dark))",
-        "primary-tint": "hsl(var(--primary-tint))",
-        mint: "hsl(var(--mint))",
-        "mint-tint": "hsl(var(--mint-tint))",
-        amber: "hsl(var(--amber))",
-        "amber-tint": "hsl(var(--amber-tint))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        success: "hsl(var(--success))",
-        warning: "hsl(var(--warning))",
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        chart: {
-          "1": "hsl(var(--chart-1))",
-          "2": "hsl(var(--chart-2))",
-          "3": "hsl(var(--chart-3))",
-          "4": "hsl(var(--chart-4))",
-          "5": "hsl(var(--chart-5))",
-        },
-      },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-        pill: "999px",
-        "2xl": "1rem",
-        "3xl": "1.25rem",
-      },
-      boxShadow: {
-        soft: "0 1px 3px rgba(11, 18, 32, 0.06), 0 4px 12px rgba(11, 18, 32, 0.04)",
-        "soft-lg": "0 4px 12px rgba(11, 18, 32, 0.08), 0 12px 28px rgba(11, 18, 32, 0.06)",
-        glow: "0 1px 2px rgba(91, 90, 247, 0.1), 0 4px 12px rgba(91, 90, 247, 0.15)",
-        "glow-lg": "0 2px 4px rgba(91, 90, 247, 0.15), 0 8px 24px rgba(91, 90, 247, 0.25)",
-      },
-      keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
-      },
-      animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-      },
-    },
-  },
-  plugins: [require("tailwindcss-animate")],
 };
 
 export default config;
