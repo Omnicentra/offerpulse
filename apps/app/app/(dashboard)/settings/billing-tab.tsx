@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   PRICING_PLANS,
   formatPrice,
+  type PlanId,
   type PricingPlan,
 } from "@offerpulse/lib/pricing";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,12 @@ import {
   Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+const PLAN_TIER: Record<PlanId, number> = {
+  starter: 0,
+  growth: 1,
+  agency: 2,
+};
 
 const STATUS_LABELS: Record<
   string,
@@ -55,6 +62,11 @@ export function BillingSettingsContent({
   const { data: subscription, isLoading } = useQuery(
     trpc.billing.getSubscription.queryOptions()
   );
+
+  const isActive =
+    subscription != null &&
+    ["active", "trialing", "past_due"].includes(subscription.status);
+  const isCanceled = subscription?.status === "canceled";
 
   const cancelMutation = useMutation(
     trpc.billing.cancelSubscription.mutationOptions({
@@ -107,20 +119,50 @@ export function BillingSettingsContent({
     }
   };
 
-  const handleUpgrade = async (plan: PricingPlan) => {
-    try {
-      const { sessionUrl } = await trpcClient.billing.createCheckoutSession.mutate({
-        lookupKey: plan.stripeLookupKeyMonthly,
-      });
-      window.location.href = sessionUrl;
-    } catch (err) {
-      toast({
-        title: "Error",
-        description:
-          err instanceof Error ? err.message : "Could not start checkout.",
-        variant: "destructive",
-      });
+  const changePlanMutation = useMutation(
+    trpc.billing.changeSubscriptionPlan.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: trpc.billing.getSubscription.queryKey(),
+        });
+        toast({
+          title: "Plan updated",
+          description:
+            "Your subscription has been changed. Prorated charges or credits will appear on your next invoice.",
+        });
+        router.refresh();
+      },
+      onError: (err) => {
+        toast({
+          title: "Error",
+          description: err.message,
+          variant: "destructive",
+        });
+      },
+    })
+  );
+
+  const handlePlanSelect = (plan: PricingPlan) => {
+    if (isActive) {
+      changePlanMutation.mutate({ planId: plan.id });
+      return;
     }
+    void (async () => {
+      try {
+        const { sessionUrl } =
+          await trpcClient.billing.createCheckoutSession.mutate({
+            lookupKey: plan.stripeLookupKeyMonthly,
+          });
+        window.location.href = sessionUrl;
+      } catch (err) {
+        toast({
+          title: "Error",
+          description:
+            err instanceof Error ? err.message : "Could not start checkout.",
+          variant: "destructive",
+        });
+      }
+    })();
   };
 
   const statusInfo = subscription
@@ -129,13 +171,6 @@ export function BillingSettingsContent({
         variant: "outline" as const,
       }
     : null;
-
-  // Canceled is a terminal state in Stripe — the subscription cannot be updated.
-  // Only active/trialing/past_due subscriptions can be managed or canceled.
-  const isActive =
-    subscription != null &&
-    ["active", "trialing", "past_due"].includes(subscription.status);
-  const isCanceled = subscription?.status === "canceled";
 
   const inner = (
     <div className="space-y-6">
@@ -288,6 +323,21 @@ export function BillingSettingsContent({
                 // Canceled subscriptions must go through checkout again.
                 const isCurrent = isActive && subscription?.planId === plan.id;
                 const canSubscribe = !isCurrent;
+                const currentTier =
+                  subscription?.planId != null &&
+                  ["starter", "growth", "agency"].includes(subscription.planId)
+                    ? PLAN_TIER[subscription.planId as PlanId]
+                    : -1;
+                const targetTier = PLAN_TIER[plan.id];
+                const planActionLabel = !isActive
+                  ? "Subscribe"
+                  : targetTier > currentTier
+                    ? "Upgrade"
+                    : "Downgrade";
+                const isChangingPlan = isActive && changePlanMutation.isPending;
+                const isChangingThisPlan =
+                  isChangingPlan &&
+                  changePlanMutation.variables?.planId === plan.id;
                 return (
                   <div
                     key={plan.id}
@@ -324,14 +374,21 @@ export function BillingSettingsContent({
                     <Button
                       variant={isCurrent ? "outline" : "default"}
                       className="mt-6 w-full"
-                      disabled={isCurrent}
-                      onClick={() => canSubscribe && handleUpgrade(plan)}
+                      disabled={
+                        isCurrent || (canSubscribe && isActive && isChangingPlan)
+                      }
+                      onClick={() => canSubscribe && handlePlanSelect(plan)}
                     >
-                      {isCurrent
-                        ? "Current Plan"
-                        : isActive
-                          ? "Upgrade"
-                          : "Subscribe"}
+                      {isChangingThisPlan ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Updating…
+                        </>
+                      ) : isCurrent ? (
+                        "Current Plan"
+                      ) : (
+                        planActionLabel
+                      )}
                     </Button>
                   </div>
                 );

@@ -209,7 +209,7 @@ export const subscriptions = pgTable(
     stripeCustomerId: text("stripe_customer_id").notNull().unique(),
     stripeSubscriptionId: text("stripe_subscription_id").notNull().unique(),
     stripePriceId: text("stripe_price_id").notNull(),
-    planId: text("plan_id").notNull(),
+    planId: text("plan_id", { enum: ["starter", "growth", "agency"] }).notNull(),
     interval: text("interval").notNull(),
     status: subscriptionStatusEnum("status").notNull(),
     cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),

@@ -12,7 +12,9 @@ import { logger, TRIAL_PERIOD_DAYS } from "@offerpulse/lib";
 import Stripe from "stripe";
 import { cache } from "react";
 
-const stripe = new Stripe(env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+  apiVersion: "2026-02-25.clover",
+});
 
 export const getDefaultWorkspaceId = cache(async (userId: string) => {
   const [membership] = await db

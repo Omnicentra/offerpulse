@@ -6,8 +6,11 @@ import { router, protectedProcedure, subscribedProcedure } from "../trpc";
 import { subscriptions, user } from "../../db/schema";
 import { env } from "@/env";
 import { getPlanById } from "@offerpulse/lib/pricing";
+import { logger } from "@offerpulse/lib";
 
-const stripe = new Stripe(env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+  apiVersion: "2026-02-25.clover",
+});
 
 export const billingRouter = router({
   getSubscription: protectedProcedure.query(async ({ ctx }) => {
@@ -93,6 +96,114 @@ export const billingRouter = router({
 
         return { sessionUrl: session.url };
       });
+    }),
+
+  /**
+   * Switch plan for an existing Stripe subscription (upgrade or downgrade).
+   * Proration is handled by Stripe (invoice items for the unused vs new price).
+   */
+  changeSubscriptionPlan: protectedProcedure
+    .input(z.object({ planId: z.enum(["starter", "growth", "agency"]) }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await ctx.db.transaction(async (tx) => {
+        await tx
+          .select()
+          .from(user)
+          .where(eq(user.id, ctx.user.id))
+          .for("update");
+
+        const row = await tx.query.subscriptions.findFirst({
+          where: eq(subscriptions.userId, ctx.user.id),
+        });
+
+        if (
+          !row ||
+          !["active", "trialing", "past_due"].includes(row.status)
+        ) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "No manageable subscription found. Use checkout to subscribe.",
+          });
+        }
+
+        if (row.planId === input.planId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "You are already on this plan.",
+          });
+        }
+
+        return row;
+      });
+
+      const targetPlan = getPlanById(input.planId);
+      if (!targetPlan) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Unknown plan.",
+        });
+      }
+
+      const interval = existing.interval === "year" ? "year" : "month";
+      const lookupKey =
+        interval === "year"
+          ? targetPlan.stripeLookupKeyYearly
+          : targetPlan.stripeLookupKeyMonthly;
+
+      const prices = await stripe.prices.list({
+        lookup_keys: [lookupKey],
+        limit: 1,
+      });
+
+      const newPrice = prices.data[0];
+      if (!newPrice) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `No price found for lookup key: ${lookupKey}`,
+        });
+      }
+
+      const stripeSub = await stripe.subscriptions.retrieve(
+        existing.stripeSubscriptionId
+      );
+
+      const item = stripeSub.items.data[0];
+      if (!item) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Subscription has no line items.",
+        });
+      }
+
+      if (item.price.id === newPrice.id) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You are already on this price.",
+        });
+      }
+
+      const metadata: Record<string, string> = {
+        ...(stripeSub.metadata ?? {}),
+        userId: ctx.user.id,
+        lookupKey,
+      };
+
+      await stripe.subscriptions.update(existing.stripeSubscriptionId, {
+        items: [{ id: item.id, price: newPrice.id }],
+        proration_behavior: "create_prorations",
+        metadata,
+      });
+
+      logger.info("Subscription plan change applied in Stripe", {
+        userId: ctx.user.id,
+        subscriptionId: existing.stripeSubscriptionId,
+        fromPlanId: existing.planId,
+        toPlanId: input.planId,
+        lookupKey,
+      });
+
+      return { ok: true as const };
     }),
 
   createPortalSession: subscribedProcedure
