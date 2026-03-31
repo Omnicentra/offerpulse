@@ -16,6 +16,8 @@ interface SubscriptionData {
   currentPeriodEnd: string | Date;
   trialEnd: string | Date | null;
   plan: PricingPlan | null;
+  pendingPlanId?: string | null;
+  stripeScheduleId?: string | null;
 }
 
 interface SubscriptionContextType {
