@@ -218,6 +218,12 @@ export const subscriptions = pgTable(
     trialStart: timestamp("trial_start"),
     trialEnd: timestamp("trial_end"),
     canceledAt: timestamp("canceled_at"),
+    /** Stripe Subscription Schedule id when a plan change is scheduled for period end */
+    stripeScheduleId: text("stripe_schedule_id"),
+    /** Plan id the subscription will switch to at period end (from schedule phase 2) */
+    pendingPlanId: text("pending_plan_id", {
+      enum: ["starter", "growth", "agency"],
+    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

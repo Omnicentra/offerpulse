@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 const bodySchema = z.object({
-  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+  newPassword: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(128, "Password must be at most 128 characters"),
 });
 
 export async function POST(request: Request) {

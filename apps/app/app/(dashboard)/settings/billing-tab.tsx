@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   PRICING_PLANS,
   formatPrice,
+  getPlanById,
   type PlanId,
   type PricingPlan,
 } from "@offerpulse/lib/pricing";
@@ -23,6 +25,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { PlanChangeDialog } from "./plan-change-dialog";
 
 const PLAN_TIER: Record<PlanId, number> = {
   starter: 0,
@@ -58,6 +61,7 @@ export function BillingSettingsContent({
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { workspaces } = useWorkspace();
+  const [planToConfirm, setPlanToConfirm] = useState<PricingPlan | null>(null);
 
   const { data: subscription, isLoading } = useQuery(
     trpc.billing.getSubscription.queryOptions()
@@ -67,6 +71,21 @@ export function BillingSettingsContent({
     subscription != null &&
     ["active", "trialing", "past_due"].includes(subscription.status);
   const isCanceled = subscription?.status === "canceled";
+
+  /** Only fully paid active subs can schedule plan changes (not trial / past_due / pending cancel). */
+  const canSchedulePlanChange =
+    subscription != null &&
+    subscription.status === "active" &&
+    !subscription.cancelAtPeriodEnd;
+
+  const planChangeBlockedReason =
+    subscription?.status === "trialing"
+      ? "Plan changes aren’t available during your trial."
+      : subscription?.status === "past_due"
+        ? "Update your payment method before changing plans."
+        : subscription?.cancelAtPeriodEnd
+          ? "Reactivate your subscription before changing plans."
+          : null;
 
   const cancelMutation = useMutation(
     trpc.billing.cancelSubscription.mutationOptions({
@@ -119,16 +138,15 @@ export function BillingSettingsContent({
     }
   };
 
-  const changePlanMutation = useMutation(
-    trpc.billing.changeSubscriptionPlan.mutationOptions({
+  const cancelScheduledPlanMutation = useMutation(
+    trpc.billing.cancelScheduledPlanChange.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries({
           queryKey: trpc.billing.getSubscription.queryKey(),
         });
         toast({
-          title: "Plan updated",
-          description:
-            "Your subscription has been changed. Prorated charges or credits will appear on your next invoice.",
+          title: "Scheduled change cancelled",
+          description: "Your plan will stay on your current subscription.",
         });
         router.refresh();
       },
@@ -144,7 +162,9 @@ export function BillingSettingsContent({
 
   const handlePlanSelect = (plan: PricingPlan) => {
     if (isActive) {
-      changePlanMutation.mutate({ planId: plan.id });
+      if (canSchedulePlanChange) {
+        setPlanToConfirm(plan);
+      }
       return;
     }
     void (async () => {
@@ -236,6 +256,25 @@ export function BillingSettingsContent({
                 </div>
               </div>
 
+              {subscription.pendingPlanId != null && (
+                <div className="mt-4 flex items-center gap-3 rounded-lg border border-indigo-200 bg-indigo-50/80 p-3">
+                  <Calendar className="h-5 w-5 shrink-0 text-indigo-600" />
+                  <div>
+                    <p className="text-sm font-medium text-indigo-950">Plan change scheduled</p>
+                    <p className="text-xs text-indigo-800">
+                      Switching to{" "}
+                      <strong>
+                        {getPlanById(subscription.pendingPlanId)?.name ??
+                          subscription.pendingPlanId}
+                      </strong>{" "}
+                      on{" "}
+                      {new Date(subscription.currentPeriodEnd).toLocaleDateString()}. No extra
+                      charge until then.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {subscription.status === "past_due" && (
                 <div className="mt-4 flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3">
                   <AlertCircle className="h-5 w-5 text-red-600" />
@@ -252,6 +291,18 @@ export function BillingSettingsContent({
                 <Button variant="outline" onClick={handlePortal}>
                   Manage payment method
                 </Button>
+                {subscription.pendingPlanId != null && (
+                  <Button
+                    variant="outline"
+                    onClick={() => cancelScheduledPlanMutation.mutate()}
+                    disabled={cancelScheduledPlanMutation.isPending}
+                  >
+                    {cancelScheduledPlanMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Cancel scheduled plan change
+                  </Button>
+                )}
                 {subscription.cancelAtPeriodEnd ? (
                   <Button
                     variant="outline"
@@ -322,7 +373,9 @@ export function BillingSettingsContent({
                 // A plan is only "current" when the subscription is in an active state.
                 // Canceled subscriptions must go through checkout again.
                 const isCurrent = isActive && subscription?.planId === plan.id;
-                const canSubscribe = !isCurrent;
+                const isScheduledTarget =
+                  isActive && subscription?.pendingPlanId === plan.id;
+                const canSubscribe = !isCurrent && !isScheduledTarget;
                 const currentTier =
                   subscription?.planId != null &&
                   ["starter", "growth", "agency"].includes(subscription.planId)
@@ -334,10 +387,10 @@ export function BillingSettingsContent({
                   : targetTier > currentTier
                     ? "Upgrade"
                     : "Downgrade";
-                const isChangingPlan = isActive && changePlanMutation.isPending;
-                const isChangingThisPlan =
-                  isChangingPlan &&
-                  changePlanMutation.variables?.planId === plan.id;
+                const planButtonDisabled =
+                  isCurrent ||
+                  isScheduledTarget ||
+                  (isActive && !canSchedulePlanChange);
                 return (
                   <div
                     key={plan.id}
@@ -345,10 +398,17 @@ export function BillingSettingsContent({
                       "rounded-2xl border p-6",
                       isCurrent
                         ? "border-2 border-blue-600 bg-blue-50/30"
-                        : "border-slate-200 bg-white"
+                        : isScheduledTarget
+                          ? "border-2 border-indigo-500 bg-indigo-50/20"
+                          : "border-slate-200 bg-white"
                     )}
                   >
                     {plan.popular && <Badge className="mb-3">Popular</Badge>}
+                    {isScheduledTarget ? (
+                      <Badge className="mb-3 bg-indigo-600 hover:bg-indigo-600">
+                        Scheduled
+                      </Badge>
+                    ) : null}
                     <h4 className="text-lg font-semibold text-slate-900">{plan.name}</h4>
                     <p className="mt-1 text-sm text-slate-600">{plan.tagline}</p>
                     <div className="mt-4">
@@ -371,30 +431,47 @@ export function BillingSettingsContent({
                           </li>
                         ))}
                     </ul>
-                    <Button
-                      variant={isCurrent ? "outline" : "default"}
-                      className="mt-6 w-full"
-                      disabled={
-                        isCurrent || (canSubscribe && isActive && isChangingPlan)
+                    <span
+                      className="mt-6 block w-full"
+                      title={
+                        planButtonDisabled && planChangeBlockedReason != null
+                          ? planChangeBlockedReason
+                          : undefined
                       }
-                      onClick={() => canSubscribe && handlePlanSelect(plan)}
                     >
-                      {isChangingThisPlan ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Updating…
-                        </>
-                      ) : isCurrent ? (
-                        "Current Plan"
-                      ) : (
-                        planActionLabel
-                      )}
-                    </Button>
+                      <Button
+                        variant={isCurrent || isScheduledTarget ? "outline" : "default"}
+                        className="w-full"
+                        disabled={planButtonDisabled}
+                        onClick={() => {
+                          if (!planButtonDisabled && canSubscribe) handlePlanSelect(plan);
+                        }}
+                      >
+                        {isCurrent
+                          ? "Current Plan"
+                          : isScheduledTarget
+                            ? "Scheduled"
+                            : planActionLabel}
+                      </Button>
+                    </span>
                   </div>
                 );
               })}
             </div>
           </div>
+
+          {subscription != null ? (
+            <PlanChangeDialog
+              open={planToConfirm != null}
+              onOpenChange={(open) => {
+                if (!open) setPlanToConfirm(null);
+              }}
+              currentPlanName={subscription.plan?.name ?? subscription.planId}
+              targetPlan={planToConfirm}
+              effectiveDate={new Date(subscription.currentPeriodEnd)}
+              billingInterval={subscription.interval === "year" ? "year" : "month"}
+            />
+          ) : null}
         </>
       )}
     </div>
