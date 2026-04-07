@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { eq, or, sql } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { env } from "@/env";
 import { db } from "@/src/server/db";
@@ -604,6 +604,12 @@ async function upsertSubscription(
   hasTrial: boolean = false
 ) {
   logger.debug("upsertSubscription start", { userId, subId: sub.id, status: sub.status });
+  logger.info("upsertSubscription: start", {
+    userId,
+    stripeSubscriptionId: sub.id,
+    stripeStatus: sub.status,
+    hasTrial,
+  });
   const priceItem = sub.items.data[0];
   const lookupKey =
     priceItem?.price.lookup_key ??
@@ -616,6 +622,24 @@ async function upsertSubscription(
     typeof sub.customer === "string" ? sub.customer : sub.customer.id;
 
   const period = await getSubscriptionPeriod(sub);
+  const mappedStatus = mapStripeStatus(sub.status);
+
+  logger.info("upsertSubscription: computed payload", {
+    userId,
+    stripeCustomerId: customerId,
+    stripeSubscriptionId: sub.id,
+    stripePriceId: priceItem?.price.id ?? null,
+    lookupKey,
+    planId: parsed?.planId ?? "starter",
+    interval: parsed?.interval ?? "month",
+    mappedStatus,
+    cancelAtPeriodEnd: hasTrial || sub.cancel_at_period_end,
+    currentPeriodStart: period.currentPeriodStart.toISOString(),
+    currentPeriodEnd: period.currentPeriodEnd.toISOString(),
+    trialStart: sub.trial_start ? new Date(sub.trial_start * 1000).toISOString() : null,
+    trialEnd: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+    canceledAt: sub.canceled_at ? new Date(sub.canceled_at * 1000).toISOString() : null,
+  });
 
   const values = {
     userId,
@@ -624,7 +648,7 @@ async function upsertSubscription(
     stripePriceId: priceItem?.price.id ?? "",
     planId: parsed?.planId ?? "starter",
     interval: parsed?.interval ?? "month",
-    status: mapStripeStatus(sub.status),
+    status: mappedStatus,
     cancelAtPeriodEnd: hasTrial || sub.cancel_at_period_end,
     currentPeriodStart: period.currentPeriodStart,
     currentPeriodEnd: period.currentPeriodEnd,
@@ -635,17 +659,84 @@ async function upsertSubscription(
 
   const id = `sub_${nanoid()}`;
 
-  await db
-    .insert(subscriptions)
-    .values({
-      id,
-      ...values,
-    })
-    .onConflictDoUpdate({
-      target: [subscriptions.userId],
-      targetWhere: sql`"status" in ('active', 'trialing', 'canceled', 'past_due')`,
-      set: values,
-    });
+  const existingForUser = await db.query.subscriptions.findMany({
+    where: eq(subscriptions.userId, userId),
+  });
 
+  logger.info("upsertSubscription: existing subscriptions for user", {
+    userId,
+    count: existingForUser.length,
+    rows: existingForUser.map((row) => ({
+      id: row.id,
+      status: row.status,
+      stripeCustomerId: row.stripeCustomerId,
+      stripeSubscriptionId: row.stripeSubscriptionId,
+    })),
+  });
+
+  const updatedByStripeSub = await db
+    .update(subscriptions)
+    .set(values)
+    .where(eq(subscriptions.stripeSubscriptionId, sub.id))
+    .returning({ id: subscriptions.id });
+
+  if (updatedByStripeSub.length > 0) {
+    logger.info("upsertSubscription: updated existing row by stripeSubscriptionId", {
+      userId,
+      stripeSubscriptionId: sub.id,
+      updatedIds: updatedByStripeSub.map((row) => row.id),
+    });
+    logger.debug("upsertSubscription upserted", { userId, subId: sub.id });
+    return;
+  }
+
+  const updatedByStripeCustomer = await db
+    .update(subscriptions)
+    .set(values)
+    .where(eq(subscriptions.stripeCustomerId, customerId))
+    .returning({ id: subscriptions.id });
+
+  if (updatedByStripeCustomer.length > 0) {
+    logger.info("upsertSubscription: updated existing row by stripeCustomerId", {
+      userId,
+      stripeCustomerId: customerId,
+      updatedIds: updatedByStripeCustomer.map((row) => row.id),
+    });
+    logger.debug("upsertSubscription upserted", { userId, subId: sub.id });
+    return;
+  }
+
+  const activeOrTrialingForUser = existingForUser.find(
+    (row) => row.status === "active" || row.status === "trialing"
+  );
+
+  if (activeOrTrialingForUser) {
+    const updatedByActiveUser = await db
+      .update(subscriptions)
+      .set(values)
+      .where(eq(subscriptions.id, activeOrTrialingForUser.id))
+      .returning({ id: subscriptions.id });
+
+    logger.info("upsertSubscription: updated active/trialing row for user", {
+      userId,
+      sourceId: activeOrTrialingForUser.id,
+      updatedIds: updatedByActiveUser.map((row) => row.id),
+    });
+    logger.debug("upsertSubscription upserted", { userId, subId: sub.id });
+    return;
+  }
+
+  await db.insert(subscriptions).values({
+    id,
+    ...values,
+  });
+
+  logger.info("upsertSubscription: inserted new row", {
+    userId,
+    insertedId: id,
+    stripeCustomerId: customerId,
+    stripeSubscriptionId: sub.id,
+    status: mappedStatus,
+  });
   logger.debug("upsertSubscription upserted", { userId, subId: sub.id });
 }
