@@ -14,7 +14,10 @@
     "build:app": "turbo run build --filter=app",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "deploy:app": "bash scripts/deploy-offerpulse-app.sh",
+    "deploy:app:preview": "bash scripts/deploy-offerpulse-app.sh --preview",
+    "deploy:app:prod": "bash scripts/deploy-offerpulse-app.sh --prod"
   },
   "devDependencies": {
     "turbo": "^2.0.0",
