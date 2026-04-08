@@ -64,12 +64,12 @@ export function Navbar() {
           <span className="text-xl font-bold tracking-tight text-ink">
             OfferPulse
           </span>
-          <Badge 
+          {/* <Badge 
             variant="secondary" 
             className="ml-2 hidden rounded-full border border-primary/20 bg-primary-tint px-2.5 py-0.5 text-xs font-medium text-primary sm:inline-flex"
           >
             Early Access
-          </Badge>
+          </Badge> */}
         </Link>
 
         {/* Desktop Navigation */}

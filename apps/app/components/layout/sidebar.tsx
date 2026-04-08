@@ -23,14 +23,14 @@ interface SidebarProps {
 }
 
 const navigation = [
-  { name: "Overview", href: "/", icon: LayoutDashboard },
-  { name: "Competitors", href: "/competitors", icon: Users },
-  { name: "Changes", href: "/changes", icon: TrendingUp },
-  { name: "Snapshots", href: "/snapshots", icon: Camera },
-  { name: "Recommendations", href: "/recommendations", icon: Lightbulb },
-  { name: "Alerts", href: "/alerts", icon: Bell },
-  { name: "Weekly Pulse", href: "/weekly-pulse", icon: BarChart3 },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Overview", href: "/", icon: LayoutDashboard, tourId: "nav-overview" },
+  { name: "Competitors", href: "/competitors", icon: Users, tourId: "nav-competitors" },
+  { name: "Changes", href: "/changes", icon: TrendingUp, tourId: "nav-changes" },
+  { name: "Snapshots", href: "/snapshots", icon: Camera, tourId: "nav-snapshots" },
+  { name: "Recommendations", href: "/recommendations", icon: Lightbulb, tourId: "nav-recommendations" },
+  { name: "Alerts", href: "/alerts", icon: Bell, tourId: "nav-alerts" },
+  { name: "Weekly Pulse", href: "/weekly-pulse", icon: BarChart3, tourId: "nav-weekly-pulse" },
+  { name: "Settings", href: "/settings", icon: Settings, tourId: "nav-settings" },
 ];
 
 export function Sidebar({
@@ -43,7 +43,7 @@ export function Sidebar({
   const sidebarContent = (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-16 items-center justify-between border-b border-slate-200 px-6">
+      <div data-tour="sidebar-logo" className="flex h-16 items-center justify-between border-b border-slate-200 px-6">
         <Link href="/" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600">
             <svg
@@ -86,6 +86,7 @@ export function Sidebar({
             <Link
               key={item.name}
               href={item.href}
+              data-tour={item.tourId}
               onClick={() => {
                 if (isMobile && onClose) {
                   onClose();

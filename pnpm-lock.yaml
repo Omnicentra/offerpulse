@@ -26,6 +26,9 @@ importers:
       '@aws-sdk/client-s3':
         specifier: ^3.996.0
         version: 3.1025.0
+      '@floating-ui/react-dom':
+        specifier: ^2.1.8
+        version: 2.1.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.72.1(react@18.3.1))
@@ -146,6 +149,9 @@ importers:
       react-hook-form:
         specifier: ^7.71.1
         version: 7.72.1(react@18.3.1)
+      react-tourlight:
+        specifier: ^0.1.1
+        version: 0.1.1(@floating-ui/react-dom@2.1.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       recharts:
         specifier: ^2.12.7
         version: 2.15.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -6522,6 +6528,14 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  react-tourlight@0.1.1:
+    resolution: {integrity: sha512-WsYRGppbABfxxUMZtypn0+laL9bXvkMh4r3BUbMYzE3FFZAWLSEI95wLjacJwH6qVqL5HPM+gQc8phup1mVq7w==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      '@floating-ui/react-dom': '>=2.0.0'
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
 
   react-transition-group@4.4.5:
     resolution: {integrity: sha512-pZcd1MCJoiKiBR2NRxeCRg13uCXbydPnmB4EOeRrY7480qNWO8IIgQG6zlDkm6uRMsURXPuKq0GWtiM59a5Q6g==}
@@ -14078,6 +14092,12 @@ snapshots:
       tslib: 2.8.1
     optionalDependencies:
       '@types/react': 18.3.28
+
+  react-tourlight@0.1.1(@floating-ui/react-dom@2.1.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      '@floating-ui/react-dom': 2.1.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
   react-transition-group@4.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:

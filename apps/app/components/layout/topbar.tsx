@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
 import Image from "next/image";
-import { Search, Plus, Menu, LogOut, User as UserIcon, ChevronDown, Clock } from "lucide-react";
+import { Search, Plus, Menu, LogOut, User as UserIcon, ChevronDown, Clock, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,6 +18,8 @@ import { signOut, useSession } from "@/src/server/auth/client";
 import { useWorkspace } from "@/src/providers/workspace-provider";
 import { useSubscription } from "@/src/providers/subscription-provider";
 import { CommandPalette, useCommandPaletteHotkeys } from "@/components/command-palette";
+import { useSpotlight } from "react-tourlight";
+import { TOUR_ID, TOUR_STORAGE_KEY } from "@/components/onboarding/onboarding-tour";
 
 interface TopbarProps {
   onMenuClick?: () => void;
@@ -37,6 +39,12 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
   const openCommandPalette = useCallback(() => setCommandPaletteOpen(true), []);
   useCommandPaletteHotkeys({ onOpen: openCommandPalette });
   const { subscription, isTrialing } = useSubscription();
+  const { start: startTour } = useSpotlight();
+
+  const handleRestartTour = () => {
+    localStorage.removeItem(TOUR_STORAGE_KEY);
+    startTour(TOUR_ID);
+  };
   const trialEnd = subscription?.trialEnd;
   const needsTrialCountdown = isTrialing && trialEnd != null;
   const [daysRemaining, setDaysRemaining] = useState(0);
@@ -177,6 +185,17 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
 
       {/* Right section */}
       <div className="flex items-center gap-3">
+        {/* Tour button */}
+        <button
+          onClick={handleRestartTour}
+          className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 lg:flex"
+          aria-label="Take a product tour"
+          title="Take a tour"
+        >
+          <Compass className="h-4 w-4" />
+          <span>Tour</span>
+        </button>
+
         {/* Add competitor button */}
         <Button
           onClick={onAddCompetitor || (() => router.push("/competitors/new"))}
