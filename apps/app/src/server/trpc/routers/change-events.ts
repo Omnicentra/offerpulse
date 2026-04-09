@@ -1,9 +1,9 @@
-import { router, workspaceProcedure } from "../trpc";
-import { z } from "zod";
-import { TRPCError } from "@trpc/server";
-import { changeEvents, competitors } from "../../db/schema";
-import { eq, and, desc, inArray, gte, lte } from "drizzle-orm";
 import { logger } from "@offerpulse/lib";
+import { TRPCError } from "@trpc/server";
+import { desc, eq, gte, lte } from "drizzle-orm";
+import { z } from "zod";
+import { changeEvents, competitors } from "../../db/schema";
+import { router, workspaceProcedure } from "../trpc";
 
 export const changeEventsRouter = router({
   list: workspaceProcedure

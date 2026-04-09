@@ -1,20 +1,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useTRPC } from "@/src/lib/trpc/client";
-import { resetApi } from "@/src/mock/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, RefreshCw } from "lucide-react";
+import { useSpotlight } from "react-tourlight";
+import { TOUR_ID } from "@/lib/dashboard-tour-analytics";
+import { clearTourState, pendingTourStart$ } from "@/src/stores/tour-state";
+import { Lock, Map } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -103,11 +97,11 @@ export function SettingsClient({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const trpc = useTRPC();
+  const { start: startTour } = useSpotlight();
 
   const tabParam = searchParams.get("tab") as TabValue | null;
   const [activeTab, setActiveTab] = useState<TabValue>(tabParam ?? "general");
 
-  const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [localSettings, setLocalSettings] = useState<LocalSettings>(() =>
     toLocalSettings(initialSettings)
   );
@@ -159,25 +153,6 @@ export function SettingsClient({
     })
   );
 
-  const resetMutation = useMutation({
-    mutationFn: resetApi.resetDemoData,
-    onSuccess: () => {
-      queryClient.invalidateQueries();
-      toast({
-        title: "Demo data reset",
-        description: "All data has been reset to initial state.",
-      });
-      setResetDialogOpen(false);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message ?? "Failed to reset demo data",
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleSave = () => {
     if (!localSettings) return;
     updateMutation.mutate({
@@ -192,8 +167,32 @@ export function SettingsClient({
     });
   };
 
-  const handleReset = () => {
-    resetMutation.mutate();
+  const markTourSeenMutation = useMutation(
+    trpc.users.markTourSeen.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.users.getProfile.queryFilter());
+      },
+    })
+  );
+
+  const handleRestartTour = () => {
+    markTourSeenMutation.mutate(
+      { seen: false },
+      {
+        onSuccess: () => {
+          clearTourState();
+          // Use the trigger observable so OnboardingTour picks it up after navigation
+          pendingTourStart$.set(true);
+          router.push("/");
+        },
+        onError: () => {
+          // Fallback: start tour directly without DB update
+          clearTourState();
+          startTour(TOUR_ID);
+          router.push("/");
+        },
+      }
+    );
   };
 
   return (
@@ -388,28 +387,27 @@ export function SettingsClient({
               </div>
             </div>
 
-            <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-6">
+            {/* Product Tour */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100">
-                    <RefreshCw className="h-6 w-6 text-orange-600" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[hsl(var(--primary-tint))]">
+                    <Map className="h-6 w-6 text-[hsl(var(--primary))]" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      Reset Demo Data
-                    </h3>
+                    <h3 className="text-sm font-semibold text-slate-900">Product Tour</h3>
                     <p className="mt-1 text-sm text-slate-600">
-                      Reset all competitors, snapshots, changes, and recommendations to
-                      the initial demo state
+                      Take a guided walkthrough of the dashboard and its key features
                     </p>
                   </div>
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => setResetDialogOpen(true)}
+                  onClick={handleRestartTour}
+                  disabled={markTourSeenMutation.isPending}
                   className="flex-shrink-0"
                 >
-                  Reset Data
+                  {markTourSeenMutation.isPending ? "Starting…" : "Restart Tour"}
                 </Button>
               </div>
             </div>
@@ -438,30 +436,6 @@ export function SettingsClient({
           </TabsContent>
         </div>
       </Tabs>
-
-      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reset Demo Data</DialogTitle>
-            <DialogDescription>
-              This will delete all your current data and restore the initial demo dataset.
-              This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setResetDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleReset}
-              disabled={resetMutation.isPending}
-            >
-              {resetMutation.isPending ? "Resetting..." : "Reset Data"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

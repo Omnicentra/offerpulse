@@ -78,7 +78,8 @@ function SignupForm() {
           signed_up_at: new Date().toISOString(),
         });
       }
-      posthog.capture("signup_completed", { source: "dashboard_app" });
+      // signup_completed is captured server-side in Better Auth `databaseHooks.user.create.after`
+      // so email and Google OAuth both emit one event with the same distinct id.
 
       // Check if user has onboarding intent (came from marketing CTA with competitor URL)
       const intent = getOnboardingIntent();

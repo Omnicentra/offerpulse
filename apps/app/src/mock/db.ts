@@ -681,11 +681,6 @@ class MockDB {
     this.data = data;
     this.saveToStorage();
   }
-
-  reset(): void {
-    this.data = generateSeedData();
-    this.saveToStorage();
-  }
 }
 
 export const mockDB = new MockDB();

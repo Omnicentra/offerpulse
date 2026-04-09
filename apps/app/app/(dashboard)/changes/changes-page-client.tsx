@@ -153,6 +153,7 @@ export function ChangesPageClient({
   return (
     <div className="space-y-6">
       <PageHeader
+        compact
         title="Changes"
         description={`${filteredChanges?.length || 0} changes detected`}
       />

@@ -11,6 +11,7 @@ import { customSession, admin as adminPlugin } from "better-auth/plugins";
 import { logger, TRIAL_PERIOD_DAYS } from "@offerpulse/lib";
 import Stripe from "stripe";
 import { cache } from "react";
+import { captureSignupCompletedServer } from "../analytics/posthog-server";
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
   apiVersion: "2026-02-25.clover",
@@ -27,7 +28,6 @@ export const getDefaultWorkspaceId = cache(async (userId: string) => {
     .where(eq(workspaceMembers.userId, userId))
     .limit(1);
 
-  logger.debug("getDefaultWorkspaceId result", membership);
   if (!membership) {
     throw new Error("User is not a member of any workspace");
   }
@@ -85,6 +85,12 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
+          try {
+            captureSignupCompletedServer(user);
+          } catch (err) {
+            logger.warn("PostHog signup_completed (server) failed:", err);
+          }
+
           // Create a default workspace for the new user and add them as owner
           const workspaceId = `workspace_${nanoid()}`;
           const slug = `workspace-${user.id.slice(-8)}`;
@@ -131,7 +137,7 @@ export const auth = betterAuth({
               customer: customer.id,
               items: [{ price: priceId }],
               trial_period_days: TRIAL_PERIOD_DAYS,
-              metadata: { userId: user.id, lookupKey: "growth_monthly" },
+              metadata: { userId: user.id, lookupKey: "starter_monthly" },
               payment_settings: {
                 save_default_payment_method: 'on_subscription',
               },
@@ -146,7 +152,7 @@ export const auth = betterAuth({
               userId: user.id,
               subscriptionId: subscription.id,
               customerId: customer.id,
-              lookupKey: "growth_monthly",
+              lookupKey: "starter_monthly",
             });
           } catch (error) {
             logger.error("Failed to create Stripe trial subscription", error, { userId: user.id });

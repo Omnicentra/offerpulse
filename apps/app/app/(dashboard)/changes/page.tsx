@@ -9,8 +9,13 @@ import { ChangesPageClient } from "./changes-page-client";
 
 function ChangesPageSkeleton() {
   return (
-    <div>
-      <PageHeader title="Changes" />
+    <div className="space-y-6">
+      <PageHeader
+        compact
+        title="Changes"
+        description="Updates detected between competitor snapshots."
+      />
+      <Skeleton className="h-32 rounded-2xl" />
       <Skeleton className="h-96 rounded-2xl" />
     </div>
   );

@@ -94,6 +94,7 @@ export default async function HomePage() {
   return (
     <div className="space-y-8">
       <PageHeader
+        compact
         title="Overview"
         description="Monitor competitor activity and track key changes"
         action={

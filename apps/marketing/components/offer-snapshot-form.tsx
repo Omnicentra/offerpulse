@@ -28,7 +28,8 @@ export function OfferSnapshotForm({
   onUrlChange,
 }: OfferSnapshotFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [hasInteracted, setHasInteracted] = useState(false)
+  const [hasTrackedInputFocus, setHasTrackedInputFocus] = useState(false)
+  const [hasTrackedUrlEntered, setHasTrackedUrlEntered] = useState(false)
 
   const form = useForm<OfferSnapshotInput>({
     resolver: zodResolver(offerSnapshotSchema),
@@ -99,22 +100,22 @@ export function OfferSnapshotForm({
                       {...field}
                       disabled={isSubmitting}
                       onFocus={() => {
-                        if (!hasInteracted) {
+                        if (!hasTrackedInputFocus) {
                           track("landing_input_focused", { source: "hero" })
-                          setHasInteracted(true)
+                          setHasTrackedInputFocus(true)
                         }
                       }}
                       onChange={(e) => {
                         field.onChange(e)
                         const url = e.target.value.trim()
                         onUrlChange?.(url ? (extractDomain(url) || url) : "")
-                        
-                        // Track when user enters meaningful text (10+ characters)
-                        if (url.length >= 10 && !hasInteracted) {
-                          track("landing_competitor_url_entered", { 
+
+                        if (url.length >= 10 && !hasTrackedUrlEntered) {
+                          track("landing_competitor_url_entered", {
                             source: "hero",
-                            partial_url: url.substring(0, 20)
+                            partial_url: url.substring(0, 20),
                           })
+                          setHasTrackedUrlEntered(true)
                         }
                       }}
                       aria-label="Competitor store URL"

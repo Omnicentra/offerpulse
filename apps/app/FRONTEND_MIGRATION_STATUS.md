@@ -58,12 +58,11 @@ const mutation = trpc.alerts.update.useMutation({
 });
 ```
 
-## Remaining mock API cleanup (2 runtime files)
+## Remaining mock API cleanup (1 runtime file)
 
-Almost all dashboard routes use tRPC. **`@/src/mock/api` is still imported in only two places** under `app/` (verify with ripgrep: `mock/api`).
+Almost all dashboard routes use tRPC. **`@/src/mock/api` is still imported in one place** under `app/` (verify with ripgrep: `mock/api`).
 
 ### Must migrate
-- [ ] **app/(dashboard)/settings/settings-client.tsx** — still uses `resetApi` from `@/src/mock/api` for demo reset. **Parent `settings/page.tsx` already prefetches via tRPC** (`workspaceSettings`, `users`, `ownStore`, etc.).
 - [ ] **app/(dashboard)/settings/members/page.tsx** — still uses `usersApi` from `@/src/mock/api`; replace with `trpc.users.*` (or patterns used on `settings/page.tsx`).
 
 ### Optional cleanup
@@ -105,7 +104,7 @@ Almost all dashboard routes use tRPC. **`@/src/mock/api` is still imported in on
 ✅ Migration pattern proven across dashboard routes; layout shells do not use the mock API  
 
 ### What's Remaining
-Two files still call `@/src/mock/api` at runtime; removing those imports completes mock removal for `app/` UI. Optional: decouple `change-type-badge` from `@/src/mock/types`.
+One file still calls `@/src/mock/api` at runtime; removing that import completes mock removal for `app/` UI (aside from optional type decoupling). Optional: decouple `change-type-badge` from `@/src/mock/types`.
 
 ### Quick Reference
 - All pages require workspaceId from `useWorkspace()` hook
