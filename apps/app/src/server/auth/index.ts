@@ -11,6 +11,7 @@ import { customSession, admin as adminPlugin } from "better-auth/plugins";
 import { logger, TRIAL_PERIOD_DAYS } from "@offerpulse/lib";
 import Stripe from "stripe";
 import { cache } from "react";
+import { captureSignupCompletedServer } from "../analytics/posthog-server";
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
   apiVersion: "2026-02-25.clover",
@@ -84,6 +85,12 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
+          try {
+            captureSignupCompletedServer(user);
+          } catch (err) {
+            logger.warn("PostHog signup_completed (server) failed:", err);
+          }
+
           // Create a default workspace for the new user and add them as owner
           const workspaceId = `workspace_${nanoid()}`;
           const slug = `workspace-${user.id.slice(-8)}`;
