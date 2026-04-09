@@ -48,7 +48,7 @@ export default function SnapshotsPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Snapshots" />
+        <PageHeader compact title="Snapshots" />
         <SkeletonTable />
       </div>
     );
@@ -57,6 +57,7 @@ export default function SnapshotsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        compact
         title="Snapshots"
         description={`${snapshots?.length ?? 0} snapshots captured`}
       />

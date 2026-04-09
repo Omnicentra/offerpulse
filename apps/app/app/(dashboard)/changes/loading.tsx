@@ -5,6 +5,7 @@ export default function ChangesLoading() {
   return (
     <div className="space-y-6">
       <PageHeader
+        compact
         title="Changes"
         description="Updates detected between competitor snapshots."
       />

@@ -102,7 +102,7 @@ export function WeeklyPulsePageClient({
   if (!pulses || pulses.length === 0) {
     return (
       <div>
-        <PageHeader title="Weekly Pulse" />
+        <PageHeader compact title="Weekly Pulse" />
         <EmptyState
           icon={BarChart3}
           title="No weekly reports yet"
@@ -115,6 +115,7 @@ export function WeeklyPulsePageClient({
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       <PageHeader
+        compact
         title="Weekly Pulse"
         description="Your weekly competitive intelligence report"
         action={

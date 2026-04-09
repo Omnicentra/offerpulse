@@ -6,6 +6,7 @@ export default function RecommendationsLoading() {
     <div className="mx-auto space-y-8">
       <div className="space-y-2">
         <PageHeader
+          compact
           title="Recommendations"
           description="Scan the list collapsed; open a row for rationale, checklist, and actions."
         />

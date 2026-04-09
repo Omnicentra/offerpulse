@@ -178,7 +178,7 @@ export default function CompetitorsPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Competitors" />
+        <PageHeader compact title="Competitors" />
         <SkeletonTable />
       </div>
     );
@@ -189,6 +189,7 @@ export default function CompetitorsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        compact
         title="Competitors"
         description={`Monitoring ${activeCount} active competitor${activeCount === 1 ? "" : "s"}`}
       />
