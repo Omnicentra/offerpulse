@@ -130,7 +130,7 @@ export const auth = betterAuth({
               customer: customer.id,
               items: [{ price: priceId }],
               trial_period_days: TRIAL_PERIOD_DAYS,
-              metadata: { userId: user.id, lookupKey: "growth_monthly" },
+              metadata: { userId: user.id, lookupKey: "starter_monthly" },
               payment_settings: {
                 save_default_payment_method: 'on_subscription',
               },
@@ -145,7 +145,7 @@ export const auth = betterAuth({
               userId: user.id,
               subscriptionId: subscription.id,
               customerId: customer.id,
-              lookupKey: "growth_monthly",
+              lookupKey: "starter_monthly",
             });
           } catch (error) {
             logger.error("Failed to create Stripe trial subscription", error, { userId: user.id });

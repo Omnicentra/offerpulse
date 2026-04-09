@@ -1,0 +1,373 @@
+[
+  {
+    "title": "What is OfferPulse?",
+    "subheading": "Monitor competitor offers, not just prices",
+    "slug": "what-is-offerpulse",
+    "visibility": "public",
+    "category_slug": "getting-started",
+    "meta_description": "Learn what OfferPulse does, who it is for, and how it helps Shopify teams detect competitor offer changes and take action fast.",
+    "related_article_slugs": ["how-offerpulse-works-end-to-end", "who-should-use-offerpulse", "first-30-minutes-with-offerpulse"],
+    "content": "OfferPulse is a competitor intelligence platform built for ecommerce teams, especially Shopify brands. It tracks the full offer layer (discounts, bundles, shipping thresholds, cart incentives, delivery/returns messaging), detects meaningful changes, and suggests practical responses.\n\n### Why this matters\nMost tools stop at price tracking. OfferPulse captures promotional mechanics that influence conversion and margin decisions.\n\n### What you can do in OfferPulse\n- Add competitors and configure monitoring frequency\n- Capture snapshots and compare offer changes over time\n- Receive AI-assisted recommendations (e.g., match, counter, test, ignore)\n- Route alerts to email and Slack\n- Review weekly summaries in Weekly Pulse\n\n### Best for\n- Ecommerce founders and operators\n- Growth/marketing managers\n- Merchandising and pricing teams\n- Agencies managing multiple storefronts"
+  },
+  {
+    "title": "How OfferPulse works (end-to-end)",
+    "subheading": "From competitor URL to actionable recommendations",
+    "slug": "how-offerpulse-works-end-to-end",
+    "visibility": "public",
+    "category_slug": "onboarding",
+    "meta_description": "Understand the OfferPulse flow: competitor setup, snapshot capture, change detection, recommendations, and alert delivery.",
+    "related_article_slugs": ["add-your-first-competitor", "understand-snapshots", "how-change-detection-works", "understand-recommendation-strategies"],
+    "content": "OfferPulse follows a continuous monitoring pipeline:\n\n1. **Add competitor** and choose what signals to track.\n2. **Capture snapshot** manually or on schedule.\n3. **Detect changes** between snapshot versions.\n4. **Generate recommendations** with confidence and strategy.\n5. **Deliver alerts** by email/Slack using your thresholds.\n6. **Summarize performance** in Weekly Pulse.\n\n### Monitoring cadence\nChoose frequencies like hourly windows or daily depending on plan and use case.\n\n### Typical timeline\n- Initial setup: ~10 minutes\n- First meaningful insights: often same day\n- Routine operation: mostly automated with alert-based review"
+  },
+  {
+    "title": "Who should use OfferPulse?",
+    "subheading": "Ideal teams, use cases, and expected outcomes",
+    "slug": "who-should-use-offerpulse",
+    "visibility": "public",
+    "category_slug": "getting-started",
+    "meta_description": "See if OfferPulse is right for your team and learn common use cases for competitor monitoring and offer intelligence.",
+    "related_article_slugs": ["what-is-offerpulse", "best-practices-for-high-signal-monitoring", "understand-recommendation-strategies"],
+    "content": "OfferPulse is strongest for teams that need to react quickly to competitor offer changes while protecting margin.\n\n### Common use cases\n- Monitor competitor promo stacks across categories\n- Detect free shipping threshold changes\n- Track bundle/gift/cart incentive shifts\n- Coordinate pricing and campaign responses\n\n### Outcome you should expect\n- Faster awareness of market moves\n- More consistent response playbooks\n- Better prioritization via confidence scoring and recommendations"
+  },
+  {
+    "title": "First 30 minutes with OfferPulse",
+    "subheading": "Quickstart checklist for new users",
+    "slug": "first-30-minutes-with-offerpulse",
+    "visibility": "public",
+    "category_slug": "onboarding",
+    "meta_description": "Complete your first 30 minutes in OfferPulse with this practical onboarding checklist.",
+    "related_article_slugs": ["create-your-account-and-workspace", "add-your-first-competitor", "configure-alert-settings", "connect-shopify-store"],
+    "content": "Use this sequence to get immediate value:\n\n1. Create account and confirm workspace details.\n2. Add one high-priority competitor.\n3. Configure monitor settings (signals + frequency).\n4. Trigger first snapshot capture.\n5. Set alert channels and confidence threshold.\n6. (Optional) Connect Shopify or configure your store manually.\n7. Review first recommendations and mark actions.\n\n### Pro tip\nStart with 1-3 competitors and tighten settings before scaling to dozens."
+  },
+  {
+    "title": "Create your account and workspace",
+    "subheading": "Sign up, login methods, and workspace basics",
+    "slug": "create-your-account-and-workspace",
+    "visibility": "public",
+    "category_slug": "account-workspace",
+    "meta_description": "Learn how to sign up for OfferPulse, choose login methods, and understand workspace setup.",
+    "related_article_slugs": ["manage-workspace-members-and-roles", "update-profile-avatar-password", "reset-your-password"],
+    "content": "OfferPulse supports email/password and Google sign-in. On first signup, a workspace is created automatically for you.\n\n### Workspace basics\n- A workspace groups competitors, snapshots, alerts, and team members.\n- Owners/admins can manage membership and settings.\n- Switching workspaces is supported when you belong to multiple teams."
+  },
+  {
+    "title": "Manage workspace members and roles",
+    "subheading": "Invite teammates and control access",
+    "slug": "manage-workspace-members-and-roles",
+    "visibility": "public",
+    "category_slug": "account-workspace",
+    "meta_description": "Invite team members to OfferPulse and assign roles with the right level of access.",
+    "related_article_slugs": ["create-your-account-and-workspace", "workspace-switching-explained", "plan-limits-and-feature-access"],
+    "content": "Invite teammates from workspace settings and assign appropriate roles.\n\n### Role guidance\n- **Owner/Admin:** billing, integrations, governance\n- **Member:** daily monitoring and execution\n\n### Best practices\n- Keep billing/integration permissions limited\n- Use shared alert channels for continuity\n- Remove stale members to reduce noise and risk"
+  },
+  {
+    "title": "Update profile, avatar, and password",
+    "subheading": "Keep account identity and security current",
+    "slug": "update-profile-avatar-password",
+    "visibility": "public",
+    "category_slug": "account-workspace",
+    "meta_description": "Update your profile details, avatar, and password in OfferPulse account settings.",
+    "related_article_slugs": ["reset-your-password", "create-your-account-and-workspace"],
+    "content": "From account settings, you can update display name, avatar URL, and password (if your account uses password login).\n\n### Security recommendation\nUse a unique password and rotate credentials periodically, especially for owner/admin accounts."
+  },
+  {
+    "title": "Reset your password",
+    "subheading": "Recover access quickly and safely",
+    "slug": "reset-your-password",
+    "visibility": "public",
+    "category_slug": "account-workspace",
+    "meta_description": "Trouble signing in? Follow these steps to reset your OfferPulse password securely.",
+    "related_article_slugs": ["update-profile-avatar-password", "create-your-account-and-workspace", "login-troubleshooting"],
+    "content": "Use the forgot-password flow from sign-in.\n\n### Steps\n1. Request reset link with your account email\n2. Open reset email\n3. Set a new password\n4. Re-login\n\nIf you originally signed up with Google, use Google sign-in unless you have explicitly set a password."
+  },
+  {
+    "title": "Add your first competitor",
+    "subheading": "Create a competitor profile and start monitoring",
+    "slug": "add-your-first-competitor",
+    "visibility": "public",
+    "category_slug": "competitors",
+    "meta_description": "Learn how to add your first competitor in OfferPulse and configure monitoring settings.",
+    "related_article_slugs": ["configure-monitor-settings", "trigger-manual-snapshot-capture", "best-practices-for-high-signal-monitoring"],
+    "content": "Go to Competitors > New and enter competitor details (name and URL).\n\n### Setup checklist\n- Use canonical storefront URL\n- Validate country/store context\n- Enable monitoring immediately\n- Save, then trigger first capture to baseline data"
+  },
+  {
+    "title": "Configure monitor settings",
+    "subheading": "Choose frequencies and offer signals to track",
+    "slug": "configure-monitor-settings",
+    "visibility": "public",
+    "category_slug": "competitors",
+    "meta_description": "Set monitoring frequency and choose offer signals like promos, bundles, and shipping thresholds.",
+    "related_article_slugs": ["add-your-first-competitor", "best-practices-for-high-signal-monitoring", "how-change-detection-works"],
+    "content": "Each competitor has monitor settings that define cadence and signal scope.\n\n### Common tracked signals\n- Promotions and discounts\n- Shipping thresholds\n- Bundles and gifts\n- Cart incentives\n- Delivery/returns messaging\n\n### Recommended starting cadence\n- High-priority competitors: more frequent checks\n- Long-tail competitors: daily cadence"
+  },
+  {
+    "title": "Trigger a manual snapshot capture",
+    "subheading": "Run immediate checks on a competitor",
+    "slug": "trigger-manual-snapshot-capture",
+    "visibility": "public",
+    "category_slug": "snapshots",
+    "meta_description": "Run a manual snapshot capture in OfferPulse to check competitor offers immediately.",
+    "related_article_slugs": ["understand-snapshots", "snapshot-status-and-failures", "configure-monitor-settings"],
+    "content": "Use manual capture when you need immediate validation (campaign launches, promo changes, or suspicious market movement).\n\n### What happens next\n- Capture job is queued\n- Snapshot result is stored\n- Differences are evaluated against previous snapshots\n- Eligible changes flow to recommendations and alerts"
+  },
+  {
+    "title": "Understand snapshots",
+    "subheading": "What a snapshot contains and how to read it",
+    "slug": "understand-snapshots",
+    "visibility": "public",
+    "category_slug": "snapshots",
+    "meta_description": "Learn what OfferPulse snapshots include and how to interpret captured offer data.",
+    "related_article_slugs": ["how-change-detection-works", "trigger-manual-snapshot-capture", "snapshot-status-and-failures"],
+    "content": "A snapshot captures key offer-state signals at a point in time for a competitor.\n\n### Typical contents\n- Offer metadata and extracted signals\n- Timing/context fields\n- Change-supporting evidence used by downstream detection\n\n### How to use snapshots\n- Establish baseline behavior\n- Compare over time for trend and sudden shifts\n- Validate recommendation rationale"
+  },
+  {
+    "title": "How change detection works",
+    "subheading": "From raw snapshots to meaningful change events",
+    "slug": "how-change-detection-works",
+    "visibility": "public",
+    "category_slug": "change-detection",
+    "meta_description": "See how OfferPulse detects and classifies offer changes from competitor snapshots.",
+    "related_article_slugs": ["understand-snapshots", "understand-confidence-levels", "understand-recommendation-strategies"],
+    "content": "OfferPulse compares recent snapshots to identify meaningful deltas, then classifies them by change type.\n\n### Change categories\n- Promo/discount updates\n- Shipping threshold changes\n- Bundle/gift/cart incentive changes\n- Delivery/returns messaging changes\n\nDetected events are scored for confidence and passed into recommendations + alerts."
+  },
+  {
+    "title": "Understand confidence levels",
+    "subheading": "Low, medium, and high confidence explained",
+    "slug": "understand-confidence-levels",
+    "visibility": "public",
+    "category_slug": "change-detection",
+    "meta_description": "Understand confidence levels in OfferPulse and how to tune alerts for signal quality.",
+    "related_article_slugs": ["how-change-detection-works", "configure-alert-settings", "best-practices-for-high-signal-monitoring"],
+    "content": "Confidence indicates how reliable a detected change is based on available evidence.\n\n### Practical guidance\n- **High:** usually actionable immediately\n- **Medium:** verify context before reaction\n- **Low:** monitor trend or wait for confirmation\n\nUse confidence thresholds in alert settings to reduce noise."
+  },
+  {
+    "title": "Understand recommendation strategies",
+    "subheading": "Match, counter, ignore, or test with context",
+    "slug": "understand-recommendation-strategies",
+    "visibility": "public",
+    "category_slug": "recommendations",
+    "meta_description": "Learn how OfferPulse recommendation strategies work and when to use each one.",
+    "related_article_slugs": ["how-change-detection-works", "manage-recommendation-status-and-checklists", "best-practices-for-high-signal-monitoring"],
+    "content": "Recommendations map detected changes to practical next moves.\n\n### Common strategies\n- **Match:** parity response to avoid conversion loss\n- **Counter:** differentiated response (e.g., alternative incentive)\n- **Test:** controlled experiment before broad rollout\n- **Ignore:** no tactical action needed now\n\nTreat recommendations as decision support, then align with your margin and campaign goals."
+  },
+  {
+    "title": "Manage recommendation status and checklists",
+    "subheading": "Track execution from insight to action",
+    "slug": "manage-recommendation-status-and-checklists",
+    "visibility": "public",
+    "category_slug": "recommendations",
+    "meta_description": "Mark recommendations as open/done/snoozed and use checklist workflows to drive execution.",
+    "related_article_slugs": ["understand-recommendation-strategies", "weekly-pulse-overview", "best-practices-for-high-signal-monitoring"],
+    "content": "Use statuses and checklist items to coordinate execution across teams.\n\n### Suggested workflow\n1. Review new recommendations daily\n2. Assign owner and due date externally (or in your PM tool)\n3. Mark done/snoozed as decisions are made\n4. Review outcomes during Weekly Pulse"
+  },
+  {
+    "title": "Configure alert settings",
+    "subheading": "Choose channels, event types, and thresholds",
+    "slug": "configure-alert-settings",
+    "visibility": "public",
+    "category_slug": "notifications",
+    "meta_description": "Set up OfferPulse alerts by channel, event type, and confidence threshold.",
+    "related_article_slugs": ["connect-slack-for-alerts", "understand-confidence-levels", "weekly-pulse-overview"],
+    "content": "Alert settings control where and when notifications fire.\n\n### You can configure\n- Channels: email and/or Slack\n- Event type filters\n- Minimum confidence threshold\n- Weekly digest preferences\n\n### Start simple\nEnable high-confidence alerts first, then widen scope once signal quality is validated."
+  },
+  {
+    "title": "Connect Slack for alerts",
+    "subheading": "Authorize workspace and route notifications",
+    "slug": "connect-slack-for-alerts",
+    "visibility": "public",
+    "category_slug": "slack",
+    "meta_description": "Connect Slack to OfferPulse and send competitor change alerts to the right channels.",
+    "related_article_slugs": ["configure-alert-settings", "test-alert-delivery", "slack-integration-troubleshooting"],
+    "content": "Use the Slack integration flow in settings to authorize your workspace.\n\n### After connect\n- Pick destination channels\n- Test a sample alert\n- Confirm your confidence threshold is appropriate\n\nIf delivery fails, reconnect integration and verify channel permissions."
+  },
+  {
+    "title": "Test alert delivery",
+    "subheading": "Validate email and Slack notifications",
+    "slug": "test-alert-delivery",
+    "visibility": "public",
+    "category_slug": "notifications",
+    "meta_description": "Send test notifications to verify OfferPulse alert delivery before relying on production alerts.",
+    "related_article_slugs": ["configure-alert-settings", "connect-slack-for-alerts", "alerts-not-arriving"],
+    "content": "Always send test alerts after configuration changes.\n\n### Validation checklist\n- Correct recipient/channel selected\n- No overly strict confidence filter\n- Integration authorized and active\n- No muted/blocked notification rules in Slack/email client"
+  },
+  {
+    "title": "Weekly Pulse overview",
+    "subheading": "Weekly summary of market movements and actions",
+    "slug": "weekly-pulse-overview",
+    "visibility": "public",
+    "category_slug": "weekly-pulse",
+    "meta_description": "Understand what Weekly Pulse includes and how to use it for strategic review.",
+    "related_article_slugs": ["manage-recommendation-status-and-checklists", "configure-alert-settings", "best-practices-for-high-signal-monitoring"],
+    "content": "Weekly Pulse provides a compact view of detected changes, top events, and recommendation highlights.\n\n### Use Weekly Pulse to\n- Spot trend-level movement beyond daily noise\n- Confirm which response strategies were used\n- Align commercial and growth decisions in weekly review"
+  },
+  {
+    "title": "Connect Shopify store",
+    "subheading": "Sync your store data for better recommendation context",
+    "slug": "connect-shopify-store",
+    "visibility": "public",
+    "category_slug": "shopify",
+    "meta_description": "Connect Shopify to OfferPulse and understand plan requirements and expected sync behavior.",
+    "related_article_slugs": ["manual-store-setup", "shopify-sync-troubleshooting", "plan-limits-and-feature-access"],
+    "content": "OfferPulse supports Shopify OAuth connection for richer store context.\n\n### Why connect Shopify\n- Better personalization for recommendations\n- Product/promo context for response strategy\n\n### Notes\nShopify access may be plan-gated depending on your subscription tier."
+  },
+  {
+    "title": "Manual store setup",
+    "subheading": "Configure your own store without Shopify connection",
+    "slug": "manual-store-setup",
+    "visibility": "public",
+    "category_slug": "shopify",
+    "meta_description": "Set up your store manually in OfferPulse when Shopify sync is not available or not needed.",
+    "related_article_slugs": ["connect-shopify-store", "best-practices-for-high-signal-monitoring"],
+    "content": "You can configure store context manually if you do not connect Shopify.\n\n### Best use cases\n- Non-Shopify or mixed-stack operations\n- Early setup before OAuth approvals\n- Teams that want lightweight context only\n\nManual setup still supports monitoring and recommendations, but with less automated enrichment."
+  },
+  {
+    "title": "Plan limits and feature access",
+    "subheading": "What changes across subscription tiers",
+    "slug": "plan-limits-and-feature-access",
+    "visibility": "public",
+    "category_slug": "plans",
+    "meta_description": "Understand OfferPulse plan differences, feature limits, and integration availability.",
+    "related_article_slugs": ["billing-overview", "connect-shopify-store", "workspace-and-seat-limits"],
+    "content": "Plans differ by usage limits, integration access, and team scale features.\n\n### Typical differences\n- Workspace/team capacity\n- Monitoring intensity/cadence\n- Advanced integrations (e.g., Shopify tier gating)\n- Premium capabilities by plan\n\nReview pricing in-app for current entitlements."
+  },
+  {
+    "title": "Billing overview",
+    "subheading": "Checkout, plan changes, cancellation, and reactivation",
+    "slug": "billing-overview",
+    "visibility": "public",
+    "category_slug": "invoices-payments",
+    "meta_description": "Learn how OfferPulse billing works, including checkout, plan changes, cancellations, and reactivation.",
+    "related_article_slugs": ["plan-limits-and-feature-access", "payment-failed-or-past-due", "access-after-cancellation"],
+    "content": "Billing uses Stripe-managed flows for checkout and payment management.\n\n### Supported actions\n- Start subscription checkout\n- Change plans (with schedule rules depending on state)\n- Cancel/reactivate\n- Open billing portal for payment methods and invoices\n\nSome state transitions are restricted (for example, during trial/past-due/scheduled change scenarios)."
+  },
+  {
+    "title": "Payment failed or past due",
+    "subheading": "Recover account billing health quickly",
+    "slug": "payment-failed-or-past-due",
+    "visibility": "public",
+    "category_slug": "invoices-payments",
+    "meta_description": "Fix failed payments or past-due status in OfferPulse and restore full access.",
+    "related_article_slugs": ["billing-overview", "access-after-cancellation"],
+    "content": "If your subscription is past due:\n\n1. Open billing portal\n2. Update payment method\n3. Retry payment / resolve invoices\n4. Confirm status is active\n\nIf access remains restricted after successful payment, contact support with workspace name and billing email."
+  },
+  {
+    "title": "Access after cancellation",
+    "subheading": "What happens at period end and how to resume",
+    "slug": "access-after-cancellation",
+    "visibility": "public",
+    "category_slug": "invoices-payments",
+    "meta_description": "Understand OfferPulse access behavior after cancellation and how to reactivate.",
+    "related_article_slugs": ["billing-overview", "payment-failed-or-past-due"],
+    "content": "Cancellation behavior depends on billing state and whether cancellation is immediate or period-end.\n\n### To resume service\n- Reactivate in billing settings if available\n- Or start a new checkout if previous subscription has ended"
+  },
+  {
+    "title": "Offer Snapshot free tool guide",
+    "subheading": "Analyze a competitor URL and read the report",
+    "slug": "offer-snapshot-tool-guide",
+    "visibility": "public",
+    "category_slug": "offer-snapshot-tool",
+    "meta_description": "Use the Offer Snapshot free tool to analyze competitor offers, pages, and opportunity signals.",
+    "related_article_slugs": ["offer-clarity-checker-guide", "offer-snapshot-common-errors", "what-is-offerpulse"],
+    "content": "The Offer Snapshot tool scans a competitor domain and compiles a concise report.\n\n### What you get\n- Offer structure summary\n- Score and priority cues\n- Page-level context and supporting evidence\n\n### Tips for best output\n- Use the primary storefront URL\n- Avoid temporary campaign links\n- Retry after major site updates"
+  },
+  {
+    "title": "Offer Clarity Checker guide",
+    "subheading": "Score message clarity and get improvement ideas",
+    "slug": "offer-clarity-checker-guide",
+    "visibility": "public",
+    "category_slug": "offer-clarity-checker",
+    "meta_description": "Run Offer Clarity Checker to evaluate messaging quality and receive AI-assisted recommendations.",
+    "related_article_slugs": ["offer-snapshot-tool-guide", "best-practices-for-high-signal-monitoring"],
+    "content": "Offer Clarity Checker evaluates how clearly a storefront communicates offer terms and next steps.\n\n### Expected output\n- Clarity score\n- Key issues and strengths\n- Suggested rewrites/improvements\n\nUse this before launching campaigns or redesigning offer presentation."
+  },
+  {
+    "title": "Login troubleshooting",
+    "subheading": "Fix common sign-in and session problems",
+    "slug": "login-troubleshooting",
+    "visibility": "public",
+    "category_slug": "troubleshooting",
+    "meta_description": "Troubleshoot common OfferPulse login issues for email/password and Google sign-in.",
+    "related_article_slugs": ["reset-your-password", "create-your-account-and-workspace"],
+    "content": "If login fails:\n\n1. Confirm you are signing in on the app domain\n2. Verify account method (Google vs password)\n3. Reset password if needed\n4. Disable aggressive browser privacy extensions temporarily\n\nIf still blocked, contact support with timestamp and email used."
+  },
+  {
+    "title": "Snapshot status and capture failures",
+    "subheading": "Why captures fail and how to recover",
+    "slug": "snapshot-status-and-failures",
+    "visibility": "public",
+    "category_slug": "troubleshooting",
+    "meta_description": "Learn common causes of snapshot capture failures and how to troubleshoot quickly.",
+    "related_article_slugs": ["trigger-manual-snapshot-capture", "understand-snapshots", "offer-snapshot-common-errors"],
+    "content": "Capture failures can happen due to target-site changes, anti-bot protections, or transient external service issues.\n\n### Recovery steps\n- Retry manual capture\n- Validate competitor URL and page availability\n- Reduce overly broad monitoring assumptions\n- Re-run after a short delay\n\nPersistent failures should be escalated to support."
+  },
+  {
+    "title": "Alerts not arriving",
+    "subheading": "Diagnose email/Slack notification gaps",
+    "slug": "alerts-not-arriving",
+    "visibility": "public",
+    "category_slug": "troubleshooting",
+    "meta_description": "Troubleshoot why OfferPulse alerts are not appearing in email or Slack.",
+    "related_article_slugs": ["configure-alert-settings", "test-alert-delivery", "connect-slack-for-alerts"],
+    "content": "Check these first:\n\n- Alert channels enabled\n- Event type included\n- Confidence threshold not too strict\n- Slack authorization still active\n- Email recipient correct and not filtered\n\nThen run a test alert to validate path end-to-end."
+  },
+  {
+    "title": "Shopify sync troubleshooting",
+    "subheading": "Resolve OAuth and store sync issues",
+    "slug": "shopify-sync-troubleshooting",
+    "visibility": "public",
+    "category_slug": "troubleshooting",
+    "meta_description": "Fix common Shopify connection and sync issues in OfferPulse.",
+    "related_article_slugs": ["connect-shopify-store", "manual-store-setup", "plan-limits-and-feature-access"],
+    "content": "If Shopify connection fails:\n\n1. Verify your plan allows Shopify integration\n2. Re-initiate OAuth from settings\n3. Confirm store domain format is correct\n4. Retry after clearing stale browser session state\n\nIf sync appears stale, reconnect and run a fresh sync cycle."
+  },
+  {
+    "title": "Best practices for high-signal monitoring",
+    "subheading": "Reduce noise and increase decision quality",
+    "slug": "best-practices-for-high-signal-monitoring",
+    "visibility": "public",
+    "category_slug": "known-limits-edge-cases",
+    "meta_description": "Apply OfferPulse best practices for cleaner signals, fewer false positives, and better response decisions.",
+    "related_article_slugs": ["configure-monitor-settings", "understand-confidence-levels", "understand-recommendation-strategies"],
+    "content": "### Recommended operating model\n- Start with top 3-5 strategic competitors\n- Use conservative confidence thresholds initially\n- Review recommendations daily, Weekly Pulse weekly\n- Document response playbooks by strategy type\n- Tune frequencies based on seasonality and campaign windows\n\n### Avoid\n- Over-monitoring long-tail competitors too early\n- Reacting to low-confidence events without context"
+  },
+  {
+    "title": "Offer Snapshot common errors",
+    "subheading": "Rate limits, URL issues, and analysis retries",
+    "slug": "offer-snapshot-common-errors",
+    "visibility": "public",
+    "category_slug": "offer-snapshot-tool",
+    "meta_description": "Troubleshoot common Offer Snapshot tool errors such as invalid URLs and temporary processing failures.",
+    "related_article_slugs": ["offer-snapshot-tool-guide", "snapshot-status-and-failures"],
+    "content": "Common causes of snapshot tool failure:\n- Invalid or blocked URL\n- Temporary service timeout\n- Rate-limit protection triggered\n\n### What to do\n- Ensure URL is valid and publicly reachable\n- Retry after a short wait\n- Use canonical domain URLs\n- Avoid repeatedly submitting the same URL in a short window"
+  },
+
+  {
+    "title": "Support runbook: triage billing tickets",
+    "subheading": "Internal workflow for payment and entitlement issues",
+    "slug": "support-runbook-billing-triage",
+    "visibility": "private",
+    "category_slug": "support-runbooks",
+    "meta_description": "Internal support runbook for triaging OfferPulse billing and plan entitlement requests.",
+    "related_article_slugs": ["billing-overview", "payment-failed-or-past-due", "plan-limits-and-feature-access"],
+    "content": "Internal checklist:\n1. Confirm workspace + billing email\n2. Verify subscription status and plan\n3. Check latest webhook/event sync timing\n4. Identify whether issue is payment, entitlement, or UI cache\n5. Provide next action and ETA\n\nEscalate if subscription state and access state diverge for >15 minutes."
+  },
+  {
+    "title": "Support runbook: triage monitoring accuracy tickets",
+    "subheading": "Internal checklist for false positives/negatives",
+    "slug": "support-runbook-monitoring-accuracy",
+    "visibility": "private",
+    "category_slug": "support-runbooks",
+    "meta_description": "Internal runbook for investigating OfferPulse monitoring accuracy issues.",
+    "related_article_slugs": ["how-change-detection-works", "understand-confidence-levels", "snapshot-status-and-failures"],
+    "content": "Internal checklist:\n1. Gather competitor URL + event IDs + timestamps\n2. Review snapshot history around reported window\n3. Validate extracted fields and detection thresholds\n4. Compare confidence distribution\n5. Recommend settings change or escalation to engineering\n\nCommunicate clearly whether issue is extraction quality, detection logic, or notification filtering."
+  },
+  {
+    "title": "tawk chat support setup",
+    "subheading": "How OfferPulse support chat is configured",
+    "slug": "tawk-chat-support-setup",
+    "visibility": "private",
+    "category_slug": "tawk-chat-support",
+    "meta_description": "Internal guide for OfferPulse tawk chat widget setup, webhook signature verification, and notification flow.",
+    "related_article_slugs": ["support-runbook-billing-triage", "alerts-not-arriving"],
+    "content": "Internal setup includes:\n- Widget embed on marketing + app surfaces\n- Webhook endpoint for chat:start events\n- HMAC-SHA1 verification using x-tawk-signature\n- Email notification routing for new chat starts\n\nIf notifications fail, verify webhook secret match and header signature first."
+  }
+]

@@ -1,6 +1,15 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  TOUR_ID,
+  captureDashboardTourCompleted,
+  captureDashboardTourSkipped,
+  captureDashboardTourStarted,
+  captureDashboardTourStepAdvanced,
+  captureDashboardTourStepViewed,
+  stepKeyAtIndex,
+} from "@/lib/dashboard-tour-analytics";
 import { useTRPC } from "@/src/lib/trpc/client";
 import { pendingTourStart$ } from "@/src/stores/tour-state";
 import { use$ } from "@legendapp/state/react";
@@ -11,7 +20,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react"
 import type { SpotlightStep } from "react-tourlight";
 import { SpotlightTour, useSpotlight } from "react-tourlight";
 
-export const TOUR_ID = "dashboard-tour";
+export { TOUR_ID } from "@/lib/dashboard-tour-analytics";
 
 /**
  * Multi-page tour steps.
@@ -122,11 +131,12 @@ function useStableTourSteps(): SpotlightStep[] {
 function TourController() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { start } = useSpotlight();
+  const { start, isActive, activeTourId, currentStep, totalSteps } = useSpotlight();
   const router = useRouter();
   const pathname = usePathname();
   const startedRef = useRef(false);
   const pendingStart = use$(pendingTourStart$);
+  const lastLoggedStepRef = useRef<number | null>(null);
 
   const { data: profile, isSuccess } = useQuery({
     ...trpc.users.getProfile.queryOptions(),
@@ -152,7 +162,10 @@ function TourController() {
     if (profile.hasSeenTour) return;
 
     startedRef.current = true;
-    const timer = setTimeout(() => start(TOUR_ID), 900);
+    const timer = setTimeout(() => {
+      captureDashboardTourStarted("auto_first_visit");
+      start(TOUR_ID);
+    }, 900);
     return () => clearTimeout(timer);
   }, [isSuccess, profile?.hasSeenTour, start]);
 
@@ -165,14 +178,38 @@ function TourController() {
     // Navigate home first so the first step starts in the expected context.
     if (pathname !== "/") router.push("/");
 
-    const timer = setTimeout(() => start(TOUR_ID), 1200);
+    const timer = setTimeout(() => {
+      captureDashboardTourStarted("settings_restart");
+      start(TOUR_ID);
+    }, 1200);
     return () => clearTimeout(timer);
   }, [pendingStart, start, pathname, router]);
+
+  useEffect(() => {
+    if (!isActive || activeTourId !== TOUR_ID) {
+      lastLoggedStepRef.current = null;
+      return;
+    }
+    if (totalSteps < 1) return;
+    if (lastLoggedStepRef.current === currentStep) return;
+    lastLoggedStepRef.current = currentStep;
+    captureDashboardTourStepViewed({
+      step_index: currentStep,
+      step_key: stepKeyAtIndex(currentStep),
+      total_steps: totalSteps,
+    });
+  }, [isActive, activeTourId, currentStep, totalSteps]);
 
   // Mark as seen when tour completes or is skipped
   // Must be referentially stable: SpotlightTour re-runs register/unregister when onComplete/onSkip change,
   // which would tear down an active tour mid-step.
-  const handleDone = useCallback(() => {
+  const handleComplete = useCallback(() => {
+    captureDashboardTourCompleted();
+    markTourSeenMutateRef.current({ seen: true });
+  }, []);
+
+  const handleSkip = useCallback((stepIndex: number) => {
+    captureDashboardTourSkipped(stepIndex);
     markTourSeenMutateRef.current({ seen: true });
   }, []);
 
@@ -235,16 +272,29 @@ function TourController() {
             Skip tour
           </button>
 
-          <Button size="sm" onClick={next} className="h-8 gap-1 px-3 text-xs">
-            {currentIndex < totalSteps - 1 ? (
-              <>
-                Next
-                <ArrowRight className="h-3 w-3" />
-              </>
-            ) : (
-              "Get started"
-            )}
-          </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                const isFinal = currentIndex >= totalSteps - 1;
+                captureDashboardTourStepAdvanced({
+                  from_step_index: currentIndex,
+                  from_step_key: stepKeyAtIndex(currentIndex),
+                  to_step_index: isFinal ? currentIndex : currentIndex + 1,
+                  is_final_click: isFinal,
+                });
+                next();
+              }}
+              className="h-8 gap-1 px-3 text-xs"
+            >
+              {currentIndex < totalSteps - 1 ? (
+                <>
+                  Next
+                  <ArrowRight className="h-3 w-3" />
+                </>
+              ) : (
+                "Get started"
+              )}
+            </Button>
         </div>
       </div>
     ),
@@ -255,8 +305,8 @@ function TourController() {
     <SpotlightTour
       id={TOUR_ID}
       steps={steps}
-      onComplete={handleDone}
-      onSkip={handleDone}
+      onComplete={handleComplete}
+      onSkip={handleSkip}
       renderTooltip={renderTooltip}
     />
   );

@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTRPC } from "@/src/lib/trpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSpotlight } from "react-tourlight";
-import { TOUR_ID } from "@/components/onboarding/onboarding-tour";
+import { TOUR_ID } from "@/lib/dashboard-tour-analytics";
 import { clearTourState, pendingTourStart$ } from "@/src/stores/tour-state";
 import { Lock, Map } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
