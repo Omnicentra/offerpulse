@@ -383,7 +383,11 @@ export function getAllToolSlugs(): string[] {
 }
 
 /** Tool slugs that have a dedicated tool page and API implemented */
-export const IMPLEMENTED_TOOL_SLUGS = ["offer-snapshot", "offer-clarity-check"] as const;
+export const IMPLEMENTED_TOOL_SLUGS = [
+  "offer-snapshot",
+  "offer-clarity-check",
+  "discount-detector",
+] as const;
 
 export function isToolImplemented(slug: string): boolean {
   return IMPLEMENTED_TOOL_SLUGS.includes(slug as (typeof IMPLEMENTED_TOOL_SLUGS)[number]);

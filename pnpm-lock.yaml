@@ -244,7 +244,7 @@ importers:
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.72.1(react@18.3.1))
       '@mendable/firecrawl-js':
-        specifier: ^4.13.2
+        specifier: ^4.18.1
         version: 4.18.1
       '@offerpulse/lib':
         specifier: workspace:*

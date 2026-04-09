@@ -43,6 +43,21 @@ export const offerSnapshotPreviewSchema = z.object({
 export type OfferSnapshotPreviewInput = z.infer<typeof offerSnapshotPreviewSchema>
 
 /**
+ * Discount & Code Detector tool — POST body
+ */
+export const discountDetectorRequestSchema = z.object({
+  url: z
+    .string()
+    .min(1, "URL is required")
+    .transform((val) =>
+      val.startsWith("http://") || val.startsWith("https://") ? val : `https://${val}`,
+    )
+    .refine(isValidStoreUrl, { message: "Invalid URL format" }),
+});
+
+export type DiscountDetectorRequestInput = z.infer<typeof discountDetectorRequestSchema>;
+
+/**
  * Sign up form validation
  */
 export const signUpSchema = z.object({
