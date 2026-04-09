@@ -43,7 +43,7 @@ export const offerSnapshotPreviewSchema = z.object({
 export type OfferSnapshotPreviewInput = z.infer<typeof offerSnapshotPreviewSchema>
 
 /**
- * Discount & Code Detector tool — POST body
+ * Discount Detector tool — POST body
  */
 export const discountDetectorRequestSchema = z.object({
   url: z

@@ -1,15 +1,13 @@
 /**
- * Second-phase screenshots for the Discount Detector: after Agent returns structured offers,
- * we scrape only a small set of same-origin URLs with `formats: ["screenshot"]`.
- * Each call consumes Firecrawl credits (one per page) — keep the URL list capped.
+ * Second-phase screenshots for the Discount Detector: after extraction, scrape a small set of
+ * same-origin URLs with `formats: ["screenshot"]`. Each call uses one Firecrawl scrape credit.
  */
 
 import { logger } from "@/lib/logger";
 import type { DiscountDetectorFindings } from "@/lib/tools/discount-detector-extraction";
-import { scrapeWithFirecrawl } from "@/lib/tools/firecrawl";
+import { scrapeWithFirecrawl, FIRECRAWL_CONCURRENCY } from "@/lib/tools/firecrawl";
 
 export const DISCOUNT_DETECTOR_MAX_SCREENSHOT_URLS = 5;
-export const DISCOUNT_DETECTOR_SCREENSHOT_CONCURRENCY = 3;
 
 export interface DiscountDetectorPageScreenshot {
   url: string;
@@ -48,7 +46,6 @@ export function pickDiscountDetectorScreenshotUrls(
   add(storeUrl);
 
   for (const o of findings.offers) add(o.sourceUrl);
-  for (const p of findings.promoCodes) add(p.sourceUrl);
 
   const list = [...seen];
   const isHomePath = (pathname: string) => pathname === "/" || pathname === "";
@@ -68,10 +65,8 @@ export async function scrapeDiscountDetectorScreenshots(
   urls: string[],
 ): Promise<DiscountDetectorPageScreenshot[]> {
   const out: DiscountDetectorPageScreenshot[] = [];
-  const concurrency = DISCOUNT_DETECTOR_SCREENSHOT_CONCURRENCY;
-
-  for (let i = 0; i < urls.length; i += concurrency) {
-    const batch = urls.slice(i, i + concurrency);
+  for (let i = 0; i < urls.length; i += FIRECRAWL_CONCURRENCY) {
+    const batch = urls.slice(i, i + FIRECRAWL_CONCURRENCY);
     const chunk = await Promise.all(
       batch.map(async (url) => {
         const r = await scrapeWithFirecrawl(url, {

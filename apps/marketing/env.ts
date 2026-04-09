@@ -64,9 +64,11 @@ export const env = createEnv({
     UPSTASH_REDIS_REST_TOKEN: z
       .string()
       .min(1, "UPSTASH_REDIS_REST_TOKEN is required for rate limiting"),
-    /** Max Firecrawl Agent credits per Discount Detector request (50–2500). Default 450 in code when unset. */
-    DISCOUNT_DETECTOR_AGENT_MAX_CREDITS: z.coerce.number().int().min(50).max(2500).optional(),
-    /** When "true", failed/empty Agent runs fall back to HTML/regex extraction (one scrape). */
+    /** Max URLs returned from Firecrawl /map for Discount Detector (10–500). */
+    DISCOUNT_DETECTOR_MAP_LIMIT: z.coerce.number().int().min(10).max(500).optional(),
+    /** Max same-origin pages to /scrape after map (1–25). */
+    DISCOUNT_DETECTOR_SCRAPE_PAGES: z.coerce.number().int().min(1).max(25).optional(),
+    /** When "true", empty map/scrape results fall back to a direct HTML fetch + heuristics. */
     DISCOUNT_DETECTOR_REGEX_FALLBACK: z.enum(["true", "false"]).optional(),
   },
   clientPrefix: "NEXT_PUBLIC_",
@@ -106,7 +108,8 @@ export const env = createEnv({
     FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
-    DISCOUNT_DETECTOR_AGENT_MAX_CREDITS: process.env.DISCOUNT_DETECTOR_AGENT_MAX_CREDITS,
+    DISCOUNT_DETECTOR_MAP_LIMIT: process.env.DISCOUNT_DETECTOR_MAP_LIMIT,
+    DISCOUNT_DETECTOR_SCRAPE_PAGES: process.env.DISCOUNT_DETECTOR_SCRAPE_PAGES,
     DISCOUNT_DETECTOR_REGEX_FALLBACK: process.env.DISCOUNT_DETECTOR_REGEX_FALLBACK,
     NEXT_PUBLIC_TAWK_PROPERTY_ID: process.env.NEXT_PUBLIC_TAWK_PROPERTY_ID,
     NEXT_PUBLIC_TAWK_WIDGET_ID: process.env.NEXT_PUBLIC_TAWK_WIDGET_ID,

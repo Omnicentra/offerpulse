@@ -18,6 +18,7 @@ import {
   scrapeWithFirecrawl,
   buildScrollActions,
   buildCheckoutFlowActions,
+  FIRECRAWL_CONCURRENCY,
 } from "@/lib/tools/firecrawl";
 import { filterRelevantUrls, pickProductUrl } from "@/lib/tools/url-filter";
 import {
@@ -141,7 +142,6 @@ export async function POST(request: Request) {
     });
 
     // PHASE 3: Scraping with concurrency limit (Firecrawl API)
-    const FIRECRAWL_CONCURRENCY = 3;
     const scrapeStart = Date.now();
     logger.debug("[offer-snapshot] starting scraping with concurrency limit", {
       urlCount: filteredUrls.length,

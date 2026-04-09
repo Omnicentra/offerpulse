@@ -14,6 +14,9 @@ export interface DiscoveredUrl {
   description?: string;
 }
 
+/** Max concurrent Firecrawl /scrape requests when processing multiple URLs (offer snapshot, discount detector, etc.). */
+export const FIRECRAWL_CONCURRENCY = 2;
+
 // ─── Scrape types ────────────────────────────────────────────────────────────
 
 export type FirecrawlAction =

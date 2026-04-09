@@ -52,7 +52,7 @@ export const tools: Tool[] = [
     isFeatured: true,
     features: [
       "Detects free shipping thresholds automatically",
-      "Extracts discount percentages and promo codes",
+      "Extracts discount percentages and offer copy",
       "Identifies bundle offers (BOGO, multi-buy)",
       "Finds gift with purchase offers",
       "Spots cart progress incentives",

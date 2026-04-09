@@ -17,14 +17,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { normalizeUrl, validateUrl } from "@/lib/url-helpers";
 import {
@@ -67,13 +59,11 @@ function isBundleHint(
 function OfferRow({
   evidenceText,
   locationHint,
-  associatedCode,
   subtitle,
   sourceUrl,
 }: {
   evidenceText: string;
   locationHint: string;
-  associatedCode?: string;
   subtitle?: string;
   sourceUrl?: string;
 }) {
@@ -85,11 +75,6 @@ function OfferRow({
         <Badge variant="outline" className="text-xs font-normal">
           {locationHint}
         </Badge>
-        {associatedCode ? (
-          <Badge className="bg-violet-600 font-mono text-xs hover:bg-violet-700">
-            {associatedCode}
-          </Badge>
-        ) : null}
         {sourceUrl ? (
           <a
             href={sourceUrl}
@@ -164,18 +149,15 @@ export function DiscountDetectorToolClient({ urlParam }: DiscountDetectorToolCli
         tool_slug: "discount-detector",
         analyzed_url: normalizedUrl,
         offers_found: data.offers.length,
-        promo_codes_found: data.promoCodes.length,
         summary_percentage: data.summary.percentageCount,
         summary_fixed: data.summary.fixedAmountCount,
         summary_bundle_hints: data.summary.bundleHintCount,
-        summary_codes: data.summary.promoCodeCount,
         has_percentage: kinds.has("percentage"),
         has_fixed_amount: kinds.has("fixed_amount"),
         has_bundle_hint: kinds.has("bundle_hint"),
         schema_version: data.schemaVersion,
         page_screenshots_count: data.pageScreenshots?.length ?? 0,
         warnings_count: data.warnings?.length ?? 0,
-        agent_credits_used: data.agentCreditsUsed,
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred";
@@ -237,11 +219,11 @@ export function DiscountDetectorToolClient({ urlParam }: DiscountDetectorToolCli
         </div>
 
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-          <h2 className="mb-2 text-3xl font-bold text-slate-900">Discount &amp; code report</h2>
+          <h2 className="mb-2 text-3xl font-bold text-slate-900">Discount report</h2>
           <p className="mb-4 text-slate-600">
-            AI-assisted scan (Firecrawl Agent) of public storefront pages for visible percentage off,
-            fixed-amount deals, bundle-style copy, and advertised promo codes. Cart-only or
-            email-exclusive offers may not appear.
+            We map public storefront URLs, scrape prioritized pages, and scan HTML for visible
+            percentage-off messaging, fixed-amount deals, and bundle-style copy. Cart-only or
+            checkout-only offers may not appear.
           </p>
 
           {result.warnings.length > 0 ? (
@@ -250,9 +232,6 @@ export function DiscountDetectorToolClient({ urlParam }: DiscountDetectorToolCli
                 <CardTitle className="text-base text-amber-950">Notes</CardTitle>
                 <CardDescription className="text-amber-900/80">
                   Schema v{result.schemaVersion}
-                  {result.agentCreditsUsed != null
-                    ? ` · ~${result.agentCreditsUsed} agent credits`
-                    : null}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -265,7 +244,7 @@ export function DiscountDetectorToolClient({ urlParam }: DiscountDetectorToolCli
             </Card>
           ) : null}
 
-          <div className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Card className="border-violet-100 bg-violet-50/50">
               <CardContent className="flex items-center gap-3 pt-6">
                 <Percent className="h-8 w-8 text-violet-600" />
@@ -293,15 +272,6 @@ export function DiscountDetectorToolClient({ urlParam }: DiscountDetectorToolCli
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-slate-200 bg-slate-50/50">
-              <CardContent className="flex items-center gap-3 pt-6">
-                <Tag className="h-8 w-8 text-slate-600" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{result.summary.promoCodeCount}</p>
-                  <p className="text-sm text-slate-600">Promo codes</p>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           <div className="mb-10">
@@ -321,7 +291,6 @@ export function DiscountDetectorToolClient({ urlParam }: DiscountDetectorToolCli
                       key={`p-${i}`}
                       evidenceText={o.evidenceText}
                       locationHint={o.locationHint}
-                      associatedCode={o.associatedCode}
                       sourceUrl={o.sourceUrl}
                     />
                   ))
@@ -336,7 +305,6 @@ export function DiscountDetectorToolClient({ urlParam }: DiscountDetectorToolCli
                       key={`f-${i}`}
                       evidenceText={o.evidenceText}
                       locationHint={o.locationHint}
-                      associatedCode={o.associatedCode}
                       subtitle={`Parsed amount: ${o.currency}${o.value}`}
                       sourceUrl={o.sourceUrl}
                     />
@@ -358,69 +326,6 @@ export function DiscountDetectorToolClient({ urlParam }: DiscountDetectorToolCli
                 )}
               </TabsContent>
             </Tabs>
-          </div>
-
-          <div className="mb-10">
-            <h3 className="mb-4 text-xl font-semibold text-slate-900">Promo codes</h3>
-            {result.promoCodes.length === 0 ? (
-              <p className="text-sm text-slate-500">No promo codes found in visible copy.</p>
-            ) : (
-              <Card>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Code</TableHead>
-                      <TableHead>Context</TableHead>
-                      <TableHead>Where</TableHead>
-                      <TableHead>Page</TableHead>
-                      <TableHead className="w-[100px]">Confidence</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {result.promoCodes.map((row, i) => (
-                      <TableRow key={`${row.code}-${i}`}>
-                        <TableCell className="font-mono font-semibold text-violet-700">{row.code}</TableCell>
-                        <TableCell className="max-w-md text-sm text-slate-600">{row.evidenceText}</TableCell>
-                        <TableCell className="text-sm text-slate-500">{row.locationHint}</TableCell>
-                        <TableCell className="text-sm">
-                          {row.sourceUrl ? (
-                            <a
-                              href={row.sourceUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-violet-600 hover:underline"
-                            >
-                              Open
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {row.confidence ? (
-                            <Badge
-                              variant="outline"
-                              className={
-                                row.confidence === "high"
-                                  ? "border-green-300 text-green-800"
-                                  : row.confidence === "medium"
-                                    ? "border-amber-300 text-amber-800"
-                                    : "border-slate-300 text-slate-600"
-                              }
-                            >
-                              {row.confidence}
-                            </Badge>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Card>
-            )}
           </div>
 
           {result.pageScreenshots.length > 0 ? (
@@ -480,7 +385,7 @@ export function DiscountDetectorToolClient({ urlParam }: DiscountDetectorToolCli
               <Sparkles className="mx-auto h-12 w-12 text-violet-600" />
               <h2 className="mt-4 text-2xl font-bold text-slate-900">Monitor competitors automatically</h2>
               <p className="mt-3 text-slate-700">
-                Get alerts when competitor discounts and codes change — no manual rescans.
+                Get alerts when competitor discounts and offers change — no manual rescans.
               </p>
               <Button asChild size="lg" className="mt-6">
                 <Link href="/">Start monitoring</Link>
@@ -501,7 +406,7 @@ export function DiscountDetectorToolClient({ urlParam }: DiscountDetectorToolCli
           </Link>
           <span>/</span>
           <Link href="/free-tools/discount-detector" className="hover:text-slate-900">
-            Discount &amp; Code Detector
+            Discount Detector
           </Link>
           <span>/</span>
           <span className="text-slate-900">Tool</span>
@@ -513,11 +418,9 @@ export function DiscountDetectorToolClient({ urlParam }: DiscountDetectorToolCli
               <Percent className="h-6 w-6 text-violet-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-                Discount &amp; Code Detector
-              </h1>
+              <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Discount Detector</h1>
               <p className="mt-1 text-sm text-slate-600">
-                AI-assisted detection of visible discounts and codes on public store pages
+                Detect visible discount messaging by mapping the site and analysing public HTML
               </p>
             </div>
           </div>
@@ -553,7 +456,7 @@ export function DiscountDetectorToolClient({ urlParam }: DiscountDetectorToolCli
                         Scanning…
                       </>
                     ) : (
-                      "Detect discounts & codes"
+                      "Detect discounts"
                     )}
                   </Button>
                 </form>
@@ -574,7 +477,7 @@ export function DiscountDetectorToolClient({ urlParam }: DiscountDetectorToolCli
                   href="/free-tools/discount-detector"
                   className="flex items-center gap-2 text-violet-700 hover:underline"
                 >
-                  Learn more about Discount &amp; Code Detector
+                  Learn more about Discount Detector
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </CardContent>

@@ -1,8 +1,9 @@
 /**
- * Discount & Code Detector API — v1 response shape.
+ * Discount Detector API — v3 response shape.
  *
- * Pipeline: (1) Firecrawl Agent (structured JSON), (2) optional regex/HTML fallback,
- * (3) capped screenshot scrapes for same-origin evidence URLs.
+ * Pipeline: (1) Firecrawl /map for same-origin URL discovery, (2) /scrape on a capped,
+ * prioritized URL list + HTML/heuristic extraction (offers only — no promo codes),
+ * (3) optional simple fetch fallback, (4) capped screenshot scrapes for evidence URLs.
  * Bump DISCOUNT_DETECTOR_RESPONSE_VERSION when changing JSON fields consumers rely on.
  */
 
@@ -10,48 +11,31 @@ import { NextResponse } from "next/server";
 import { env } from "@/env";
 import { logger } from "@/lib/logger";
 import { discountDetectorRequestSchema } from "@/lib/validators";
-import {
-  agentOutputToFindings,
-  parseDiscountDetectorAgentData,
-} from "@/lib/tools/discount-detector-agent-schema";
 import { extractDiscountDetectorFindings } from "@/lib/tools/discount-detector-extraction";
+import { runDiscountDetectorMapScrape } from "@/lib/tools/discount-detector-map-scrape";
 import {
   pickDiscountDetectorScreenshotUrls,
   scrapeDiscountDetectorScreenshots,
   type DiscountDetectorPageScreenshot,
 } from "@/lib/tools/discount-detector-screenshots";
-import { runDiscountDetectorAgent } from "@/lib/tools/firecrawl-discount-agent";
 import { fetchStoreHtml } from "@/lib/tools/scraper";
 import { rateLimiter, getClientIdentifier } from "@/lib/tools/rate-limit";
 import type {
   DetectedDiscountOffer,
-  DetectedPromoCode,
   DiscountDetectorFindings,
   DiscountDetectorSummary,
 } from "@/lib/tools/discount-detector-extraction";
 
-export type { DetectedDiscountOffer, DetectedPromoCode, DiscountDetectorSummary };
+export type { DetectedDiscountOffer, DiscountDetectorSummary };
 
-/** Increment when `DiscountDetectorResponse` fields or Agent output mapping change meaningfully. */
-export const DISCOUNT_DETECTOR_RESPONSE_VERSION = 1;
+/** Increment when `DiscountDetectorResponse` fields or pipeline outputs change meaningfully. */
+export const DISCOUNT_DETECTOR_RESPONSE_VERSION = 3;
 
-const DEFAULT_AGENT_MAX_CREDITS = 400;
-
-function emptyFindings(): DiscountDetectorFindings {
-  return {
-    offers: [],
-    promoCodes: [],
-    summary: {
-      percentageCount: 0,
-      fixedAmountCount: 0,
-      promoCodeCount: 0,
-      bundleHintCount: 0,
-    },
-  };
-}
+const DEFAULT_MAP_LIMIT = 100;
+const DEFAULT_SCRAPE_PAGES = 10;
 
 function hasAnyFindings(f: DiscountDetectorFindings): boolean {
-  return f.offers.length > 0 || f.promoCodes.length > 0;
+  return f.offers.length > 0;
 }
 
 export interface DiscountDetectorResponse {
@@ -59,10 +43,8 @@ export interface DiscountDetectorResponse {
   url: string;
   timestamp: string;
   offers: DetectedDiscountOffer[];
-  promoCodes: DetectedPromoCode[];
   summary: DiscountDetectorSummary;
   pageScreenshots: DiscountDetectorPageScreenshot[];
-  agentCreditsUsed?: number;
   warnings: string[];
 }
 
@@ -115,32 +97,20 @@ export async function POST(request: Request) {
     const storeUrl = parsed.data.url;
     logger.debug("[discount-detector] target url", { url: storeUrl });
 
-    const maxCredits = env.DISCOUNT_DETECTOR_AGENT_MAX_CREDITS ?? DEFAULT_AGENT_MAX_CREDITS;
+    const mapLimit = env.DISCOUNT_DETECTOR_MAP_LIMIT ?? DEFAULT_MAP_LIMIT;
+    const maxScrapePages = env.DISCOUNT_DETECTOR_SCRAPE_PAGES ?? DEFAULT_SCRAPE_PAGES;
     const regexFallbackEnabled = env.DISCOUNT_DETECTOR_REGEX_FALLBACK === "true";
 
     const warnings: string[] = [];
-    let agentCreditsUsed: number | undefined;
-    let findings: DiscountDetectorFindings = emptyFindings();
 
-    const agentResult = await runDiscountDetectorAgent({
+    const mapScrape = await runDiscountDetectorMapScrape({
       storeUrl,
-      maxCredits,
-      timeoutSeconds: 180,
+      mapLimit,
+      maxScrapePages,
     });
+    warnings.push(...mapScrape.warnings);
 
-    if (agentResult.creditsUsed !== undefined) {
-      agentCreditsUsed = agentResult.creditsUsed;
-    }
-
-    if (agentResult.ok && agentResult.data !== undefined && agentResult.data !== null) {
-      const { output, warnings: parseWarnings } = parseDiscountDetectorAgentData(agentResult.data);
-      warnings.push(...parseWarnings);
-      findings = agentOutputToFindings(output, storeUrl);
-    } else {
-      const msg = agentResult.error ?? "Firecrawl Agent did not return usable data.";
-      warnings.push(msg);
-      logger.warn("[discount-detector] agent path incomplete", { storeUrl, error: msg });
-    }
+    let findings: DiscountDetectorFindings = mapScrape.findings;
 
     if (!hasAnyFindings(findings) && regexFallbackEnabled) {
       try {
@@ -152,9 +122,9 @@ export async function POST(request: Request) {
           fetchMs: Date.now() - fetchStart,
         });
         findings = extractDiscountDetectorFindings(html, finalUrl);
-        warnings.push("Used HTML/regex fallback because Agent returned no structured results or failed.");
+        warnings.push("Used direct HTML fetch + heuristics because map/scrape found no offers.");
       } catch (fallbackErr) {
-        const m = fallbackErr instanceof Error ? fallbackErr.message : "Fallback scrape failed";
+        const m = fallbackErr instanceof Error ? fallbackErr.message : "Fallback fetch failed";
         warnings.push(m);
         logger.error("[discount-detector] regex fallback failed", { storeUrl, error: fallbackErr });
       }
@@ -164,15 +134,18 @@ export async function POST(request: Request) {
     const pageScreenshots =
       screenshotUrls.length > 0 ? await scrapeDiscountDetectorScreenshots(screenshotUrls) : [];
 
+    let firecrawlCreditsUsed = mapScrape.firecrawlCreditsUsed;
+    if (pageScreenshots.length > 0) {
+      firecrawlCreditsUsed += pageScreenshots.length;
+    }
+
     const result: DiscountDetectorResponse = {
       schemaVersion: DISCOUNT_DETECTOR_RESPONSE_VERSION,
       url: storeUrl,
       timestamp: new Date().toISOString(),
       offers: findings.offers,
-      promoCodes: findings.promoCodes,
       summary: findings.summary,
       pageScreenshots,
-      agentCreditsUsed,
       warnings,
     };
 
@@ -181,6 +154,7 @@ export async function POST(request: Request) {
       totalMs: Date.now() - startTime,
       ...findings.summary,
       screenshots: pageScreenshots.length,
+      firecrawlCreditsUsed,
     });
 
     return NextResponse.json(result, { headers });

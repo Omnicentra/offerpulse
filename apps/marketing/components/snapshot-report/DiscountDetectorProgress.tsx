@@ -5,11 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, CheckCircle2 } from "lucide-react";
 
 const steps = [
-  { id: 1, label: "Fetching storefront…", duration: 1500 },
-  { id: 2, label: "Scanning for percentage discounts…", duration: 1800 },
-  { id: 3, label: "Detecting fixed amounts & promo codes…", duration: 1600 },
-  { id: 4, label: "Checking structured data…", duration: 1200 },
-  { id: 5, label: "Building your report…", duration: 1000 },
+  { id: 1, label: "Mapping store URLs…", duration: 2500 },
+  { id: 2, label: "Scraping prioritized pages…", duration: 4000 },
+  { id: 3, label: "Scanning for discount messaging…", duration: 2200 },
+  { id: 4, label: "Checking structured data…", duration: 1400 },
+  { id: 5, label: "Building your report…", duration: 1200 },
 ];
 
 export function DiscountDetectorProgress() {
@@ -37,7 +37,7 @@ export function DiscountDetectorProgress() {
           <div className="text-center">
             <Loader2 className="mx-auto h-12 w-12 animate-spin text-violet-600" />
             <h3 className="mt-4 text-xl font-semibold text-slate-900">
-              Scanning for discounts & codes…
+              Scanning for discounts…
             </h3>
           </div>
           <ul className="space-y-3">

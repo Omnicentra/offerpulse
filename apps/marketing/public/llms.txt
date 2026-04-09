@@ -26,7 +26,7 @@ We offer free competitive analysis tools:
 
 1. Competitor Offer Snapshot - Extract all visible offers from any store
 2. Free Shipping Threshold Finder - Detect shipping requirements automatically  
-3. Discount & Code Detector - Find active promotions and codes
+3. Discount Detector - Find visible discount and sale messaging on public pages
 4. Offer Clarity Checker - Score your store's promotional clarity
 5. Cart Incentive Analyser - Detect progress bars and unlock thresholds
 6. Bundle Ideas Generator - Get bundle offer suggestions

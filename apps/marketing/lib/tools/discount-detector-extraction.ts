@@ -1,18 +1,15 @@
 /**
- * Discount & promo code extraction for the free Discount Detector tool.
- * HTML + JSON-LD heuristics (no vision).
+ * Discount-oriented extraction for the free Discount Detector tool.
+ * HTML + JSON-LD heuristics (no vision). Does not infer promo codes.
  */
 
 import * as cheerio from "cheerio";
-
-export type PromoCodeConfidence = "high" | "medium" | "low";
 
 export interface DiscountDetectorPercentageOffer {
   kind: "percentage";
   value: number;
   evidenceText: string;
   locationHint: string;
-  associatedCode?: string;
   /** Page URL where the offer was seen (when known). */
   sourceUrl?: string;
 }
@@ -23,7 +20,6 @@ export interface DiscountDetectorFixedOffer {
   currency: string;
   evidenceText: string;
   locationHint: string;
-  associatedCode?: string;
   sourceUrl?: string;
 }
 
@@ -39,65 +35,16 @@ export type DetectedDiscountOffer =
   | DiscountDetectorFixedOffer
   | DiscountDetectorBundleHint;
 
-export interface DetectedPromoCode {
-  code: string;
-  evidenceText: string;
-  locationHint: string;
-  confidence?: PromoCodeConfidence;
-  sourceUrl?: string;
-}
-
 export interface DiscountDetectorSummary {
   percentageCount: number;
   fixedAmountCount: number;
-  promoCodeCount: number;
   bundleHintCount: number;
 }
 
 export interface DiscountDetectorFindings {
   offers: DetectedDiscountOffer[];
-  promoCodes: DetectedPromoCode[];
   summary: DiscountDetectorSummary;
 }
-
-const CODE_BLOCKLIST = new Set(
-  [
-    "SAVE",
-    "SHOP",
-    "SALE",
-    "FREE",
-    "CART",
-    "HOME",
-    "MENU",
-    "NEXT",
-    "PREV",
-    "VIEW",
-    "SHOPNOW",
-    "BUY",
-    "ITEM",
-    "ITEMS",
-    "SIZE",
-    "COLOR",
-    "ADD",
-    "USD",
-    "GBP",
-    "EUR",
-    "HTML",
-    "HTTP",
-    "HTTPS",
-    "WWW",
-    "JSON",
-    "NULL",
-    "TRUE",
-    "FALSE",
-    "EMAIL",
-    "CLICK",
-    "HERE",
-    "READ",
-    "MORE",
-    "LESS",
-  ].map((s) => s.toUpperCase()),
-);
 
 const PERCENTAGE_PATTERNS: RegExp[] = [
   /(?:up\s+to\s+)?(\d+)%\s+off/gi,
@@ -134,14 +81,6 @@ const BUNDLE_PATTERNS: RegExp[] = [
   /\d+\s+for\s+the\s+price\s+of\s+\d+/gi,
   /bogo/gi,
   /buy\s+one\s+get\s+one/gi,
-];
-
-const CODE_LINE_PATTERNS: RegExp[] = [
-  /(?:promo|discount|coupon|voucher)\s+code\s*[:\s]\s*['"]?([A-Z0-9][A-Z0-9-]{2,18})['"]?/gi,
-  /(?:use|enter|apply)\s+(?:the\s+)?code\s*[:\s]\s*['"]?([A-Z0-9][A-Z0-9-]{2,18})['"]?/gi,
-  /code\s*[:\s]\s*['"]([A-Z0-9][A-Z0-9-]{2,18})['"]/gi,
-  /(?:code|promo|coupon)\s*[:\s]+\s*([A-Z0-9]{4,20})\b/gi,
-  /\b([A-Z0-9]{4,15})\s+at\s+checkout/gi,
 ];
 
 function normalizeEvidence(text: string): string {
@@ -187,43 +126,6 @@ function determineLocation(
   const footerText = $("footer, [role='contentinfo'], .footer").text();
   if (footerText.includes(matchText)) return "Footer";
   return "Page content";
-}
-
-function isLikelyPromoCode(raw: string): boolean {
-  const code = raw.trim().toUpperCase();
-  if (code.length < 4 || code.length > 20) return false;
-  if (!/^[A-Z0-9]+(?:-[A-Z0-9]+)*$/.test(code)) return false;
-  if (CODE_BLOCKLIST.has(code)) return false;
-  if (/^#?[0-9A-F]{3,8}$/i.test(code)) return false;
-  if (/^\d+$/.test(code) && code.length > 6) return false;
-  return true;
-}
-
-function codeConfidence(line: string): PromoCodeConfidence {
-  const l = line.toLowerCase();
-  if (/promo|discount\s+code|coupon|voucher|use\s+code|apply\s+code|enter\s+code/.test(l))
-    return "high";
-  if (/code|checkout/.test(l)) return "medium";
-  return "low";
-}
-
-function extractCodeFromSnippet(snippet: string): string | undefined {
-  for (const re of CODE_LINE_PATTERNS) {
-    const r = new RegExp(re.source, re.flags);
-    const m = r.exec(snippet);
-    if (m?.[1] && isLikelyPromoCode(m[1])) return m[1].toUpperCase();
-  }
-  return undefined;
-}
-
-function sentenceContaining(haystack: string, needle: string): string {
-  const idx = haystack.indexOf(needle);
-  if (idx < 0) return needle;
-  const start = Math.max(0, haystack.lastIndexOf(".", idx - 1) + 1, haystack.lastIndexOf("\n", idx - 1) + 1);
-  const endSlice = haystack.slice(idx);
-  const endRel = endSlice.search(/[.!?\n]/);
-  const end = endRel >= 0 ? idx + endRel + 1 : Math.min(haystack.length, idx + 160);
-  return haystack.slice(start, end).trim() || needle;
 }
 
 function collectAnnouncements($: cheerio.CheerioAPI): string[] {
@@ -313,19 +215,22 @@ function matchAllFresh(re: RegExp, text: string): RegExpMatchArray[] {
   return [...text.matchAll(r)];
 }
 
-function uniquePromoCodes(codes: DetectedPromoCode[]): DetectedPromoCode[] {
-  const seen = new Set<string>();
-  const out: DetectedPromoCode[] = [];
-  for (const c of codes) {
-    const key = `${c.code.toUpperCase()}:${normalizeEvidence(c.evidenceText)}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(c);
-  }
-  return out;
+export function mergeDiscountDetectorFindings(
+  parts: DiscountDetectorFindings[],
+): DiscountDetectorFindings {
+  const allOffers = parts.flatMap((p) => p.offers);
+  const offers = uniqueOffers(allOffers);
+  return {
+    offers,
+    summary: {
+      percentageCount: offers.filter((o) => o.kind === "percentage").length,
+      fixedAmountCount: offers.filter((o) => o.kind === "fixed_amount").length,
+      bundleHintCount: offers.filter((o) => o.kind === "bundle_hint").length,
+    },
+  };
 }
 
-export function extractDiscountDetectorFindings(html: string, _pageUrl: string): DiscountDetectorFindings {
+export function extractDiscountDetectorFindings(html: string, pageUrl: string): DiscountDetectorFindings {
   const $ = cheerio.load(html);
   const announcements = collectAnnouncements($);
   const headerText = $("header, [role='banner'], .header, #header").text();
@@ -339,7 +244,6 @@ export function extractDiscountDetectorFindings(html: string, _pageUrl: string):
   const locationCtx = { announcements, headerText, heroText };
 
   const offers: DetectedDiscountOffer[] = [];
-  const promoCodes: DetectedPromoCode[] = [];
 
   const scanText = (text: string, locationOverride?: string): void => {
     for (const pattern of PERCENTAGE_PATTERNS) {
@@ -348,8 +252,6 @@ export function extractDiscountDetectorFindings(html: string, _pageUrl: string):
         const evidenceText = match[0].trim().substring(0, 120);
         const value = parseInt(match[1], 10);
         if (!Number.isFinite(value) || value <= 0 || value > 100) continue;
-        const snippet = sentenceContaining(text, match[0]);
-        const associatedCode = extractCodeFromSnippet(snippet);
         const locationHint =
           locationOverride ?? determineLocation($, match[0], locationCtx);
         offers.push({
@@ -357,7 +259,7 @@ export function extractDiscountDetectorFindings(html: string, _pageUrl: string):
           value,
           evidenceText,
           locationHint,
-          associatedCode,
+          sourceUrl: pageUrl,
         });
       }
     }
@@ -369,8 +271,6 @@ export function extractDiscountDetectorFindings(html: string, _pageUrl: string):
         const value = parseAmount(match[1], decimal);
         if (!Number.isFinite(value) || value <= 0) continue;
         const currency = detectCurrency(match[0]);
-        const snippet = sentenceContaining(text, match[0]);
-        const associatedCode = extractCodeFromSnippet(snippet);
         const locationHint =
           locationOverride ?? determineLocation($, match[0], locationCtx);
         offers.push({
@@ -379,7 +279,7 @@ export function extractDiscountDetectorFindings(html: string, _pageUrl: string):
           currency,
           evidenceText,
           locationHint,
-          associatedCode,
+          sourceUrl: pageUrl,
         });
       }
     }
@@ -394,6 +294,7 @@ export function extractDiscountDetectorFindings(html: string, _pageUrl: string):
           kind: "bundle_hint",
           evidenceText,
           locationHint,
+          sourceUrl: pageUrl,
         });
       }
     }
@@ -403,57 +304,14 @@ export function extractDiscountDetectorFindings(html: string, _pageUrl: string):
   if (altBlob.trim()) scanText(altBlob, "Image or accessibility text");
   if (jsonLdBlob.trim()) scanText(jsonLdBlob, "Structured data (JSON-LD)");
 
-  // Standalone promo codes from full page text
-  const codeSeen = new Set<string>();
-  for (const re of CODE_LINE_PATTERNS) {
-    const matches = matchAllFresh(re, bodyText);
-    for (const match of matches.slice(0, 25)) {
-      const code = match[1]?.toUpperCase();
-      if (!code || !isLikelyPromoCode(code)) continue;
-      const line = sentenceContaining(bodyText, match[0]);
-      const key = `${code}:${normalizeEvidence(line)}`;
-      if (codeSeen.has(key)) continue;
-      codeSeen.add(key);
-      promoCodes.push({
-        code,
-        evidenceText: line.substring(0, 200),
-        locationHint: determineLocation($, match[0], locationCtx),
-        confidence: codeConfidence(line),
-      });
-    }
-  }
-
-  // Merge codes referenced on offers into promoCodes (dedupe)
-  for (const o of offers) {
-    if (o.kind === "bundle_hint") continue;
-    const c = o.associatedCode;
-    if (!c) continue;
-    const key = `${c}:${normalizeEvidence(o.evidenceText)}`;
-    if (codeSeen.has(key)) continue;
-    codeSeen.add(key);
-    promoCodes.push({
-      code: c,
-      evidenceText: o.evidenceText,
-      locationHint: o.locationHint,
-      confidence: "high",
-    });
-  }
-
   const dedupedOffers = uniqueOffers(offers);
-  const dedupedCodes = uniquePromoCodes(promoCodes);
-
-  const percentageCount = dedupedOffers.filter((o) => o.kind === "percentage").length;
-  const fixedAmountCount = dedupedOffers.filter((o) => o.kind === "fixed_amount").length;
-  const bundleHintCount = dedupedOffers.filter((o) => o.kind === "bundle_hint").length;
 
   return {
     offers: dedupedOffers,
-    promoCodes: dedupedCodes,
     summary: {
-      percentageCount,
-      fixedAmountCount,
-      promoCodeCount: dedupedCodes.length,
-      bundleHintCount,
+      percentageCount: dedupedOffers.filter((o) => o.kind === "percentage").length,
+      fixedAmountCount: dedupedOffers.filter((o) => o.kind === "fixed_amount").length,
+      bundleHintCount: dedupedOffers.filter((o) => o.kind === "bundle_hint").length,
     },
   };
 }
