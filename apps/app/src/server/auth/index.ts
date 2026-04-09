@@ -27,7 +27,6 @@ export const getDefaultWorkspaceId = cache(async (userId: string) => {
     .where(eq(workspaceMembers.userId, userId))
     .limit(1);
 
-  logger.debug("getDefaultWorkspaceId result", membership);
   if (!membership) {
     throw new Error("User is not a member of any workspace");
   }

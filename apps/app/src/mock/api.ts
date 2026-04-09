@@ -582,11 +582,3 @@ export const authApi = {
     return !!localStorage.getItem("offerpulse_auth_token");
   },
 };
-
-// Reset API
-export const resetApi = {
-  async resetDemoData(): Promise<void> {
-    await delay(300);
-    mockDB.reset();
-  },
-};

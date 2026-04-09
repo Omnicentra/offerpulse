@@ -17,7 +17,6 @@ The OfferPulse dashboard app is now **fully functional** with all features worki
 - ✅ Realistic seed data (5 competitors, 12 snapshots, 20 change events, 10 recommendations, 2 weekly pulses)
 - ✅ 250-600ms artificial latency on API calls
 - ✅ 1-3% simulated error rate for testing error states
-- ✅ Reset demo data functionality
 
 ### 2. Authentication (Demo Mode)
 
@@ -132,7 +131,6 @@ The OfferPulse dashboard app is now **fully functional** with all features worki
 - ✅ Default monitor settings
 - ✅ Default frequency selector
 - ✅ Default tracking toggles
-- ✅ Reset demo data button with confirmation
 
 #### `/settings/members`
 - ✅ Members table
@@ -228,10 +226,6 @@ Example:
 - Email: `demo@offerpulse.com`
 - Password: `demo123`
 
-### Resetting Demo Data
-
-Navigate to **Settings → Reset Demo Data** button. This will restore all data to the initial seed state.
-
 ### Testing the Capture Flow
 
 1. Go to **Competitors**
@@ -247,7 +241,6 @@ Navigate to **Settings → Reset Demo Data** button. This will restore all data 
 - **Latency:** 250-600ms random delay on most calls
 - **Errors:** 1-3% chance of simulated network errors
 - **Persistence:** All changes saved to localStorage automatically
-- **Reset:** Use the "Reset Demo Data" button in Settings
 
 ## File Structure
 
@@ -326,7 +319,6 @@ These are intentionally mocked/stubbed as per the requirements.
 ✅ Update alert settings
 ✅ View weekly pulse reports
 ✅ Invite/remove team members
-✅ Reset demo data
 ✅ Responsive design on mobile
 ✅ Keyboard navigation
 ✅ Error handling (try operations multiple times to hit 1-3% error rate)

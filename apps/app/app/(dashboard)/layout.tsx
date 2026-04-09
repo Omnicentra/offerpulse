@@ -9,23 +9,16 @@ import { TawkWidget } from "@/components/tawk-widget";
 import { OnboardingTour } from "@/components/onboarding/onboarding-tour";
 import { SpotlightProvider } from "react-tourlight";
 import { posthog } from "posthog-js";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "@/src/server/auth/client";
 import { env } from "@/env";
-import type { SpotlightTheme } from "react-tourlight";
+import type { SpotlightTheme, TourState } from "react-tourlight";
+import { tourState$, updateTourState } from "@/src/stores/tour-state";
 
+// Only the overlay is customised — the tooltip is fully replaced via renderTooltip
 const tourTheme: SpotlightTheme = {
-  overlay: {
-    background: "rgba(11, 18, 32, 0.72)",
-  },
-  tooltip: {
-    background: "transparent",
-    color: "transparent",
-    borderRadius: "0px",
-    boxShadow: "none",
-    padding: "0px",
-    maxWidth: "400px",
-  },
+  overlay: { background: "rgba(11, 18, 32, 0.72)" },
+  tooltip: { background: "transparent", color: "transparent", borderRadius: "0px", boxShadow: "none", padding: "0px", maxWidth: "400px" },
   title: { fontSize: "0px", fontWeight: "0", color: "transparent", marginBottom: "0px" },
   content: { fontSize: "0px", color: "transparent", lineHeight: "0" },
   button: { background: "transparent", color: "transparent", borderRadius: "0px", padding: "0px", fontSize: "0px", fontWeight: "0", border: "none", cursor: "pointer", hoverBackground: "transparent" },
@@ -45,6 +38,12 @@ export default function DashboardLayout({
 
   const tawkPropertyId = env.NEXT_PUBLIC_TAWK_PROPERTY_ID;
   const tawkWidgetId = env.NEXT_PUBLIC_TAWK_WIDGET_ID;
+
+  // Capture persisted tour state once per mount (lazy init — no ref read during render).
+  const [savedState] = useState<Record<string, TourState>>(() =>
+    tourState$.get()
+  );
+
   // Single identify for all auth methods (email/password + OAuth). Uses non-PII user id only.
   useEffect(() => {
     if (!user) return;
@@ -60,6 +59,9 @@ export default function DashboardLayout({
         <SpotlightProvider
           theme={tourTheme}
           transitionDuration={320}
+          initialState={savedState}
+          onStateChange={updateTourState}
+          showProgress
         >
           <OnboardingTour />
           <SubscriptionGuard>

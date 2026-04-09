@@ -259,8 +259,19 @@ export const usersRouter = router({
       image: userRecord.image,
       createdAt: userRecord.createdAt,
       hasPassword: !!credentialAccount,
+      hasSeenTour: userRecord.hasSeenTour,
     };
   }),
+
+  markTourSeen: protectedProcedure
+    .input(z.object({ seen: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .update(user)
+        .set({ hasSeenTour: input.seen })
+        .where(eq(user.id, ctx.user.id));
+      return { hasSeenTour: input.seen };
+    }),
 
   updateProfile: protectedProcedure
     .input(

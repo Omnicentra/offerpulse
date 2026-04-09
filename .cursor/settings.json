@@ -11,6 +11,9 @@
     },
     "sentry": {
       "enabled": true
+    },
+    "posthog": {
+      "enabled": true
     }
   }
 }

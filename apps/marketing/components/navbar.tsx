@@ -1,15 +1,14 @@
 "use client"
 
+import { OfferPulseMark } from "@/components/OfferPulseMark"
+import { Button } from "@/components/ui/button"
+import { track } from "@/lib/analytics"
+import { normalizeUrl, validateUrl } from "@/lib/url-helpers"
+import { buildAppSignupUrl, getStoredCompetitorUrl } from "@offerpulse/lib/routing"
+import { cn } from "@offerpulse/lib/utils"
+import { Menu, X } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Menu, X } from "lucide-react"
-import { cn } from "@offerpulse/lib/utils"
-import { OfferPulseMark } from "@/components/OfferPulseMark"
-import { track } from "@/lib/analytics"
-import { buildAppSignupUrl, getStoredCompetitorUrl } from "@offerpulse/lib/routing"
-import { normalizeUrl, validateUrl } from "@/lib/url-helpers"
 
 const navLinks = [
   { href: "/how-it-works", label: "How it works" },
