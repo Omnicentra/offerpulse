@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { TRPCError } from "@trpc/server";
-import { createCaller } from "@/src/lib/trpc/server";
-import { auth } from "@/src/server/auth";
 import { headers } from "next/headers";
+import { auth } from "@/src/server/auth";
+import { getQueryClient, HydrateClient, trpc } from "@/src/lib/trpc/server";
 import { CompetitorDetailClient } from "./competitor-detail-client";
 
 interface CompetitorDetailPageProps {
@@ -28,65 +28,53 @@ export default async function CompetitorDetailPage({
     redirect("/login");
   }
 
-  const caller = await createCaller();
-
-  // // Require active subscription before calling workspace procedures
-  // const subscription = await caller.billing.getSubscription();
-  // const isActive = ["active", "trialing"].includes(
-  //   subscription?.status ?? ""
-  // );
-  // if (!subscription || !isActive) {
-  //   redirect("/settings/billing");
-  // }
-
-  let initialCompetitor: Awaited<
-    ReturnType<typeof caller.competitors.get>
-  > | null = null;
-  let initialSnapshots: Awaited<
-    ReturnType<typeof caller.snapshots.list>
-  > = [];
-  let initialChanges: Awaited<
-    ReturnType<typeof caller.changeEvents.list>
-  > = [];
-  let initialRecommendations: Awaited<
-    ReturnType<typeof caller.recommendations.list>
-  > = [];
-  let initialMonitorSettings: Awaited<
-    ReturnType<typeof caller.monitorSettings.get>
-  > | null = null;
+  const queryClient = getQueryClient();
 
   try {
-    const [competitor, snapshots, changes, recommendations, monitorSettings] =
-      await Promise.all([
-        caller.competitors.get({ workspaceId, id: competitorId }),
-        caller.snapshots.list({ workspaceId, competitorId }),
-        caller.changeEvents.list({ workspaceId, competitorId }),
-        caller.recommendations.list({ workspaceId, competitorId }),
-        caller.monitorSettings.get({ workspaceId, competitorId }),
-      ]);
-
-    initialCompetitor = competitor;
-    initialSnapshots = snapshots;
-    initialChanges = changes;
-    initialRecommendations = recommendations;
-    initialMonitorSettings = monitorSettings;
+    await queryClient.fetchQuery(
+      trpc.competitors.get.queryOptions({ workspaceId, id: competitorId })
+    );
   } catch (err) {
     if (err instanceof TRPCError && err.code === "NOT_FOUND") {
-      initialCompetitor = null;
-    } else {
-      throw err;
+      return (
+        <HydrateClient>
+          <CompetitorDetailClient
+            competitorId={competitorId}
+            workspaceId={workspaceId}
+          />
+        </HydrateClient>
+      );
     }
+    throw err;
   }
 
+  await Promise.all([
+    queryClient.prefetchQuery(
+      trpc.snapshots.list.queryOptions({ workspaceId, competitorId })
+    ),
+    queryClient.prefetchQuery(
+      trpc.changeEvents.list.queryOptions({ workspaceId, competitorId })
+    ),
+    queryClient.prefetchQuery(
+      trpc.recommendations.list.queryOptions({ workspaceId, competitorId })
+    ),
+    queryClient.prefetchQuery(
+      trpc.monitorSettings.get.queryOptions({ workspaceId, competitorId })
+    ),
+    queryClient.prefetchQuery(
+      trpc.ownStore.get.queryOptions({ workspaceId })
+    ),
+    queryClient.prefetchQuery(
+      trpc.ownStore.products.list.queryOptions({ workspaceId })
+    ),
+  ]);
+
   return (
-    <CompetitorDetailClient
-      competitorId={competitorId}
-      workspaceId={workspaceId}
-      initialCompetitor={initialCompetitor}
-      initialSnapshots={initialSnapshots}
-      initialChanges={initialChanges}
-      initialRecommendations={initialRecommendations}
-      initialMonitorSettings={initialMonitorSettings}
-    />
+    <HydrateClient>
+      <CompetitorDetailClient
+        competitorId={competitorId}
+        workspaceId={workspaceId}
+      />
+    </HydrateClient>
   );
 }

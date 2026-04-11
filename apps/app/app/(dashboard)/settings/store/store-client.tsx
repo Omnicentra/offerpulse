@@ -16,8 +16,6 @@ import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, RefreshCw } from "lucide-react";
-import type { RouterOutputs } from "@/src/server/trpc/routers/root";
-
 function SyncNowButton({ workspaceId }: { workspaceId: string }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -47,13 +45,12 @@ function SyncNowButton({ workspaceId }: { workspaceId: string }) {
 
 interface StoreClientProps {
   workspaceId: string;
-  initialStore: RouterOutputs["ownStore"]["get"];
   planId: string;
   isAdmin: boolean;
   embedded?: boolean;
 }
 
-export function StoreClient({ workspaceId, initialStore, planId, isAdmin, embedded = false }: StoreClientProps) {
+export function StoreClient({ workspaceId, planId, isAdmin, embedded = false }: StoreClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -63,12 +60,11 @@ export function StoreClient({ workspaceId, initialStore, planId, isAdmin, embedd
 
   const { data: store, isFetching } = useQuery({
     ...trpc.ownStore.get.queryOptions({ workspaceId }),
-    initialData: initialStore,
     enabled: !!workspaceId,
   });
 
   const canUseShopify = isAdmin || ["growth", "agency"].includes(planId);
-  const isShopifyConnected = (store?.platform ?? initialStore.platform) === "shopify";
+  const isShopifyConnected = store?.platform === "shopify";
 
   const disconnectMutation = useMutation(
     trpc.shopify.disconnect.mutationOptions({
@@ -187,7 +183,6 @@ export function StoreClient({ workspaceId, initialStore, planId, isAdmin, embedd
         </h2>
         <StoreDetailsForm
           workspaceId={workspaceId}
-          initialStore={initialStore}
           store={store}
           isFetching={isFetching}
         />

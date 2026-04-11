@@ -19,6 +19,7 @@ import { Send, Unlink, Mail, MessageSquare, SlidersHorizontal, Bell } from "luci
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useTRPC } from "@/src/lib/trpc/client";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@/src/server/trpc/routers/root";
 
@@ -26,7 +27,6 @@ type AlertSettings = RouterOutputs["alerts"]["get"];
 
 interface AlertsPageClientProps {
   workspaceId: string;
-  initialSettings: AlertSettings;
 }
 
 function SlackLogo({ className }: { className?: string }) {
@@ -74,10 +74,7 @@ function alertsPathWithTab(tab: TabValue) {
   return `/alerts?tab=${tab}`;
 }
 
-export function AlertsPageClient({
-  workspaceId,
-  initialSettings,
-}: AlertsPageClientProps) {
+export function AlertsPageClient({ workspaceId }: AlertsPageClientProps) {
   const { toast } = useToast();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -93,9 +90,8 @@ export function AlertsPageClient({
     router.push(alertsPathWithTab(tab), { scroll: false });
   };
 
-  const { data: settings = initialSettings } = useQuery({
+  const { data: settings } = useQuery({
     ...trpc.alerts.get.queryOptions({ workspaceId }),
-    initialData: initialSettings,
     enabled: !!workspaceId,
   });
 
@@ -117,7 +113,7 @@ export function AlertsPageClient({
   const [localSettings, setLocalSettings] = useState<AlertSettings | undefined>(
     undefined
   );
-  const currentSettings = localSettings ?? settings ?? initialSettings;
+  const currentSettings = localSettings ?? settings;
 
   const disconnectMutation = useMutation(
     trpc.alerts.disconnectSlack.mutationOptions({
@@ -243,6 +239,19 @@ export function AlertsPageClient({
     CART_INCENTIVE: "Cart Incentives",
     DELIVERY_RETURNS: "Delivery & Returns",
   };
+
+  if (!currentSettings) {
+    return (
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-slate-900">Alerts</h1>
+          <p className="mt-1 text-sm text-slate-600">Loading…</p>
+        </div>
+        <Skeleton className="h-12 w-full max-w-xl rounded-lg" />
+        <Skeleton className="mt-6 h-72 rounded-2xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex min-h-[min(100%,calc(100vh-6rem))] max-w-6xl flex-col">

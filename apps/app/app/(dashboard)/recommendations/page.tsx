@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/src/server/auth";
-import { createCaller } from "@/src/lib/trpc/server";
+import { getQueryClient, HydrateClient, trpc } from "@/src/lib/trpc/server";
 import { RecommendationsPageClient } from "./recommendations-page-client";
 
 export default async function RecommendationsPage() {
@@ -18,14 +18,14 @@ export default async function RecommendationsPage() {
     redirect("/login");
   }
 
-  const caller = await createCaller();
-
-  const initialRecommendations = await caller.recommendations.list({ workspaceId });
+  const queryClient = getQueryClient();
+  await queryClient.prefetchQuery(
+    trpc.recommendations.list.queryOptions({ workspaceId })
+  );
 
   return (
-    <RecommendationsPageClient
-      workspaceId={workspaceId}
-      initialRecommendations={initialRecommendations}
-    />
+    <HydrateClient>
+      <RecommendationsPageClient workspaceId={workspaceId} />
+    </HydrateClient>
   );
 }

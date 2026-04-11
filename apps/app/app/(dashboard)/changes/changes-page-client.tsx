@@ -26,8 +26,6 @@ import {
 import { useTRPC } from "@/src/lib/trpc/client";
 import { Badge } from "@/components/ui/badge";
 import { Filter, TrendingUp, X, Zap, AlertCircle } from "lucide-react";
-import type { RouterOutputs } from "@/src/server/trpc/routers/root";
-
 type ChangeEventType =
   | "PROMO"
   | "SHIPPING"
@@ -35,20 +33,11 @@ type ChangeEventType =
   | "CART_INCENTIVE"
   | "DELIVERY_RETURNS";
 
-type CompetitorsList = RouterOutputs["competitors"]["list"];
-type ChangeEventsList = RouterOutputs["changeEvents"]["list"];
-
 interface ChangesPageClientProps {
   workspaceId: string;
-  initialCompetitors: CompetitorsList;
-  initialChanges: ChangeEventsList;
 }
 
-export function ChangesPageClient({
-  workspaceId,
-  initialCompetitors,
-  initialChanges,
-}: ChangesPageClientProps) {
+export function ChangesPageClient({ workspaceId }: ChangesPageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedId = searchParams.get("selected");
@@ -62,15 +51,13 @@ export function ChangesPageClient({
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
   const [selectedChange, setSelectedChange] = useState<string | null>(null);
 
-  const { data: competitors = initialCompetitors } = useQuery({
+  const { data: competitors } = useQuery({
     ...trpc.competitors.list.queryOptions({ workspaceId }),
-    initialData: initialCompetitors,
     enabled: !!workspaceId,
   });
 
-  const { data: allChanges = initialChanges } = useQuery({
+  const { data: allChanges } = useQuery({
     ...trpc.changeEvents.list.queryOptions({ workspaceId }),
-    initialData: initialChanges,
     enabled: !!workspaceId,
   });
 
@@ -79,14 +66,16 @@ export function ChangesPageClient({
     if (selectedId && allChanges) {
       const change = allChanges.find((c) => c.id === selectedId);
       if (change) {
-        setSelectedChange(selectedId);
-        setDetailDrawerOpen(true);
+        queueMicrotask(() => {
+          setSelectedChange(selectedId);
+          setDetailDrawerOpen(true);
+        });
       }
     }
   }, [selectedId, allChanges]);
 
   // Filter changes
-  const filteredChanges = allChanges?.filter((change) => {
+  const filteredChanges = (allChanges ?? []).filter((change) => {
     if (competitorFilter && competitorFilter !== "all" && change.competitorId !== competitorFilter) return false;
     if (typeFilters.length > 0 && !typeFilters.includes(change.type as ChangeEventType)) return false;
     if (confidenceFilter && confidenceFilter !== "all" && change.confidence !== confidenceFilter) return false;
@@ -95,7 +84,7 @@ export function ChangesPageClient({
   });
 
   // Group by date
-  const groupedChanges = filteredChanges?.reduce((groups, change) => {
+  const groupedChanges = filteredChanges.reduce((groups, change) => {
     const date = new Date(change.detectedAt);
     const now = new Date();
     const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
@@ -155,7 +144,7 @@ export function ChangesPageClient({
       <PageHeader
         compact
         title="Changes"
-        description={`${filteredChanges?.length || 0} changes detected`}
+        description={`${filteredChanges.length} changes detected`}
       />
 
       {/* Filters */}
@@ -242,7 +231,7 @@ export function ChangesPageClient({
       </div>
 
       {/* Changes List */}
-      {filteredChanges && filteredChanges.length === 0 ? (
+      {filteredChanges.length === 0 ? (
         <EmptyState
           icon={TrendingUp}
           title="No changes found"
@@ -254,7 +243,7 @@ export function ChangesPageClient({
         />
       ) : (
         <div className="space-y-6">
-          {Object.entries(groupedChanges || {}).map(([label, changes]) => (
+          {Object.entries(groupedChanges).map(([label, changes]) => (
             <div key={label}>
               <h3 className="mb-3 text-sm font-semibold text-slate-900">{label}</h3>
               <div className="space-y-2">

@@ -9,20 +9,20 @@ const isLocal = process.env.NODE_ENV === "development";
 // Extract PostHog IDs from URL for cross-domain tracking (bootstrap approach)
 // This must happen BEFORE posthog.init() to bootstrap the session
 let bootstrapConfig = {};
-if (typeof window !== 'undefined') {
-  const urlParams = new URLSearchParams(window.location.search);
-  const distinctId = urlParams.get('ph_distinct_id');
-  const sessionId = urlParams.get('ph_session_id');
-  
-  if (distinctId || sessionId) {
-    bootstrapConfig = {
-      bootstrap: {
-        distinctID: distinctId,
-        sessionID: sessionId,
-      }
-    };
-  }
+
+const urlParams = new URLSearchParams(window.location.search);
+const distinctId = urlParams.get('ph_distinct_id');
+const sessionId = urlParams.get('ph_session_id');
+
+if (distinctId || sessionId) {
+  bootstrapConfig = {
+    bootstrap: {
+      distinctID: distinctId,
+      sessionID: sessionId,
+    }
+  };
 }
+
 
 posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
   // Use neutral proxy path (/_px) - /ingest is often blocked by ad blockers

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,39 +15,35 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useTRPC } from "@/src/lib/trpc/client";
-import type { RouterOutputs } from "@/src/server/trpc/routers/root";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { authClient } from "@/src/server/auth/client";
 import { Loader2 } from "lucide-react";
 
-type UserProfile = RouterOutputs["users"]["getProfile"];
-
 interface AccountClientProps {
-  initialProfile: UserProfile;
   embedded?: boolean;
 }
 
-export function AccountClient({ initialProfile, embedded = false }: AccountClientProps) {
+export function AccountClient({ embedded = false }: AccountClientProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const trpc = useTRPC();
 
-  const [name, setName] = useState(initialProfile.name ?? "");
-  const [imageUrl, setImageUrl] = useState(initialProfile.image ?? "");
+  const [name, setName] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
 
-  const { data: profile = initialProfile } = useQuery({
+  const { data: profile } = useQuery({
     ...trpc.users.getProfile.queryOptions(),
-    initialData: initialProfile,
     refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
+    if (!profile) return;
     setName(profile.name ?? "");
     setImageUrl(profile.image ?? "");
   }, [profile]);
@@ -78,6 +75,8 @@ export function AccountClient({ initialProfile, embedded = false }: AccountClien
   };
 
   const handlePasswordSubmit = async () => {
+    if (!profile) return;
+
     if (newPassword !== confirmPassword) {
       toast({
         title: "Error",
@@ -176,7 +175,25 @@ export function AccountClient({ initialProfile, embedded = false }: AccountClien
   };
 
   const hasProfileChanges =
-    name.trim() !== (profile.name ?? "") || imageUrl.trim() !== (profile.image ?? "");
+    profile != null &&
+    (name.trim() !== (profile.name ?? "") ||
+      imageUrl.trim() !== (profile.image ?? ""));
+
+  if (!profile) {
+    return (
+      <div className={embedded ? "space-y-8" : "mx-auto max-w-4xl space-y-8"}>
+        {!embedded && (
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Account Settings</h1>
+            <p className="mt-1 text-sm text-slate-600">
+              Manage your personal account information
+            </p>
+          </div>
+        )}
+        <Skeleton className="h-64 w-full rounded-2xl" />
+      </div>
+    );
+  }
 
   return (
     <div className={embedded ? "space-y-8" : "mx-auto max-w-4xl space-y-8"}>

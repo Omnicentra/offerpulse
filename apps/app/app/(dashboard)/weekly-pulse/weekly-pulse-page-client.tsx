@@ -20,12 +20,6 @@ import {
 import { useTRPC } from "@/src/lib/trpc/client";
 import { BarChart3, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { RouterOutputs } from "@/src/server/trpc/routers/root";
-
-type PulsesList = RouterOutputs["weeklyPulse"]["list"];
-type CurrentPulse = RouterOutputs["weeklyPulse"]["get"];
-type CompetitorsList = RouterOutputs["competitors"]["list"];
-
 function formatWeekRange(weekOf: string | Date) {
   const start = new Date(weekOf);
   const end = new Date(start);
@@ -35,18 +29,12 @@ function formatWeekRange(weekOf: string | Date) {
 
 export interface WeeklyPulsePageClientProps {
   workspaceId: string;
-  initialPulses: PulsesList;
-  initialCurrentPulse: CurrentPulse | null;
-  initialCompetitors: CompetitorsList;
   /** Week ISO string resolved on the server (URL param or most recent). */
   initialWeekIso: string;
 }
 
 export function WeeklyPulsePageClient({
   workspaceId,
-  initialPulses,
-  initialCurrentPulse,
-  initialCompetitors,
   initialWeekIso,
 }: WeeklyPulsePageClientProps) {
   const router = useRouter();
@@ -55,18 +43,19 @@ export function WeeklyPulsePageClient({
 
   const [manualSelection, setManualSelection] = useState<string>("");
 
+  const { data: pulses } = useQuery({
+    ...trpc.weeklyPulse.list.queryOptions({ workspaceId }),
+    enabled: !!workspaceId,
+  });
+
+  const pulsesList = pulses ?? [];
+
   const selectedWeekOf =
     manualSelection ||
     initialWeekIso ||
-    (initialPulses.length > 0
-      ? new Date(initialPulses[0].weekOf).toISOString()
+    (pulsesList.length > 0
+      ? new Date(pulsesList[0].weekOf).toISOString()
       : "");
-
-  const { data: pulses = initialPulses } = useQuery({
-    ...trpc.weeklyPulse.list.queryOptions({ workspaceId }),
-    initialData: initialPulses,
-    enabled: !!workspaceId,
-  });
 
   const { data: currentPulse, isPending: isPulsePending } = useQuery({
     ...trpc.weeklyPulse.get.queryOptions(
@@ -78,17 +67,14 @@ export function WeeklyPulsePageClient({
         staleTime: 60_000,
       }
     ),
-    initialData:
-      selectedWeekOf === initialWeekIso && initialCurrentPulse
-        ? initialCurrentPulse
-        : undefined,
   });
 
-  const { data: competitors = initialCompetitors } = useQuery({
+  const { data: competitors } = useQuery({
     ...trpc.competitors.list.queryOptions({ workspaceId }),
-    initialData: initialCompetitors,
     enabled: !!workspaceId,
   });
+
+  const competitorsList = competitors ?? [];
 
   const handleShare = () => {
     const url = `${window.location.origin}/weekly-pulse?week=${encodeURIComponent(selectedWeekOf)}`;
@@ -99,7 +85,7 @@ export function WeeklyPulsePageClient({
     });
   };
 
-  if (!pulses || pulses.length === 0) {
+  if (pulsesList.length === 0) {
     return (
       <div>
         <PageHeader compact title="Weekly Pulse" />
@@ -125,7 +111,7 @@ export function WeeklyPulsePageClient({
                 <SelectValue placeholder="Select week" />
               </SelectTrigger>
               <SelectContent>
-                {pulses.map((pulse) => {
+                {pulsesList.map((pulse) => {
                   const iso = new Date(pulse.weekOf).toISOString();
                   return (
                     <SelectItem key={iso} value={iso}>
@@ -210,7 +196,7 @@ export function WeeklyPulsePageClient({
               <h3 className="mb-6 text-lg font-semibold text-slate-900">Top Competitor Moves</h3>
               <div className="space-y-3">
                 {currentPulse.topMoves.slice(0, 5).map((change) => {
-                  const competitor = competitors?.find((c) => c.id === change.competitorId);
+                  const competitor = competitorsList.find((c) => c.id === change.competitorId);
                   return (
                     <button
                       key={change.id}

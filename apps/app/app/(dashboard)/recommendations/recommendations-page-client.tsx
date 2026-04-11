@@ -48,12 +48,10 @@ import type { RouterOutputs } from "@/src/server/trpc/routers/root";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
 
-type RecommendationsList = RouterOutputs["recommendations"]["list"];
-type Recommendation = RecommendationsList[number];
+type Recommendation = RouterOutputs["recommendations"]["list"][number];
 
 interface RecommendationsPageClientProps {
   workspaceId: string;
-  initialRecommendations: RecommendationsList;
 }
 
 function impactAccentClass(impact: number) {
@@ -93,7 +91,6 @@ function checklistProgress(rec: Recommendation) {
 
 export function RecommendationsPageClient({
   workspaceId,
-  initialRecommendations,
 }: RecommendationsPageClientProps) {
   const searchParams = useSearchParams();
   const selectedFromUrl = searchParams.get("selected");
@@ -110,16 +107,20 @@ export function RecommendationsPageClient({
   const [snoozeDays, setSnoozeDays] = useState("7");
   const [openAccordionIds, setOpenAccordionIds] = useState<string[]>([]);
 
-  const { data: recommendations = initialRecommendations } = useQuery({
+  const { data: recommendations } = useQuery({
     ...trpc.recommendations.list.queryOptions({ workspaceId }),
-    initialData: initialRecommendations,
     enabled: !!workspaceId,
   });
 
+  const recommendationsList = useMemo(
+    () => recommendations ?? [],
+    [recommendations]
+  );
+
   useEffect(() => {
-    if (!selectedFromUrl || !recommendations?.length) return;
+    if (!selectedFromUrl || !recommendationsList.length) return;
     if (appliedUrlSelectionRef.current === selectedFromUrl) return;
-    const rec = recommendations.find((r) => r.id === selectedFromUrl);
+    const rec = recommendationsList.find((r) => r.id === selectedFromUrl);
     if (!rec) return;
     appliedUrlSelectionRef.current = selectedFromUrl;
     queueMicrotask(() => {
@@ -129,7 +130,7 @@ export function RecommendationsPageClient({
         prev.includes(selectedFromUrl) ? prev : [...prev, selectedFromUrl]
       );
     });
-  }, [selectedFromUrl, recommendations]);
+  }, [selectedFromUrl, recommendationsList]);
 
   const updateStatusMutation = useMutation(
     trpc.recommendations.updateStatus.mutationOptions({
@@ -167,20 +168,20 @@ export function RecommendationsPageClient({
 
   const statusCounts = useMemo(() => {
     return {
-      all: recommendations.length,
-      open: recommendations.filter((r) => r.status === "open").length,
-      done: recommendations.filter((r) => r.status === "done").length,
-      snoozed: recommendations.filter((r) => r.status === "snoozed").length,
+      all: recommendationsList.length,
+      open: recommendationsList.filter((r) => r.status === "open").length,
+      done: recommendationsList.filter((r) => r.status === "done").length,
+      snoozed: recommendationsList.filter((r) => r.status === "snoozed").length,
     };
-  }, [recommendations]);
+  }, [recommendationsList]);
 
   /** Rows matching the status tab (counts for strategy chips use this slice) */
   const afterStatusFilter = useMemo(() => {
-    return recommendations.filter((rec) => {
+    return recommendationsList.filter((rec) => {
       if (statusFilter === "all") return true;
       return rec.status === statusFilter;
     });
-  }, [recommendations, statusFilter]);
+  }, [recommendationsList, statusFilter]);
 
   const strategyCounts = useMemo(() => {
     const counts: Record<StrategyFilterValue, number> = {

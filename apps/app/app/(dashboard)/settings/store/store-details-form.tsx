@@ -2,6 +2,7 @@
 
 /* eslint-disable react-hooks/set-state-in-effect -- Sync form with server state */
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -21,14 +22,12 @@ const CURRENCIES = ["GBP", "USD", "EUR"] as const;
 
 interface StoreDetailsFormProps {
   workspaceId: string;
-  initialStore: RouterOutputs["ownStore"]["get"];
   store: RouterOutputs["ownStore"]["get"] | undefined;
   isFetching: boolean;
 }
 
 export function StoreDetailsForm({
   workspaceId,
-  initialStore,
   store,
   isFetching,
 }: StoreDetailsFormProps) {
@@ -36,18 +35,16 @@ export function StoreDetailsForm({
   const queryClient = useQueryClient();
   const trpc = useTRPC();
 
-  const resolved = store ?? initialStore;
-
-  const [storeName, setStoreName] = useState(resolved.storeName);
-  const [storeUrl, setStoreUrl] = useState(resolved.storeUrl ?? "");
-  const [currency, setCurrency] = useState(resolved.currency);
+  const [storeName, setStoreName] = useState("");
+  const [storeUrl, setStoreUrl] = useState("");
+  const [currency, setCurrency] = useState<string>("GBP");
 
   useEffect(() => {
-    const next = store ?? initialStore;
-    setStoreName(next.storeName);
-    setStoreUrl(next.storeUrl ?? "");
-    setCurrency(next.currency);
-  }, [store, initialStore]);
+    if (!store) return;
+    setStoreName(store.storeName);
+    setStoreUrl(store.storeUrl ?? "");
+    setCurrency(store.currency);
+  }, [store]);
 
   const updateMutation = useMutation(
     trpc.ownStore.update.mutationOptions({
@@ -79,10 +76,14 @@ export function StoreDetailsForm({
     });
   };
 
+  if (!store) {
+    return <Skeleton className="h-48 w-full rounded-xl" />;
+  }
+
   const hasChanges =
-    storeName !== resolved.storeName ||
-    (storeUrl || "") !== (resolved.storeUrl ?? "") ||
-    currency !== resolved.currency;
+    storeName !== store.storeName ||
+    (storeUrl || "") !== (store.storeUrl ?? "") ||
+    currency !== store.currency;
 
   return (
     <div className="space-y-6">

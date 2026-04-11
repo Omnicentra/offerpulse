@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { createCaller } from "@/src/lib/trpc/server";
+import { getQueryClient, trpc } from "@/src/lib/trpc/server";
 import { auth } from "@/src/server/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
@@ -42,14 +42,22 @@ export default async function HomePage() {
     redirect("/login");
   }
 
-  const caller = await createCaller();
+  const queryClient = getQueryClient();
 
   const [competitors, changeEvents, recommendations, weeklyPulses] =
     await Promise.all([
-      caller.competitors.list({ workspaceId }),
-      caller.changeEvents.list({ workspaceId }),
-      caller.recommendations.list({ workspaceId }),
-      caller.weeklyPulse.list({ workspaceId }),
+      queryClient.fetchQuery(
+        trpc.competitors.list.queryOptions({ workspaceId })
+      ),
+      queryClient.fetchQuery(
+        trpc.changeEvents.list.queryOptions({ workspaceId })
+      ),
+      queryClient.fetchQuery(
+        trpc.recommendations.list.queryOptions({ workspaceId })
+      ),
+      queryClient.fetchQuery(
+        trpc.weeklyPulse.list.queryOptions({ workspaceId })
+      ),
     ]);
 
   // Calculate stats

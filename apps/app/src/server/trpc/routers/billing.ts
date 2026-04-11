@@ -7,10 +7,7 @@ import { subscriptions, user } from "../../db/schema";
 import { env } from "@/env";
 import { getPlanById } from "@offerpulse/lib/pricing";
 import { logger } from "@offerpulse/lib";
-
-const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-  apiVersion: "2026-02-25.clover",
-});
+import { stripe } from "../../billing/stripe";
 
 function getSubscriptionPeriodEndUnix(sub: Stripe.Subscription): number {
   const firstItem = sub.items.data[0];

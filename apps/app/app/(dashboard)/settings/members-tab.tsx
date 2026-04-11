@@ -29,8 +29,6 @@ import { z } from "zod";
 import { useTRPC } from "@/src/lib/trpc/client";
 import type { RouterOutputs } from "@/src/server/trpc/routers/root";
 import { useQuery } from "@tanstack/react-query";
-import { type Members } from "@/src/lib/trpc/types";
-
 const inviteSchema = z.object({
   email: z.email("Invalid email address"),
   role: z.enum(["owner", "admin", "member"]),
@@ -41,10 +39,9 @@ type Member = RouterOutputs["users"]["list"][number];
 
 interface MembersTabProps {
   workspaceId: string;
-  initialMembers: Members;
 }
 
-export function MembersTab({ workspaceId, initialMembers }: MembersTabProps) {
+export function MembersTab({ workspaceId }: MembersTabProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const trpc = useTRPC();
@@ -55,11 +52,12 @@ export function MembersTab({ workspaceId, initialMembers }: MembersTabProps) {
     name: string;
   } | null>(null);
 
-  const { data: members = [] } = useQuery({
+  const { data: members } = useQuery({
     ...trpc.users.list.queryOptions({ workspaceId }),
     enabled: !!workspaceId,
-    initialData: initialMembers,
   });
+
+  const membersList = members ?? [];
 
   const {
     register,
@@ -140,7 +138,7 @@ export function MembersTab({ workspaceId, initialMembers }: MembersTabProps) {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-slate-600">
-            {members.length} member{members.length === 1 ? "" : "s"} in your workspace
+            {membersList.length} member{membersList.length === 1 ? "" : "s"} in your workspace
           </p>
         </div>
         <Button onClick={() => setInviteDialogOpen(true)} className="gap-2">
@@ -169,7 +167,7 @@ export function MembersTab({ workspaceId, initialMembers }: MembersTabProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {members.map((member: Member) => (
+              {membersList.map((member: Member) => (
                 <tr key={member.id}>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">

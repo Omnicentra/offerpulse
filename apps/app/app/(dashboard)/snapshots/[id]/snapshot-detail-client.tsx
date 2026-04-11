@@ -12,29 +12,16 @@ import { useTRPC } from "@/src/lib/trpc/client";
 import Link from "next/link";
 import { ArrowLeft, Download, Camera, Store } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { RouterOutputs } from "@/src/server/trpc/routers/root";
-
-type SnapshotWithCompetitor = RouterOutputs["snapshots"]["get"];
-type CompetitorItem = RouterOutputs["competitors"]["list"][number];
-type SnapshotItem = RouterOutputs["snapshots"]["list"][number];
-type ChangeEventItem = RouterOutputs["changeEvents"]["list"][number];
+import { TRPCClientError } from "@trpc/client";
 
 interface SnapshotDetailClientProps {
   snapshotId: string;
   workspaceId: string;
-  initialSnapshot: SnapshotWithCompetitor | null;
-  initialCompetitors: CompetitorItem[];
-  initialAllSnapshots: SnapshotItem[];
-  initialChanges: ChangeEventItem[];
 }
 
 export function SnapshotDetailClient({
   snapshotId,
   workspaceId,
-  initialSnapshot,
-  initialCompetitors,
-  initialAllSnapshots,
-  initialChanges,
 }: SnapshotDetailClientProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -45,32 +32,32 @@ export function SnapshotDetailClient({
 
   const {
     data: snapshot,
-    isLoading,
-    isError,
-    error,
+    status: snapshotStatus,
+    error: snapshotError,
   } = useQuery({
     ...trpc.snapshots.get.queryOptions({ workspaceId, id: snapshotId }),
-    initialData: initialSnapshot ?? undefined,
     enabled: !!workspaceId && !!snapshotId,
+    retry: false,
   });
 
-  const { data: competitors = initialCompetitors } = useQuery({
+  const { data: competitors } = useQuery({
     ...trpc.competitors.list.queryOptions({ workspaceId }),
-    initialData: initialCompetitors,
     enabled: !!workspaceId,
   });
 
-  const { data: allSnapshots = initialAllSnapshots } = useQuery({
+  const { data: allSnapshots } = useQuery({
     ...trpc.snapshots.list.queryOptions({ workspaceId }),
-    initialData: initialAllSnapshots,
     enabled: !!workspaceId && !!snapshot,
   });
 
-  const { data: changes = initialChanges } = useQuery({
+  const { data: changes } = useQuery({
     ...trpc.changeEvents.list.queryOptions({ workspaceId }),
-    initialData: initialChanges,
     enabled: !!workspaceId && !!snapshot,
   });
+
+  const competitorsList = competitors ?? [];
+  const allSnapshotsList = allSnapshots ?? [];
+  const changesList = changes ?? [];
 
   const { data: ownStore } = useQuery({
     ...trpc.ownStore.get.queryOptions({ workspaceId }),
@@ -84,10 +71,10 @@ export function SnapshotDetailClient({
 
   const competitor =
     snapshot?.competitor ??
-    competitors?.find((c) => c.id === snapshot?.competitorId);
+    competitorsList.find((c) => c.id === snapshot?.competitorId);
 
-  const previousSnapshot = allSnapshots
-    ?.filter(
+  const previousSnapshot = allSnapshotsList
+    .filter(
       (s) =>
         s.competitorId === snapshot?.competitorId &&
         (snapshot
@@ -99,7 +86,7 @@ export function SnapshotDetailClient({
         new Date(b.capturedAt).getTime() - new Date(a.capturedAt).getTime()
     )[0];
 
-  const relatedChange = changes?.find(
+  const relatedChange = changesList.find(
     (c) => c.snapshotAfterId === snapshotId || c.snapshotBeforeId === snapshotId
   );
 
@@ -151,7 +138,7 @@ export function SnapshotDetailClient({
     );
   };
 
-  if (isLoading && !snapshot) {
+  if (snapshotStatus === "pending") {
     return (
       <div>
         <Skeleton className="mb-8 h-12 w-64" />
@@ -160,15 +147,19 @@ export function SnapshotDetailClient({
     );
   }
 
-  if (
-    !snapshot ||
-    (isError && (error as { data?: { code?: string } })?.data?.code === "NOT_FOUND")
-  ) {
+  if (snapshotStatus === "error" || !snapshot) {
+    const notFound =
+      snapshotError instanceof TRPCClientError &&
+      snapshotError.data?.code === "NOT_FOUND";
     return (
       <EmptyState
         icon={Camera}
-        title="Snapshot not found"
-        description="The snapshot you're looking for doesn't exist."
+        title={notFound ? "Snapshot not found" : "Unable to load snapshot"}
+        description={
+          notFound
+            ? "The snapshot you're looking for doesn't exist."
+            : "Something went wrong. Try again or go back to the list."
+        }
         action={{
           label: "Back to Snapshots",
           onClick: () => router.push("/snapshots"),

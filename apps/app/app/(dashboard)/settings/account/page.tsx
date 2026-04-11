@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createCaller } from "@/src/lib/trpc/server";
+import { getQueryClient, HydrateClient, trpc } from "@/src/lib/trpc/server";
 import { AccountClient } from "./account-client";
 import { auth } from "@/src/server/auth";
 import { headers } from "next/headers";
@@ -13,8 +13,12 @@ export default async function AccountSettingsPage() {
     redirect("/login");
   }
 
-  const caller = await createCaller();
-  const profile = await caller.users.getProfile();
+  const queryClient = getQueryClient();
+  await queryClient.prefetchQuery(trpc.users.getProfile.queryOptions());
 
-  return <AccountClient initialProfile={profile} />;
+  return (
+    <HydrateClient>
+      <AccountClient />
+    </HydrateClient>
+  );
 }

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { hasSubscribedWorkspaceAccess } from "@offerpulse/lib/constants";
-import { createCaller } from "@/src/lib/trpc/server";
+import { getQueryClient, HydrateClient, trpc } from "@/src/lib/trpc/server";
 import { SettingsClient } from "./settings-client";
 import { auth } from "@/src/server/auth";
 import { headers } from "next/headers";
@@ -14,34 +14,36 @@ export default async function SettingsPage() {
     redirect("/login");
   }
 
-  const caller = await createCaller();
   const { workspaceId, role } = session.user;
 
   if (!workspaceId) {
     redirect("/login");
   }
 
-  const subscription = await caller.billing.getSubscription();
+  const queryClient = getQueryClient();
+  const subscription = await queryClient.fetchQuery(
+    trpc.billing.getSubscription.queryOptions()
+  );
   if (!subscription || !hasSubscribedWorkspaceAccess(subscription.status)) {
     redirect("/settings/billing");
   }
 
-  const [initialSettings, initialProfile, initialStore, initialMembers] = await Promise.all([
-    caller.workspaceSettings.get({ workspaceId }),
-    caller.users.getProfile(),
-    caller.ownStore.get({ workspaceId }),
-    caller.users.list({ workspaceId }),
+  await Promise.all([
+    queryClient.prefetchQuery(
+      trpc.workspaceSettings.get.queryOptions({ workspaceId })
+    ),
+    queryClient.prefetchQuery(trpc.users.getProfile.queryOptions()),
+    queryClient.prefetchQuery(trpc.ownStore.get.queryOptions({ workspaceId })),
+    queryClient.prefetchQuery(trpc.users.list.queryOptions({ workspaceId })),
   ]);
 
   return (
-    <SettingsClient
-      workspaceId={workspaceId}
-      initialSettings={initialSettings}
-      planId={subscription.planId}
-      userRole={role ?? "user"}
-      initialProfile={initialProfile}
-      initialStore={initialStore}
-      initialMembers={initialMembers}
-    />
+    <HydrateClient>
+      <SettingsClient
+        workspaceId={workspaceId}
+        planId={subscription.planId}
+        userRole={role ?? "user"}
+      />
+    </HydrateClient>
   );
 }

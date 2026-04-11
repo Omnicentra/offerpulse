@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChangeTypeBadge } from "@/components/ui/change-type-badge";
 import { ConfidenceBadge } from "@/components/ui/confidence-badge";
@@ -26,22 +25,12 @@ import {
   Store,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { RouterOutputs } from "@/src/server/trpc/routers/root";
-
-type CompetitorItem = RouterOutputs["competitors"]["get"];
-type SnapshotItem = RouterOutputs["snapshots"]["list"][number];
-type ChangeEventItem = RouterOutputs["changeEvents"]["list"][number];
-type RecommendationItem = RouterOutputs["recommendations"]["list"][number];
-type MonitorSettingsItem = RouterOutputs["monitorSettings"]["get"];
+import { TRPCClientError } from "@trpc/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CompetitorDetailClientProps {
   competitorId: string;
   workspaceId: string;
-  initialCompetitor: CompetitorItem | null;
-  initialSnapshots: SnapshotItem[];
-  initialChanges: ChangeEventItem[];
-  initialRecommendations: RecommendationItem[];
-  initialMonitorSettings: MonitorSettingsItem | null | undefined;
 }
 
 function formatTime(timestamp: string | Date) {
@@ -57,11 +46,6 @@ function formatTime(timestamp: string | Date) {
 export function CompetitorDetailClient({
   competitorId,
   workspaceId,
-  initialCompetitor,
-  initialSnapshots,
-  initialChanges,
-  initialRecommendations,
-  initialMonitorSettings,
 }: CompetitorDetailClientProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -79,35 +63,39 @@ export function CompetitorDetailClient({
     trackDeliveryReturns: true,
   });
 
-  const { data: competitor = initialCompetitor } = useQuery({
+  const {
+    data: competitor,
+    status: competitorStatus,
+    error: competitorError,
+  } = useQuery({
     ...trpc.competitors.get.queryOptions({ workspaceId, id: competitorId }),
-    initialData: initialCompetitor ?? undefined,
     enabled: !!workspaceId && !!competitorId,
+    retry: false,
   });
 
-  const { data: snapshots = initialSnapshots } = useQuery({
+  const { data: snapshots } = useQuery({
     ...trpc.snapshots.list.queryOptions({ workspaceId, competitorId }),
-    initialData: initialSnapshots,
     enabled: !!workspaceId && !!competitorId,
   });
 
-  const { data: changes = initialChanges } = useQuery({
+  const { data: changes } = useQuery({
     ...trpc.changeEvents.list.queryOptions({ workspaceId, competitorId }),
-    initialData: initialChanges,
     enabled: !!workspaceId && !!competitorId,
   });
 
-  const { data: recommendations = initialRecommendations } = useQuery({
+  const { data: recommendations } = useQuery({
     ...trpc.recommendations.list.queryOptions({ workspaceId, competitorId }),
-    initialData: initialRecommendations,
     enabled: !!workspaceId && !!competitorId,
   });
 
-  const { data: monitorSettings = initialMonitorSettings } = useQuery({
+  const { data: monitorSettings } = useQuery({
     ...trpc.monitorSettings.get.queryOptions({ workspaceId, competitorId }),
-    initialData: initialMonitorSettings ?? undefined,
     enabled: !!workspaceId && !!competitorId,
   });
+
+  const snapshotsList = snapshots ?? [];
+  const changesList = changes ?? [];
+  const recommendationsList = recommendations ?? [];
 
   const { data: ownStore } = useQuery({
     ...trpc.ownStore.get.queryOptions({ workspaceId }),
@@ -121,7 +109,7 @@ export function CompetitorDetailClient({
 
   const captureMutation = useMutation(
     trpc.snapshots.capture.mutationOptions({
-      onSuccess: (result) => {
+      onSuccess: () => {
         toast({
           title: "Capture Started",
           description: "Capturing competitor snapshot - this may take 30-60 seconds",
@@ -250,12 +238,29 @@ export function CompetitorDetailClient({
     }
   };
 
-  if (!competitor) {
+  if (competitorStatus === "pending") {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-48 w-full rounded-2xl" />
+        <Skeleton className="h-96 w-full rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (competitorStatus === "error" || !competitor) {
+    const notFound =
+      competitorError instanceof TRPCClientError &&
+      competitorError.data?.code === "NOT_FOUND";
     return (
       <EmptyState
         icon={TrendingUp}
-        title="Competitor not found"
-        description="The competitor you're looking for doesn't exist."
+        title={notFound ? "Competitor not found" : "Unable to load competitor"}
+        description={
+          notFound
+            ? "The competitor you're looking for doesn't exist."
+            : "Something went wrong. Try again or go back to the list."
+        }
         action={{
           label: "Back to Competitors",
           onClick: () => router.push("/competitors"),
@@ -264,7 +269,7 @@ export function CompetitorDetailClient({
     );
   }
 
-  const latestSnapshot = snapshots?.[0];
+  const latestSnapshot = snapshotsList[0];
   const tags = (competitor.tags ?? []) as string[];
 
   return (
@@ -473,7 +478,7 @@ export function CompetitorDetailClient({
                 Total Changes
               </p>
               <p className="mt-2 text-3xl font-bold text-slate-900">
-                {changes?.length ?? 0}
+                {changesList.length}
               </p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -481,7 +486,7 @@ export function CompetitorDetailClient({
                 Total Snapshots
               </p>
               <p className="mt-2 text-3xl font-bold text-slate-900">
-                {snapshots?.length ?? 0}
+                {snapshotsList.length}
               </p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -489,17 +494,16 @@ export function CompetitorDetailClient({
                 Recommendations
               </p>
               <p className="mt-2 text-3xl font-bold text-slate-900">
-                {recommendations?.filter((r) => r.status === "open").length ??
-                  0}
+                {recommendationsList.filter((r) => r.status === "open").length}
               </p>
             </div>
           </div>
         </TabsContent>
 
         <TabsContent value="changes" className="space-y-4">
-          {changes && changes.length > 0 ? (
+          {changesList.length > 0 ? (
             <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
-              {changes.map((change) => (
+              {changesList.map((change) => (
                 <div key={change.id} className="p-6">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
@@ -533,9 +537,9 @@ export function CompetitorDetailClient({
         </TabsContent>
 
         <TabsContent value="snapshots" className="space-y-4">
-          {snapshots && snapshots.length > 0 ? (
+          {snapshotsList.length > 0 ? (
             <div className="grid gap-4">
-              {snapshots.map((snapshot) => (
+              {snapshotsList.map((snapshot) => (
                 <div
                   key={snapshot.id}
                   className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6"
@@ -576,9 +580,9 @@ export function CompetitorDetailClient({
         </TabsContent>
 
         <TabsContent value="recommendations" className="space-y-4">
-          {recommendations && recommendations.length > 0 ? (
+          {recommendationsList.length > 0 ? (
             <div className="space-y-4">
-              {recommendations.map((rec) => (
+              {recommendationsList.map((rec) => (
                 <div
                   key={rec.id}
                   className="rounded-2xl border border-slate-200 bg-white p-6"

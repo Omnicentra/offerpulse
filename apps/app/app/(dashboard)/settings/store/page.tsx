@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { hasSubscribedWorkspaceAccess } from "@offerpulse/lib/constants";
-import { createCaller } from "@/src/lib/trpc/server";
+import { getQueryClient, HydrateClient, trpc } from "@/src/lib/trpc/server";
 import { StoreClient } from "./store-client";
 import { auth } from "@/src/server/auth";
 import { headers } from "next/headers";
@@ -20,20 +20,25 @@ export default async function StoreSettingsPage() {
     redirect("/login");
   }
 
-  const caller = await createCaller();
-  const subscription = await caller.billing.getSubscription();
+  const queryClient = getQueryClient();
+  const subscription = await queryClient.fetchQuery(
+    trpc.billing.getSubscription.queryOptions()
+  );
   if (!subscription || !hasSubscribedWorkspaceAccess(subscription.status)) {
     redirect("/settings/billing");
   }
 
-  const initialStore = await caller.ownStore.get({ workspaceId });
+  await queryClient.prefetchQuery(
+    trpc.ownStore.get.queryOptions({ workspaceId })
+  );
 
   return (
-    <StoreClient
-      isAdmin={session.user.role === "admin"}
-      workspaceId={workspaceId}
-      initialStore={initialStore}
-      planId={subscription.planId}
-    />
+    <HydrateClient>
+      <StoreClient
+        isAdmin={session.user.role === "admin"}
+        workspaceId={workspaceId}
+        planId={subscription.planId}
+      />
+    </HydrateClient>
   );
 }

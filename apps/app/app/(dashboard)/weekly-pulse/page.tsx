@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/src/server/auth";
-import { createCaller } from "@/src/lib/trpc/server";
+import { getQueryClient, HydrateClient, trpc } from "@/src/lib/trpc/server";
 import { WeeklyPulsePageClient } from "./weekly-pulse-page-client";
 
 interface WeeklyPulsePageProps {
@@ -25,11 +25,15 @@ export default async function WeeklyPulsePage({ searchParams }: WeeklyPulsePageP
   const params = await searchParams;
   const weekParam = params.week;
 
-  const caller = await createCaller();
+  const queryClient = getQueryClient();
 
-  const [pulses, competitors] = await Promise.all([
-    caller.weeklyPulse.list({ workspaceId }),
-    caller.competitors.list({ workspaceId }),
+  const [pulses] = await Promise.all([
+    queryClient.fetchQuery(
+      trpc.weeklyPulse.list.queryOptions({ workspaceId })
+    ),
+    queryClient.fetchQuery(
+      trpc.competitors.list.queryOptions({ workspaceId })
+    ),
   ]);
 
   const firstWeekIso =
@@ -41,21 +45,21 @@ export default async function WeeklyPulsePage({ searchParams }: WeeklyPulsePageP
 
   const initialWeekIso = weekFromUrlValid ? weekParam! : firstWeekIso;
 
-  const initialCurrentPulse =
-    initialWeekIso.length > 0
-      ? await caller.weeklyPulse.get({
-          workspaceId,
-          weekOf: initialWeekIso,
-        })
-      : null;
+  if (initialWeekIso.length > 0) {
+    await queryClient.prefetchQuery(
+      trpc.weeklyPulse.get.queryOptions({
+        workspaceId,
+        weekOf: initialWeekIso,
+      })
+    );
+  }
 
   return (
-    <WeeklyPulsePageClient
-      workspaceId={workspaceId}
-      initialPulses={pulses}
-      initialCurrentPulse={initialCurrentPulse}
-      initialCompetitors={competitors}
-      initialWeekIso={initialWeekIso}
-    />
+    <HydrateClient>
+      <WeeklyPulsePageClient
+        workspaceId={workspaceId}
+        initialWeekIso={initialWeekIso}
+      />
+    </HydrateClient>
   );
 }

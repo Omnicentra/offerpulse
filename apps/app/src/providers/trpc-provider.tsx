@@ -5,6 +5,7 @@ import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { useState } from "react";
 import superjson from "superjson";
 import { TRPCProvider as TRPCContextProvider } from "@/src/lib/trpc/client";
+import { makeQueryClient } from "@/src/lib/trpc/query-client";
 import type { AppRouter } from "@/src/server/trpc/routers/root";
 
 function getBaseUrl() {
@@ -17,17 +18,6 @@ function getBaseUrl() {
   }
 
   return "http://localhost:3001";
-}
-
-function makeQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 60 * 1000,
-        refetchOnWindowFocus: false,
-      },
-    },
-  });
 }
 
 let browserQueryClient: QueryClient | undefined = undefined;

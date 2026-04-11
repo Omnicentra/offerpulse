@@ -24,16 +24,13 @@ import { StoreClient } from "./store/store-client";
 import { AccountClient } from "./account/account-client";
 import { MembersTab } from "./members-tab";
 import { BillingTab } from "./billing-tab";
-import { WorkspaceSettingsRow, UserProfile, OwnStore, Members } from "@/src/lib/trpc/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { WorkspaceSettingsRow } from "@/src/lib/trpc/types";
 
 interface SettingsClientProps {
   workspaceId: string;
-  initialSettings: WorkspaceSettingsRow;
   planId: string;
   userRole: string;
-  initialProfile: UserProfile;
-  initialStore: OwnStore;
-  initialMembers: Members;
 }
 
 const OPENROUTER_MODEL_OPTIONS = [
@@ -84,12 +81,8 @@ type TabValue = "general" | "store" | "members" | "billing" | "account";
 
 export function SettingsClient({
   workspaceId,
-  initialSettings,
   planId,
   userRole,
-  initialProfile,
-  initialStore,
-  initialMembers,
 }: SettingsClientProps) {
   const canUseBestQualityModel = planId === "growth" || planId === "agency";
   const router = useRouter();
@@ -102,25 +95,28 @@ export function SettingsClient({
   const tabParam = searchParams.get("tab") as TabValue | null;
   const [activeTab, setActiveTab] = useState<TabValue>(tabParam ?? "general");
 
-  const [localSettings, setLocalSettings] = useState<LocalSettings>(() =>
-    toLocalSettings(initialSettings)
-  );
+  const [localSettings, setLocalSettings] = useState<LocalSettings | null>(null);
 
-  const { data: settings = initialSettings } = useQuery({
+  const { data: settings } = useQuery({
     ...trpc.workspaceSettings.get.queryOptions({ workspaceId }),
-    initialData: initialSettings,
     enabled: !!workspaceId,
     refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
-    setLocalSettings(toLocalSettings(settings));
+    if (settings) {
+      queueMicrotask(() => {
+        setLocalSettings(toLocalSettings(settings));
+      });
+    }
   }, [settings]);
 
   useEffect(() => {
     const newTab = searchParams.get("tab") as TabValue | null;
     if (newTab && ["general", "store", "members", "billing", "account"].includes(newTab)) {
-      setActiveTab(newTab);
+      queueMicrotask(() => {
+        setActiveTab(newTab);
+      });
     }
   }, [searchParams]);
 
@@ -194,6 +190,16 @@ export function SettingsClient({
       }
     );
   };
+
+  if (!settings || !localSettings) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Skeleton className="h-9 w-40" />
+        <Skeleton className="h-4 w-96 max-w-full" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -416,7 +422,6 @@ export function SettingsClient({
           <TabsContent value="store" className="m-0">
             <StoreClient
               workspaceId={workspaceId}
-              initialStore={initialStore}
               planId={planId}
               isAdmin={userRole === "admin"}
               embedded
@@ -424,7 +429,7 @@ export function SettingsClient({
           </TabsContent>
 
           <TabsContent value="members" className="m-0">
-            <MembersTab workspaceId={workspaceId} initialMembers={initialMembers} />
+            <MembersTab workspaceId={workspaceId} />
           </TabsContent>
 
           <TabsContent value="billing" className="m-0">
@@ -432,7 +437,7 @@ export function SettingsClient({
           </TabsContent>
 
           <TabsContent value="account" className="m-0">
-            <AccountClient initialProfile={initialProfile} embedded />
+            <AccountClient embedded />
           </TabsContent>
         </div>
       </Tabs>

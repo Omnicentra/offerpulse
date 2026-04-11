@@ -1,46 +1,16 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../db";
-import { eq } from "drizzle-orm";
 import * as schema from "../db/schema";
-import { workspaces, workspaceMembers, user } from "../db/schema";
+import { workspaces, workspaceMembers } from "../db/schema";
 import { nanoid } from "nanoid";
 import { env } from "@/env";
 import { sendWelcomeEmail, sendResetPasswordEmail, sendInternalAlertEmail } from "../notifications";
 import { customSession, admin as adminPlugin } from "better-auth/plugins";
 import { logger, TRIAL_PERIOD_DAYS } from "@offerpulse/lib";
-import Stripe from "stripe";
-import { cache } from "react";
 import { captureSignupCompletedServer } from "../analytics/posthog-server";
-
-const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-  apiVersion: "2026-02-25.clover",
-});
-
-export const getDefaultWorkspaceId = cache(async (userId: string) => {
-  const [membership] = await db
-    .select({
-      workspaceId: workspaceMembers.workspaceId,
-      userRole: user.role,
-    })
-    .from(workspaceMembers)
-    .leftJoin(user, eq(workspaceMembers.userId, user.id))
-    .where(eq(workspaceMembers.userId, userId))
-    .limit(1);
-
-  if (!membership) {
-    throw new Error("User is not a member of any workspace");
-  }
-  return membership;
-});
-
-export const getPriceId = cache(async (lookupKey: string) => {
-  const prices = await stripe.prices.list({
-    lookup_keys: [lookupKey],
-    limit: 1,
-  });
-  return prices.data[0]?.id;
-});
+import { stripe, getPriceId } from "../billing/stripe";
+import { getDefaultWorkspaceId } from "../workspace/get-default-workspace";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {

@@ -6,10 +6,7 @@ import { env } from "@/env";
 import { db } from "@/src/server/db";
 import { subscriptions } from "@/src/server/db/schema";
 import { logger, parseLookupKey } from "@offerpulse/lib";
-
-const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-  apiVersion: "2026-02-25.clover",
-});
+import { stripe } from "@/src/server/billing/stripe";
 
 const RELEVANT_EVENTS = new Set([
   "checkout.session.completed",
