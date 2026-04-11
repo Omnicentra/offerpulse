@@ -38,6 +38,26 @@ export const ORGANIZATION = {
 // Site configuration
 export const SITE_CONFIG = {
   name: "OfferPulse",
+  keywords: [
+    "offerpulse",
+    "offerpulse competitor monitoring",
+    "offerpulse competitor tracking",
+    "offerpulse competitor analysis",
+    "offerpulse competitor intelligence",
+    "offerpulse competitor pricing",
+    "offerpulse competitor offers",
+    "offerpulse competitor promotions",
+    "offerpulse competitor shipping",
+    "competitor monitoring",
+    "Shopify",
+    "e-commerce",
+    "competitive intelligence",
+    "offer tracking",
+    "price monitoring",
+    "promotional alerts",
+    "competitor offers",
+    "ecommerce tools",
+  ],
   description:
     "OfferPulse alerts you when competitors change their offers — promos, bundles, free shipping thresholds, and cart incentives — so you can react fast and protect conversion.",
   defaultTitle: "OfferPulse | Competitor Offer Monitoring for Shopify Sellers",
