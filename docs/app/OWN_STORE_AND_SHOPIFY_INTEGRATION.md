@@ -135,7 +135,7 @@ Change detection is in `apps/app/src/server/shopify/change-detector.ts`; transfo
 ## UI and Routes
 
 - **Store settings:** `apps/app/app/(dashboard)/settings/store/page.tsx` (server) and `store-client.tsx` (client). Fetches store and subscription; shows store details form, products table, promos table, and Shopify connect/disconnect/sync section (with upgrade prompt for Starter non-admins).
-- **Settings nav:** “Your store” entry in `apps/app/app/(dashboard)/settings/settings-client.tsx` links to `/settings/store`.
+- **Settings nav:** “Your store” entry in `apps/app/app/(dashboard)/settings/page.tsx` links to `/settings/store`.
 - **Competitor detail:** Store context card and personalized recommendation badges are used in `apps/app/app/(dashboard)/competitors/[id]/competitor-detail-client.tsx`.
 
 ---
