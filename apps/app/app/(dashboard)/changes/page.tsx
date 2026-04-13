@@ -1,10 +1,13 @@
 import { redirect } from "next/navigation";
 import { getQueryClient, HydrateClient, trpc } from "@/src/lib/trpc/server";
-import { getServerSession } from "@/src/server/auth/server-session";
+import { auth } from "@/src/server/auth";
+import { headers } from "next/headers";
 import { ChangesPageClient } from "./changes-page-client";
 
 export default async function ChangesPage() {
-  const session = await getServerSession();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
   if (!session?.user) {
     redirect("/login");

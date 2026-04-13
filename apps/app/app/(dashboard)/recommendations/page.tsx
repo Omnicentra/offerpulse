@@ -1,10 +1,13 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { auth } from "@/src/server/auth";
 import { getQueryClient, HydrateClient, trpc } from "@/src/lib/trpc/server";
-import { getServerSession } from "@/src/server/auth/server-session";
 import { RecommendationsPageClient } from "./recommendations-page-client";
 
 export default async function RecommendationsPage() {
-  const session = await getServerSession();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
   if (!session?.user) {
     redirect("/login");

@@ -2,10 +2,13 @@ import { redirect } from "next/navigation";
 import { hasSubscribedWorkspaceAccess } from "@offerpulse/lib/constants";
 import { getQueryClient, HydrateClient, trpc } from "@/src/lib/trpc/server";
 import { StoreClient } from "./store-client";
-import { getServerSession } from "@/src/server/auth/server-session";
+import { auth } from "@/src/server/auth";
+import { headers } from "next/headers";
 
 export default async function StoreSettingsPage() {
-  const session = await getServerSession();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
   if (!session?.user) {
     redirect("/login");

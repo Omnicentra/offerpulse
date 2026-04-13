@@ -4,7 +4,7 @@ import * as Sentry from "@sentry/nextjs";
 import superjson from "superjson";
 import { hasSubscribedWorkspaceAccess } from "@offerpulse/lib/constants";
 import { db } from "../db";
-import { getServerSession } from "../auth/server-session";
+import { auth } from "../auth";
 import { subscriptions, workspaceMembers } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -14,11 +14,13 @@ export type CreateContextOptions = Omit<FetchCreateContextFnOptions, "info"> & {
 };
 
 /**
- * Create context for tRPC requests (fetch adapter + RSC prefetch).
- * Session comes from getServerSession() so it is deduped with RSC auth checks.
+ * Create context for tRPC requests
  */
-export async function createTRPCContext(_opts: CreateContextOptions) {
-  const session = await getServerSession();
+export async function createTRPCContext(opts: CreateContextOptions) {
+  // Get session from Better-auth
+  const session = await auth.api.getSession({
+    headers: opts.req.headers,
+  });
 
   return {
     db,

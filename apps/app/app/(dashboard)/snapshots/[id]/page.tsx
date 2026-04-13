@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { TRPCError } from "@trpc/server";
-import { getServerSession } from "@/src/server/auth/server-session";
+import { headers } from "next/headers";
+import { auth } from "@/src/server/auth";
 import { getQueryClient, HydrateClient, trpc } from "@/src/lib/trpc/server";
 import { SnapshotDetailClient } from "./snapshot-detail-client";
 
@@ -12,7 +13,9 @@ export default async function SnapshotDetailPage({
   params,
 }: SnapshotDetailPageProps) {
   const { id: snapshotId } = await params;
-  const session = await getServerSession();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
   if (!session?.user) {
     redirect("/login");
