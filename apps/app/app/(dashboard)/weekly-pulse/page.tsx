@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import { auth } from "@/src/server/auth";
 import { getQueryClient, HydrateClient, trpc } from "@/src/lib/trpc/server";
+import { getServerSession } from "@/src/server/auth/server-session";
 import { WeeklyPulsePageClient } from "./weekly-pulse-page-client";
 
 interface WeeklyPulsePageProps {
@@ -9,9 +8,7 @@ interface WeeklyPulsePageProps {
 }
 
 export default async function WeeklyPulsePage({ searchParams }: WeeklyPulsePageProps) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getServerSession();
 
   if (!session?.user) {
     redirect("/login");

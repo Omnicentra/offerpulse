@@ -7,8 +7,7 @@ import {
   workspaceMembers,
   subscriptions,
 } from "@/src/server/db/schema";
-import { auth } from "@/src/server/auth";
-import { headers } from "next/headers";
+import { getServerSession } from "@/src/server/auth/server-session";
 import { eq, and } from "drizzle-orm";
 import { getPlanById } from "@offerpulse/lib/pricing";
 import { logger } from "@offerpulse/lib";
@@ -46,9 +45,7 @@ export async function GET(request: NextRequest) {
     normalizedShop,
   });
 
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getServerSession();
 
   if (!session?.user) {
     logger.warn("[shopify/auth/start] No active session, redirecting to login", {

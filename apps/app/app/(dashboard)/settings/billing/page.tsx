@@ -1,17 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
-import { auth } from "@/src/server/auth";
+import { getServerSession } from "@/src/server/auth/server-session";
 import { getQueryClient, HydrateClient, trpc } from "@/src/lib/trpc/server";
 import { BillingSettingsContent } from "../billing-tab";
 
 export default async function BillingPage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getServerSession();
 
   if (!session?.user) {
     redirect("/login");

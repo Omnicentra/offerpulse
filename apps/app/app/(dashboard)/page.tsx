@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getQueryClient, trpc } from "@/src/lib/trpc/server";
-import { auth } from "@/src/server/auth";
+import { getServerSession } from "@/src/server/auth/server-session";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -28,9 +27,7 @@ function formatDistanceToNow(date: Date): string {
 }
 
 export default async function HomePage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getServerSession();
 
   if (!session?.user) {
     redirect("/login");
