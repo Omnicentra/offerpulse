@@ -72,7 +72,9 @@ function formatMessage(
 
 export const logger = {
   debug(message: string, ...args: unknown[]) {
-    if (process.env.NODE_ENV === "development") {
+    const dev = process.env.NODE_ENV === "development";
+    const debugEnabled = process.env.LOG_LEVEL === "debug";
+    if (dev || debugEnabled) {
       console.log(formatMessage("debug", message, ...args));
     }
   },

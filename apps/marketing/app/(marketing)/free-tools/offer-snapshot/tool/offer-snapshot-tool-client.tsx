@@ -1,8 +1,6 @@
 "use client";
 
-import type {
-  OfferSnapshotResponse
-} from "@/app/api/tools/offer-snapshot/route";
+import type { OfferSnapshotResponse } from "@/app/api/tools/offer-snapshot/route";
 import { Container } from "@/components/container";
 import { MetricsRow } from "@/components/snapshot-report/MetricsRow";
 import { OfferStackCard } from "@/components/snapshot-report/OfferStackCard";
@@ -29,6 +27,7 @@ import {
 } from "@/lib/tools/scoring";
 import { normalizeUrl, validateUrl } from "@/lib/url-helpers";
 import { buildAppSignupUrl } from "@offerpulse/lib/routing";
+import { buildPendingBootstrapUrl } from "@/lib/pending-bootstrap-url";
 import {
   AlertCircle,
   ArrowRight,
@@ -62,6 +61,7 @@ export function OfferSnapshotToolClient({
   const [result, setResult] = useState<OfferSnapshotResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showScreenshotModal, setShowScreenshotModal] = useState(false);
+  const [startMonitoringLoading, setStartMonitoringLoading] = useState(false);
 
   // Auto-run if URL is in query params (only once)
   useEffect(() => {
@@ -131,6 +131,92 @@ export function OfferSnapshotToolClient({
     }
   };
 
+  async function navigateToSignupWithPendingSnapshot(
+    snapshot: OfferSnapshotResponse
+  ): Promise<void> {
+    setStartMonitoringLoading(true);
+    try {
+      if (process.env.NODE_ENV === "development") {
+        const dbg = globalThis.console.debug;
+        if (typeof dbg === "function") {
+          dbg.call(globalThis.console, "[pending-offer-flow:client]", "start", {
+            domain: snapshot.domain,
+            url: snapshot.url,
+          });
+        }
+      }
+      const toolPayload = JSON.parse(
+        JSON.stringify(snapshot)
+      ) as Record<string, unknown>;
+      const res = await fetch("/api/tools/offer-snapshot/pending", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          competitorUrl: snapshot.url,
+          toolPayload,
+          source: "offer_snapshot_report",
+        }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error || "Could not save your report. Try again.");
+      }
+      const data = (await res.json()) as { pendingId: string };
+      if (process.env.NODE_ENV === "development") {
+        const dbg = globalThis.console.debug;
+        if (typeof dbg === "function") {
+          dbg.call(globalThis.console, "[pending-offer-flow:client]", "pending stored", {
+            status: res.status,
+            pendingIdPrefix: data.pendingId?.slice(0, 8),
+          });
+        }
+      }
+      const bootstrap = new URL(
+        buildPendingBootstrapUrl({
+          pendingId: data.pendingId,
+          next: "/signup",
+          competitorUrl: snapshot.url,
+          source: "offer_snapshot_report",
+        })
+      );
+      const ref = new URL(
+        buildAppSignupUrl({
+          competitorUrl: snapshot.url,
+          source: "offer_snapshot_report",
+        })
+      );
+      for (const key of [
+        "ph_distinct_id",
+        "ph_session_id",
+        "utm_source",
+        "utm_medium",
+        "utm_campaign",
+        "source",
+      ] as const) {
+        const v = ref.searchParams.get(key);
+        if (v) bootstrap.searchParams.set(key, v);
+      }
+      const dest = bootstrap.toString();
+      if (process.env.NODE_ENV === "development") {
+        const dbg = globalThis.console.debug;
+        if (typeof dbg === "function") {
+          dbg.call(globalThis.console, "[pending-offer-flow:client]", "redirect bootstrap", {
+            host: bootstrap.host,
+            pathname: bootstrap.pathname,
+            pendingIdPrefix: data.pendingId?.slice(0, 8),
+          });
+        }
+      }
+      window.location.href = dest;
+    } catch (e) {
+      const message =
+        e instanceof Error ? e.message : "Something went wrong. Try again.";
+      setError(message);
+    } finally {
+      setStartMonitoringLoading(false);
+    }
+  }
+
   // Calculate score if we have results
   const offerScore = result?.offers ? calculateOfferScore(result.offers) : null;
   const scoreInterpretation = offerScore
@@ -145,11 +231,6 @@ export function OfferSnapshotToolClient({
     const screenshotUrl = result.screenshotUrl;
     const pagesAnalyzed = result.pagesAnalyzed || [];
     const stats = result.stats;
-    const reportSignupUrl = buildAppSignupUrl({
-      competitorUrl: result.url,
-      source: "offer_snapshot_report",
-    });
-
     // Build metrics
     const metrics = {
       discounts: offers.discounts.length,
@@ -236,13 +317,31 @@ export function OfferSnapshotToolClient({
               <Button
                 size="lg"
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
-                onClick={() => {
-                  window.location.href = reportSignupUrl;
-                }}
+                disabled={startMonitoringLoading}
+                onClick={() => void navigateToSignupWithPendingSnapshot(result)}
               >
-                Start monitoring
+                {startMonitoringLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Preparing…
+                  </>
+                ) : (
+                  "Start monitoring"
+                )}
               </Button>
             </header>
+            <p className="mb-6 max-w-2xl text-xs text-slate-500">
+              To continue monitoring, we store this report summary for up to 7 days so it
+              can be added to your account after signup. See our{" "}
+              <Link href="/privacy" className="underline hover:text-slate-700">
+                Privacy Policy
+              </Link>{" "}
+              and{" "}
+              <Link href="/terms" className="underline hover:text-slate-700">
+                Terms
+              </Link>
+              .
+            </p>
             <ScoreSummary
               score={offerScore}
               interpretation={scoreInterpretation}
@@ -432,7 +531,8 @@ export function OfferSnapshotToolClient({
             <RecommendationsCard
               visibleRecommendations={recommendations.visible}
               lockedCount={recommendations.locked}
-              signupUrl={reportSignupUrl}
+              onStartMonitoring={() => navigateToSignupWithPendingSnapshot(result)}
+              isStartMonitoringLoading={startMonitoringLoading}
             />
           </div>
 
@@ -450,11 +550,17 @@ export function OfferSnapshotToolClient({
               <Button
                 size="lg"
                 className="mt-6"
-                onClick={() => {
-                  window.location.href = reportSignupUrl;
-                }}
+                disabled={startMonitoringLoading}
+                onClick={() => void navigateToSignupWithPendingSnapshot(result)}
               >
-                Start monitoring this competitor
+                {startMonitoringLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Preparing…
+                  </>
+                ) : (
+                  "Start monitoring this competitor"
+                )}
               </Button>
               <p className="mt-4 text-sm text-slate-600">
                 From £19/mo • 14-day free trial • No credit card required
@@ -663,8 +769,14 @@ export function OfferSnapshotToolClient({
                         Start monitoring to get instant notifications when
                         competitors update their offers
                       </p>
-                      <Button asChild size="sm" className="mt-4">
-                        <Link href="/">Start monitoring →</Link>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="mt-4"
+                        disabled={startMonitoringLoading}
+                        onClick={() => void navigateToSignupWithPendingSnapshot(result)}
+                      >
+                        {startMonitoringLoading ? "Preparing…" : "Start monitoring →"}
                       </Button>
                     </div>
                   </div>
