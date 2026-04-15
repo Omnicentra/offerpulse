@@ -1,91 +1,49 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import {
-  getOnboardingIntent,
-  clearOnboardingIntent,
-} from "@offerpulse/lib/routing";
-import { Loader2, Store, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Store, AlertCircle } from "lucide-react";
 import { useSession } from "@/src/server/auth/client";
-import { useTRPC, useTRPCClient } from "@/src/lib/trpc/client";
-import { useMutation } from "@tanstack/react-query";
-
-type ProvisioningStep = "idle" | "connecting" | "creating_competitor" | "capturing_snapshot" | "polling_snapshot" | "complete" | "error";
+import { useState } from "react";
 
 export default function ShopifyOnboardingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const { data: session, isPending } = useSession();
-  const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
 
   const [shopInput, setShopInput] = useState("");
-  const [connectDialogOpen, setConnectDialogOpen] = useState(false);
-  const [provisioningStep, setProvisioningStep] = useState<ProvisioningStep>("idle");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [_createdCompetitorId, setCreatedCompetitorId] = useState<string | null>(null);
-  const [_captureJobId, setCaptureJobId] = useState<string | null>(null);
 
   const workspaceId = session?.user?.workspaceId;
 
-  // Check auth and onboarding intent on mount
   useEffect(() => {
     if (isPending) return;
     if (!session?.user) {
       router.replace("/login");
-      return;
-    }
-
-    // Check if onboarding intent exists, redirect to overview if not
-    const intent = getOnboardingIntent();
-    if (!intent) {
-      router.replace("/");
     }
   }, [session?.user, isPending, router]);
 
-  // Check if returning from Shopify OAuth
   useEffect(() => {
     const shopifyConnected = searchParams.get("shopify_connected");
     if (shopifyConnected === "true" && workspaceId) {
-      // User just connected Shopify, show success and continue onboarding
       toast({
         title: "Shopify connected",
         description: "Your store has been connected successfully.",
       });
-      
-      // Auto-continue to provision competitor if URL exists
-      setConnectDialogOpen(true);
-      completeOnboarding();
+      router.replace("/?welcome=1");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, workspaceId]);
-
-  const createCompetitorMutation = useMutation(
-    trpc.competitors.create.mutationOptions()
-  );
-
-  const triggerCaptureMutation = useMutation(
-    trpc.snapshots.capture.mutationOptions()
-  );
+  }, [searchParams, workspaceId, router, toast]);
 
   const handleConnectShopify = () => {
     if (!shopInput.trim()) {
       toast({
         title: "Enter your store domain",
-        description: "Please enter your Shopify store domain (e.g., yourstore.myshopify.com)",
+        description:
+          "Please enter your Shopify store domain (e.g., yourstore.myshopify.com)",
         variant: "destructive",
       });
       return;
@@ -100,164 +58,13 @@ export default function ShopifyOnboardingPage() {
       return;
     }
 
-    setConnectDialogOpen(true);
-    setProvisioningStep("connecting");
-
-    // Trigger Shopify OAuth flow
     const shop = shopInput.trim();
     const oauthUrl = `/api/shopify/auth/start?shop=${encodeURIComponent(shop)}&workspaceId=${encodeURIComponent(workspaceId)}`;
-    
-    // Redirect to OAuth start
     window.location.href = oauthUrl;
   };
 
   const handleSkip = () => {
-    // Still allow competitor snapshot even if skipped
-    completeOnboarding();
-  };
-
-  const completeOnboarding = async () => {
-    try {
-      if (!workspaceId) {
-        setProvisioningStep("error");
-        setErrorMessage("Workspace not found");
-        return;
-      }
-
-      const intent = getOnboardingIntent();
-      
-      if (!intent) {
-        router.push("/?welcome=1");
-        return;
-      }
-
-      // If competitor URL exists, provision it
-      if (intent.competitorUrl) {
-        setProvisioningStep("creating_competitor");
-
-        // Create competitor from URL
-        const url = new URL(intent.competitorUrl);
-        const domain = url.hostname.replace("www.", "");
-        const competitorName = domain.split(".")[0]
-          .split("-")
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" ");
-
-        const competitor = await createCompetitorMutation.mutateAsync({
-          workspaceId,
-          name: competitorName,
-          domain,
-          baseUrl: `${url.protocol}//${url.hostname}`,
-          platformGuess: domain.includes("myshopify") ? "shopify" : "other",
-          tags: [],
-          isActive: true,
-          frequency: "daily",
-          trackPromos: true,
-          trackShipping: true,
-          trackBundles: true,
-          trackCart: true,
-          trackDeliveryReturns: true,
-        });
-
-        setCreatedCompetitorId(competitor.id);
-
-        // Capture first snapshot
-        setProvisioningStep("capturing_snapshot");
-
-        const captureResult = await triggerCaptureMutation.mutateAsync({
-          workspaceId,
-          competitorId: competitor.id,
-        });
-
-        setCaptureJobId(captureResult.jobId);
-        setProvisioningStep("polling_snapshot");
-
-        // Poll for completion
-        await pollSnapshotCompletion(captureResult.jobId);
-
-        setProvisioningStep("complete");
-
-        // Clear onboarding intent
-        clearOnboardingIntent();
-
-        // Show success and navigate
-        setTimeout(() => {
-          setConnectDialogOpen(false);
-          
-          toast({
-            title: "Welcome to OfferPulse!",
-            description: "Your first competitor has been added and snapshot captured.",
-          });
-
-          router.push(`/competitors/${competitor.id}?welcome=1`);
-        }, 1500);
-      } else {
-        // No competitor URL, just go to overview
-        clearOnboardingIntent();
-        setConnectDialogOpen(false);
-        router.push("/?welcome=1");
-      }
-    } catch (error) {
-      setProvisioningStep("error");
-      setErrorMessage(error instanceof Error ? error.message : "Failed to provision competitor");
-    }
-  };
-
-  const pollSnapshotCompletion = async (jobId: string): Promise<void> => {
-    if (!workspaceId) return;
-
-    const maxAttempts = 30; // 30 attempts * 2s = 60s timeout
-    let attempts = 0;
-
-    while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s between polls
-      
-      try {
-        const statusData = await trpcClient.snapshots.captureStatus.query({
-          workspaceId,
-          jobId,
-        });
-
-        if (statusData.status === "completed") {
-          return;
-        }
-
-        if (statusData.status === "failed") {
-          throw new Error(statusData.error || "Snapshot capture failed");
-        }
-
-        attempts++;
-      } catch (error) {
-        throw error;
-      }
-    }
-
-    throw new Error("Snapshot capture timed out");
-  };
-
-  const handleRetry = () => {
-    setProvisioningStep("idle");
-    setErrorMessage("");
-    setConnectDialogOpen(false);
-  };
-
-  const getStepMessage = () => {
-    switch (provisioningStep) {
-      case "connecting":
-        return "Connecting to Shopify...";
-      case "creating_competitor":
-        return "Adding competitor to your workspace...";
-      case "capturing_snapshot":
-        return "Triggering first snapshot...";
-      case "polling_snapshot":
-        return "Capturing competitor offers...";
-      case "complete":
-        return "All set! Redirecting...";
-      case "error":
-        return "Something went wrong";
-      default:
-        return "";
-    }
+    router.push("/?welcome=1");
   };
 
   return (
@@ -270,9 +77,11 @@ export default function ShopifyOnboardingPage() {
             </div>
           </div>
           <div className="mb-2 inline-flex rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
-            Step 2 of 2
+            Optional
           </div>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900">Connect Shopify</h1>
+          <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900">
+            Connect Shopify
+          </h1>
           <p className="mt-2 text-sm text-slate-600">
             We&apos;ll use this to personalize recommendations and track your store
           </p>
@@ -289,7 +98,6 @@ export default function ShopifyOnboardingPage() {
                 value={shopInput}
                 onChange={(e) => setShopInput(e.target.value)}
                 className="mt-2 h-11"
-                disabled={provisioningStep !== "idle"}
               />
               <p className="mt-2 text-xs text-slate-500">
                 Connect your Shopify store to personalize AI recommendations
@@ -297,30 +105,16 @@ export default function ShopifyOnboardingPage() {
             </div>
 
             <div className="space-y-3">
-              <Button 
+              <Button
                 onClick={handleConnectShopify}
                 className="h-12 w-full gap-2"
-                disabled={provisioningStep !== "idle" || !shopInput.trim()}
+                disabled={!shopInput.trim()}
               >
-                {provisioningStep === "connecting" ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  <>
-                    <Store className="h-5 w-5" />
-                    Connect Shopify
-                  </>
-                )}
+                <Store className="h-5 w-5" />
+                Connect Shopify
               </Button>
 
-              <Button 
-                variant="ghost" 
-                onClick={handleSkip}
-                className="w-full"
-                disabled={provisioningStep !== "idle"}
-              >
+              <Button variant="ghost" onClick={handleSkip} className="w-full">
                 Skip for now
               </Button>
             </div>
@@ -331,7 +125,8 @@ export default function ShopifyOnboardingPage() {
                 <div>
                   <p className="text-sm font-medium text-blue-900">Optional step</p>
                   <p className="mt-1 text-xs text-blue-800">
-                    You can connect Shopify later in Settings. This helps us compare competitor offers against your store&apos;s pricing.
+                    You can connect Shopify later in Settings. Competitor monitoring is
+                    already available from your dashboard.
                   </p>
                 </div>
               </div>
@@ -343,76 +138,6 @@ export default function ShopifyOnboardingPage() {
           You can always connect Shopify later in Settings
         </p>
       </div>
-
-      {/* Provisioning Dialog */}
-      <Dialog open={connectDialogOpen} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md" showClose={false}>
-          <DialogHeader>
-            <DialogTitle>
-              {provisioningStep === "error" ? "Connection Failed" : "Setting up your account"}
-            </DialogTitle>
-            <DialogDescription>
-              {provisioningStep === "error" 
-                ? "We encountered an issue during setup"
-                : "Please wait while we configure your workspace"}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="py-6">
-            {provisioningStep === "error" ? (
-              <div className="text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-                  <AlertCircle className="h-6 w-6 text-red-600" />
-                </div>
-                <p className="mt-4 text-sm text-slate-700">{errorMessage}</p>
-                <div className="mt-6 flex gap-3">
-                  <Button variant="outline" onClick={handleRetry} className="flex-1">
-                    Try Again
-                  </Button>
-                  <Button onClick={() => router.push("/")} className="flex-1">
-                    Go to Dashboard
-                  </Button>
-                </div>
-              </div>
-            ) : provisioningStep === "complete" ? (
-              <div className="text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                  <CheckCircle2 className="h-6 w-6 text-green-600" />
-                </div>
-                <p className="mt-4 text-sm font-medium text-slate-900">
-                  {getStepMessage()}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-                  <p className="text-sm font-medium text-slate-900">{getStepMessage()}</p>
-                </div>
-                <div className="space-y-2">
-                  <div className={`h-2 overflow-hidden rounded-full bg-slate-100`}>
-                    <div 
-                      className="h-full bg-blue-600 transition-all duration-500"
-                      style={{
-                        width: provisioningStep === "connecting" ? "25%" :
-                               provisioningStep === "creating_competitor" ? "50%" :
-                               provisioningStep === "capturing_snapshot" ? "75%" :
-                               provisioningStep === "polling_snapshot" ? "90%" : "0%"
-                      }}
-                    />
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    {provisioningStep === "connecting" && "Authenticating with Shopify..."}
-                    {provisioningStep === "creating_competitor" && "Setting up your workspace..."}
-                    {provisioningStep === "capturing_snapshot" && "Triggering snapshot..."}
-                    {provisioningStep === "polling_snapshot" && "Analyzing competitor offers..."}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -111,68 +111,9 @@ export function getDashboardUrl(): string {
  */
 export const STORAGE_KEYS = {
   COMPETITOR_URL: 'offerpulse_competitor_url',
-  ONBOARDING_INTENT: 'offerpulse_onboarding_intent',
   SHOPIFY_CONNECTED: 'offerpulse_shopify_connected',
   SHOPIFY_STORE_DOMAIN: 'offerpulse_shopify_store_domain',
 } as const;
-
-/**
- * Onboarding intent structure
- */
-export interface OnboardingIntent {
-  competitorUrl?: string;
-  source?: string;
-  utm_source?: string;
-  utm_medium?: string;
-  utm_campaign?: string;
-  createdAt: string;
-}
-
-/**
- * Store onboarding intent in localStorage
- */
-export function storeOnboardingIntent(intent: Omit<OnboardingIntent, 'createdAt'>): void {
-  if (typeof window === 'undefined') return;
-  
-  const fullIntent: OnboardingIntent = {
-    ...intent,
-    createdAt: new Date().toISOString(),
-  };
-
-  try {
-    localStorage.setItem(STORAGE_KEYS.ONBOARDING_INTENT, JSON.stringify(fullIntent));
-  } catch (error) {
-    console.error('Failed to store onboarding intent:', error);
-  }
-}
-
-/**
- * Retrieve onboarding intent from localStorage
- */
-export function getOnboardingIntent(): OnboardingIntent | null {
-  if (typeof window === 'undefined') return null;
-
-  try {
-    const stored = localStorage.getItem(STORAGE_KEYS.ONBOARDING_INTENT);
-    return stored ? JSON.parse(stored) : null;
-  } catch (error) {
-    console.error('Failed to retrieve onboarding intent:', error);
-    return null;
-  }
-}
-
-/**
- * Clear onboarding intent from localStorage
- */
-export function clearOnboardingIntent(): void {
-  if (typeof window === 'undefined') return;
-
-  try {
-    localStorage.removeItem(STORAGE_KEYS.ONBOARDING_INTENT);
-  } catch (error) {
-    console.error('Failed to clear onboarding intent:', error);
-  }
-}
 
 /**
  * Validate URL format
