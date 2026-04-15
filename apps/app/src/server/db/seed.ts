@@ -217,6 +217,7 @@ async function seedSnapshots(): Promise<void> {
         competitorId,
         extractedSignals: beforeSignals,
         capturedAt: yesterday,
+        captureSource: "product_capture",
       })
       .returning();
 
@@ -227,6 +228,7 @@ async function seedSnapshots(): Promise<void> {
         competitorId,
         extractedSignals: afterSignals,
         capturedAt: now,
+        captureSource: "product_capture",
       })
       .returning();
 

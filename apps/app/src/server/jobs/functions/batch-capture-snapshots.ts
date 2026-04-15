@@ -123,6 +123,7 @@ export const batchCaptureSnapshotsJob = inngest.createFunction(
           firecrawlVisibility: changeTracking?.visibility,
           firecrawlTag,
           firecrawlJson: changeTracking?.json ?? undefined,
+          captureSource: "product_capture",
         });
 
         ids.push(snapshotId);

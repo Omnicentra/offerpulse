@@ -56,6 +56,12 @@ export const env = createEnv({
     SENTRY_DSN: z.url().optional(),
     SENTRY_AUTH_TOKEN: z.string().optional(),
     TAWK_WEBHOOK_SECRET: z.string().optional(),
+    UPSTASH_REDIS_REST_URL: z
+      .string()
+      .url("UPSTASH_REDIS_REST_URL must be a valid URL"),
+    UPSTASH_REDIS_REST_TOKEN: z
+      .string()
+      .min(1, "UPSTASH_REDIS_REST_TOKEN is required for pending snapshot handoff"),
   },
   client: {
     NEXT_PUBLIC_TAWK_PROPERTY_ID: z.string().optional().default("69bd4b8c26d3ea1c304ac05b"),
@@ -114,6 +120,8 @@ export const env = createEnv({
     SENTRY_DSN: process.env.SENTRY_DSN,
     SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
     TAWK_WEBHOOK_SECRET: process.env.TAWK_WEBHOOK_SECRET,
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     NEXT_PUBLIC_TAWK_PROPERTY_ID: process.env.NEXT_PUBLIC_TAWK_PROPERTY_ID,
     NEXT_PUBLIC_TAWK_WIDGET_ID: process.env.NEXT_PUBLIC_TAWK_WIDGET_ID,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
