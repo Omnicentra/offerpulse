@@ -12,7 +12,7 @@ import posthog from "posthog-js";
 import { Suspense, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { getOnboardingIntent } from "@offerpulse/lib/routing";
+import { consumePendingSnapshotAndNavigate } from "@/lib/consume-pending-snapshot-client";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -81,13 +81,7 @@ function SignupForm() {
       // signup_completed is captured server-side in Better Auth `databaseHooks.user.create.after`
       // so email and Google OAuth both emit one event with the same distinct id.
 
-      // Check if user has onboarding intent (came from marketing CTA with competitor URL)
-      const intent = getOnboardingIntent();
-      if (intent) {
-        router.push("/onboarding/shopify");
-      } else {
-        router.push("/");
-      }
+      await consumePendingSnapshotAndNavigate((path) => router.push(path), "/");
     } catch (error) {
       posthog.capture("signup_error", {
         error_message: error instanceof Error ? error.message : "Unknown error",
@@ -106,14 +100,10 @@ function SignupForm() {
     setIsGoogleLoading(true);
     posthog.capture("signup_google_clicked");
     
-    // Check if user has onboarding intent
-    const intent = getOnboardingIntent();
-    const callbackURL = intent ? "/onboarding/shopify" : "/";
-    
     try {
       const { error } = await signIn.social({
         provider: "google",
-        callbackURL,
+        callbackURL: "/auth/after-sign-in",
       });
       if (error) {
         toast({
