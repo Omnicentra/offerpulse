@@ -12,6 +12,7 @@ import { logger } from "@offerpulse/lib";
 import { getPendingSnapshotRedis } from "../pending-snapshot/redis";
 import { pendingRedisKey } from "../pending-snapshot/constants";
 import type { PendingOfferSnapshotRecord } from "../pending-snapshot/types";
+import { resolveCompetitorBrandNameFromUrl } from "./brand-name-from-store-url";
 import { extractSignalsFromMarketingToolPayload } from "./marketing-tool-signals";
 
 const pendingRecordSchema = z.object({
@@ -34,23 +35,16 @@ export interface ConsumePendingResult {
   reason?: "no_cookie" | "invalid_cookie" | "not_found" | "invalid_payload";
 }
 
-function deriveCompetitorFields(competitorUrl: string): {
+async function deriveCompetitorFields(competitorUrl: string): Promise<{
   domain: string;
   baseUrl: string;
   name: string;
-} {
+}> {
   const url = new URL(competitorUrl);
   const domain = url.hostname.replace(/^www\./, "");
-  const name = domain
-    .split(".")[0]
-    ?.split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ") ?? domain;
-  return {
-    domain,
-    baseUrl: `${url.protocol}//${url.hostname}`,
-    name,
-  };
+  const baseUrl = `${url.protocol}//${url.hostname}`;
+  const name = await resolveCompetitorBrandNameFromUrl(competitorUrl, domain);
+  return { domain, baseUrl, name };
 }
 
 /**
@@ -69,17 +63,6 @@ export async function takePendingOfferSnapshotFromRedis(
     });
     return null;
   }
-
-  console.log({raw: JSON.stringify(raw, null, 2)});
-
-  // let parsed: unknown;
-  // try {
-  //   parsed = JSON.parse(raw) as unknown;
-  // } catch (e) {
-  //   logger.warn("[pending-snapshot] JSON parse failed", { pendingId, error: e });
-  //   await redis.del(key);
-  //   return null;
-  // }
 
   const rec = pendingRecordSchema.safeParse(raw);
   if (!rec.success) {
@@ -119,7 +102,7 @@ export async function provisionFromPendingMarketingSnapshot(params: {
     return { ok: false, next: "/", reason: "invalid_payload" };
   }
 
-  const { domain, baseUrl, name } = deriveCompetitorFields(competitorUrl);
+  const { domain, baseUrl, name } = await deriveCompetitorFields(competitorUrl);
 
   const existing = await db.query.competitors.findFirst({
     where: and(
