@@ -14,6 +14,9 @@
     },
     "posthog": {
       "enabled": true
+    },
+    "redis-development": {
+      "enabled": true
     }
   }
 }

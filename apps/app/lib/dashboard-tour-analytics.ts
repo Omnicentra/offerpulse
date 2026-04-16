@@ -11,6 +11,7 @@ export const DASHBOARD_TOUR_STEP_KEYS = [
   "recommendations",
   "alerts",
   "weekly_pulse",
+  "your_store",
 ] as const;
 
 export type DashboardTourStartSource = "auto_first_visit" | "settings_restart";

@@ -83,10 +83,7 @@ export async function takePendingOfferSnapshotFromRedis(
 
   const rec = pendingRecordSchema.safeParse(raw);
   if (!rec.success) {
-    logger.warn("[pending-snapshot] Invalid redis payload shape", {
-      pendingId,
-      issues: rec.error.flatten(),
-    });
+    logger.warn("[pending-snapshot] Invalid redis payload shape", pendingId, rec.error);
     await redis.del(key);
     return null;
   }

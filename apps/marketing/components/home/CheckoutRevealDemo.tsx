@@ -21,7 +21,8 @@ const cursorPaths: CursorPosition[][] = [
   [{ x: 200, y: 340 }], // Frame 5: Point at summary
 ];
 
-export function CheckoutRevealDemo() {
+export function 
+CheckoutRevealDemo() {
   const [currentFrame, setCurrentFrame] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -85,11 +86,6 @@ export function CheckoutRevealDemo() {
 
     return () => clearInterval(interval);
   }, [currentFrame, isVisible, isPaused, prefersReducedMotion, frame.duration]);
-
-  const handleStepClick = (index: number) => {
-    setCurrentFrame(index);
-    setProgress(0);
-  };
 
   return (
     <div
