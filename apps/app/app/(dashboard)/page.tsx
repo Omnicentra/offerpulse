@@ -131,7 +131,7 @@ export default async function HomePage() {
   ];
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-5">
+    <div className="mx-auto flex w-full flex-1 flex-col gap-5" style={{ maxWidth: 1400 }}>
 
       {/* ── Page header ────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
@@ -187,11 +187,11 @@ export default async function HomePage() {
       </div>
 
       {/* ── Main content grid ───────────────────────────────────────────── */}
-      <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
+      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[1fr_380px]">
 
         {/* Latest Changes */}
-        <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_2px_0_rgba(15,23,42,0.04)]">
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+        <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_2px_0_rgba(15,23,42,0.04)]">
+          <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-3">
             <h2 className="text-sm font-semibold text-slate-900">Latest Changes</h2>
             <Button
               variant="ghost"
@@ -207,7 +207,7 @@ export default async function HomePage() {
           </div>
 
           {latestChanges.length === 0 ? (
-            <div className="p-6">
+            <div className="flex flex-1 items-center justify-center p-6">
               <EmptyState
                 icon={TrendingUp}
                 title="No changes yet"
@@ -216,7 +216,7 @@ export default async function HomePage() {
               />
             </div>
           ) : (
-            <div className="divide-y divide-slate-100/80">
+            <div className="flex-1 divide-y divide-slate-100/80 overflow-y-auto">
               {latestChanges.map((change) => {
                 const competitor = competitors.find((c) => c.id === change.competitorId);
                 const name = competitor?.name ?? "Unknown";
@@ -263,8 +263,8 @@ export default async function HomePage() {
         </div>
 
         {/* This Week's Pulse */}
-        <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_2px_0_rgba(15,23,42,0.04)]">
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+        <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_2px_0_rgba(15,23,42,0.04)]">
+          <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-3">
             <h2 className="text-sm font-semibold text-slate-900">This Week&apos;s Pulse</h2>
             <Button
               variant="ghost"
@@ -280,7 +280,7 @@ export default async function HomePage() {
           </div>
 
           {currentPulse ? (
-            <div className="p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {/* Totals inline */}
               <div className="flex items-center gap-6 rounded-lg border border-slate-100 bg-slate-50/60 px-4 py-3">
                 <div>
@@ -329,7 +329,7 @@ export default async function HomePage() {
               )}
             </div>
           ) : (
-            <div className="p-6">
+            <div className="p-6 h-full">
               <EmptyState
                 icon={TrendingUp}
                 title="No pulse data yet"
