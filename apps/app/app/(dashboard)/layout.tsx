@@ -2,6 +2,7 @@
 
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { ConnectStoreBanner } from "@/components/layout/connect-store-banner";
 import { SubscriptionGuard } from "@/components/subscription-guard";
 import { WorkspaceProvider } from "@/src/providers/workspace-provider";
 import { SubscriptionProvider } from "@/src/providers/subscription-provider";
@@ -69,6 +70,7 @@ export default function DashboardLayout({
               <Sidebar />
               <div className="flex flex-1 flex-col overflow-hidden">
                 <Topbar />
+                <ConnectStoreBanner />
                 <main className="flex-1 overflow-y-auto p-6">{children}</main>
               </div>
             </div>
