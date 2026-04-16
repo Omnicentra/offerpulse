@@ -104,18 +104,102 @@ export async function provisionFromPendingMarketingSnapshot(params: {
 
   const { domain, baseUrl, name } = await deriveCompetitorFields(competitorUrl);
 
-  const existing = await db.query.competitors.findFirst({
-    where: and(
-      eq(competitors.workspaceId, workspaceId),
-      eq(competitors.domain, domain)
-    ),
+  const extractedSignals = extractSignalsFromMarketingToolPayload(
+    record.toolPayload
+  );
+  const screenshotUrl =
+    typeof record.toolPayload.screenshotUrl === "string"
+      ? record.toolPayload.screenshotUrl
+      : undefined;
+
+  const provision = await db.transaction(async (tx) => {
+    const existingRow = await tx.query.competitors.findFirst({
+      where: and(
+        eq(competitors.workspaceId, workspaceId),
+        eq(competitors.domain, domain)
+      ),
+    });
+
+    if (existingRow) {
+      return {
+        kind: "duplicate" as const,
+        competitorId: existingRow.id,
+      };
+    }
+
+    const competitorId = `comp_${nanoid()}`;
+    const snapshotId = `snap_${nanoid()}`;
+    const monitorId = `ms_${nanoid()}`;
+
+    const insertedCompetitor = await tx
+      .insert(competitors)
+      .values({
+        id: competitorId,
+        workspaceId,
+        name,
+        domain,
+        baseUrl,
+        platformGuess: domain.includes("myshopify") ? "shopify" : "other",
+        tags: [],
+        isActive: true,
+        lastSnapshotAt: new Date(),
+      })
+      .onConflictDoNothing({
+        target: [competitors.workspaceId, competitors.domain],
+      })
+      .returning({ id: competitors.id });
+
+    const insertedRow = insertedCompetitor[0];
+    if (!insertedRow) {
+      const winner = await tx.query.competitors.findFirst({
+        where: and(
+          eq(competitors.workspaceId, workspaceId),
+          eq(competitors.domain, domain)
+        ),
+      });
+      if (!winner) {
+        throw new Error(
+          "competitor insert conflict but no row for workspaceId+domain"
+        );
+      }
+      return {
+        kind: "duplicate" as const,
+        competitorId: winner.id,
+      };
+    }
+
+    await tx.insert(monitorSettings).values({
+      id: monitorId,
+      competitorId: insertedRow.id,
+      frequency: "daily",
+      trackPromos: true,
+      trackShipping: true,
+      trackBundles: true,
+      trackCart: true,
+      trackDeliveryReturns: true,
+    });
+
+    await tx.insert(snapshots).values({
+      id: snapshotId,
+      competitorId: insertedRow.id,
+      extractedSignals,
+      screenshotUrl: screenshotUrl ?? null,
+      captureSource: "marketing_tool",
+      marketingToolPayload: record.toolPayload,
+    });
+
+    return {
+      kind: "created" as const,
+      competitorId: insertedRow.id,
+      snapshotId,
+    };
   });
 
-  if (existing) {
+  if (provision.kind === "duplicate") {
     logger.debug("[pending-offer-flow] duplicate domain skip insert", {
       step: "provision_duplicate",
       domain,
-      existingCompetitorId: existing.id,
+      existingCompetitorId: provision.competitorId,
     });
     logger.info("[pending-snapshot] Duplicate competitor domain; clearing pending only", {
       workspaceId,
@@ -125,54 +209,12 @@ export async function provisionFromPendingMarketingSnapshot(params: {
     return {
       ok: true,
       duplicate: true,
-      next: `/competitors/${existing.id}?welcome=1`,
-      competitorId: existing.id,
+      next: `/competitors/${provision.competitorId}?welcome=1`,
+      competitorId: provision.competitorId,
     };
   }
 
-  const competitorId = `comp_${nanoid()}`;
-  const snapshotId = `snap_${nanoid()}`;
-  const monitorId = `ms_${nanoid()}`;
-
-  const extractedSignals = extractSignalsFromMarketingToolPayload(
-    record.toolPayload
-  );
-  const screenshotUrl =
-    typeof record.toolPayload.screenshotUrl === "string"
-      ? record.toolPayload.screenshotUrl
-      : undefined;
-
-  await db.insert(competitors).values({
-    id: competitorId,
-    workspaceId,
-    name,
-    domain,
-    baseUrl,
-    platformGuess: domain.includes("myshopify") ? "shopify" : "other",
-    tags: [],
-    isActive: true,
-    lastSnapshotAt: new Date(),
-  });
-
-  await db.insert(monitorSettings).values({
-    id: monitorId,
-    competitorId,
-    frequency: "daily",
-    trackPromos: true,
-    trackShipping: true,
-    trackBundles: true,
-    trackCart: true,
-    trackDeliveryReturns: true,
-  });
-
-  await db.insert(snapshots).values({
-    id: snapshotId,
-    competitorId,
-    extractedSignals,
-    screenshotUrl: screenshotUrl ?? null,
-    captureSource: "marketing_tool",
-    marketingToolPayload: record.toolPayload,
-  });
+  const { competitorId, snapshotId } = provision;
 
   await inngest.send({
     name: "competitor/capture",

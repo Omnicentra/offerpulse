@@ -273,6 +273,10 @@ export const competitors = pgTable(
   (table) => [
     index("competitors_workspace_idx").on(table.workspaceId),
     index("competitors_is_active_idx").on(table.isActive),
+    uniqueIndex("competitors_workspace_domain_uidx").on(
+      table.workspaceId,
+      table.domain
+    ),
   ]
 );
 

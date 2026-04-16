@@ -1,0 +1,2 @@
+ALTER TABLE "alert_settings" ALTER COLUMN "capture_notifications_enabled" SET DEFAULT true;--> statement-breakpoint
+CREATE UNIQUE INDEX "competitors_workspace_domain_uidx" ON "competitors" USING btree ("workspace_id","domain");
