@@ -12,8 +12,8 @@ import { logger } from "@/lib/logger";
 const RATE_LIMIT = 3;
 const RATE_WINDOW_MS = 15 * 60 * 1000;
 
-// Initialize Upstash Redis client
-const redis = new Redis({
+/** Shared Upstash REST client for marketing server routes (rate limits, pending snapshots, etc.) */
+export const redis = new Redis({
   url: env.UPSTASH_REDIS_REST_URL,
   token: env.UPSTASH_REDIS_REST_TOKEN,
 });

@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
 import { CheckCircle, Lock, ArrowRight } from "lucide-react";
 
 interface Recommendation {
@@ -14,10 +13,16 @@ interface Recommendation {
 interface RecommendationsCardProps {
   visibleRecommendations: Recommendation[];
   lockedCount: number;
-  signupUrl: string;
+  onStartMonitoring: () => void | Promise<void>;
+  isStartMonitoringLoading?: boolean;
 }
 
-export function RecommendationsCard({ visibleRecommendations, lockedCount, signupUrl }: RecommendationsCardProps) {
+export function RecommendationsCard({
+  visibleRecommendations,
+  lockedCount,
+  onStartMonitoring,
+  isStartMonitoringLoading,
+}: RecommendationsCardProps) {
   const getEffortColor = (effort: string) => {
     if (effort === "Low") return "bg-green-100 text-green-800";
     if (effort === "Medium") return "bg-yellow-100 text-yellow-800";
@@ -35,7 +40,7 @@ export function RecommendationsCard({ visibleRecommendations, lockedCount, signu
       <CardHeader>
         <CardTitle className="text-2xl">Suggested Actions to Respond</CardTitle>
         <p className="text-sm text-slate-600">
-          Based on what we detected, here's how you could respond strategically
+          Based on what we detected, here is how you could respond strategically
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -85,11 +90,15 @@ export function RecommendationsCard({ visibleRecommendations, lockedCount, signu
               <p className="mt-2 text-sm text-slate-700">
                 Get alerts when competitors change + see full recommended responses
               </p>
-              <Button asChild size="lg" className="mt-4">
-                <Link href={signupUrl}>
-                  Start monitoring
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
+              <Button
+                type="button"
+                size="lg"
+                className="mt-4"
+                disabled={isStartMonitoringLoading}
+                onClick={() => void onStartMonitoring()}
+              >
+                Start monitoring
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>

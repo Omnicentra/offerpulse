@@ -14,37 +14,26 @@ This document describes the complete onboarding flow that connects the OfferPuls
 
 ## User Flows
 
-### Flow A: Hero Input on Marketing
-1. User enters competitor URL in marketing hero
-2. Clicks "Generate snapshot" button
-3. **Marketing** stores URL in sessionStorage and routes to:
-   ```
-   http://localhost:3001/signup?competitorUrl=URL&source=marketing_hero
-   ```
-4. **Dashboard** signup page:
-   - Pre-fills competitor URL (read-only if from marketing)
-   - Shows "Step 1 of 2"
-   - Stores onboarding intent in localStorage
-5. After signup → Routes to `/onboarding/shopify` (Step 2 of 2)
-6. After Shopify connect:
-   - Creates competitor from competitorUrl
-   - Creates monitor settings (default: daily, all tracking enabled)
-   - Captures first snapshot (free)
-   - Routes to `/competitors/[id]?welcome=1`
+### Flow A: Competitor Offer Snapshot tool → Signup → Dashboard
+1. User runs the free tool and views the report on **marketing** (`apps/marketing`).
+2. **Start monitoring** calls `POST /api/tools/offer-snapshot/pending`, which stores a **capped JSON payload** in **Upstash Redis** (7-day TTL) under `pending:offer-snapshot:{id}`.
+3. The browser is redirected to the **dashboard** origin:
+   `GET /api/onboarding/pending-bootstrap?pendingId=…&next=/signup&competitorUrl=…` (plus optional UTM / PostHog params).
+4. That route verifies the pending key exists, sets an **HttpOnly signed cookie** (`offerpulse_pending_snapshot`), and redirects to `/signup` (query params preserved for UX).
+5. After **email/password signup** or **login**, the client calls `POST /api/onboarding/consume-pending-snapshot` (session cookie + pending cookie). The server:
+   - Validates the cookie signature
+   - **GET+DEL** the Redis payload (consume-once)
+   - Creates **competitor + monitor settings**, inserts a **`marketing_tool`** snapshot row, stores trimmed JSON in `marketing_tool_payload`, queues **`competitor/capture`** (canonical `product_capture` snapshot)
+   - Clears the pending cookie
+6. The user is sent to **`/competitors/{id}?welcome=1`** (or the existing competitor if the domain already exists).
 
-### Flow B: Navbar "Get Started" on Marketing
-1. User clicks "Get started" in navbar
-2. **Marketing** checks sessionStorage for previously entered competitor URL
-3. Routes to dashboard signup:
-   - With URL: `http://localhost:3001/signup?competitorUrl=URL&source=marketing_nav`
-   - Without URL: `http://localhost:3001/signup?source=marketing_nav`
-4. Rest of flow same as Flow A
+### Flow B: Navbar / hero without a pending snapshot
+1. **Marketing** may still use `sessionStorage` (`offerpulse_competitor_url`) and `buildAppSignupUrl()` to open `/signup` with query params only.
+2. After signup/login, `consume-pending` is a no-op when no pending cookie exists; the user lands on `/` (or wherever the client fallback sends them).
 
-### Flow C: Direct Signup (No Competitor URL)
-1. User navigates directly to dashboard signup
-2. Signup form works without competitor URL
-3. After signup → Routes to `/onboarding/shopify`
-4. After Shopify connect → Routes to `/overview?welcome=1`
+### Flow C: Optional Shopify onboarding
+1. **`/onboarding/shopify`** is optional: connect a Shopify store or skip.
+2. Competitor provisioning from the free tool **does not** depend on this page; it runs from the consume API above.
 
 ## Implementation Details
 
@@ -54,6 +43,8 @@ This document describes the complete onboarding flow that connects the OfferPuls
 ```env
 NEXT_PUBLIC_MARKETING_APP_URL=http://localhost:3000
 NEXT_PUBLIC_DASHBOARD_APP_URL=http://localhost:3001
+UPSTASH_REDIS_REST_URL=…
+UPSTASH_REDIS_REST_TOKEN=…
 ```
 
 **Production:**
@@ -67,44 +58,27 @@ NEXT_PUBLIC_DASHBOARD_APP_URL=https://app.offerpulse.com
 **SessionStorage (Marketing):**
 - `offerpulse_competitor_url` - Fallback storage for competitor URL
 
-**LocalStorage (Dashboard):**
-- `offerpulse_onboarding_intent` - Full onboarding state with UTM params
-- `offerpulse_shopify_connected` - Boolean flag
-- `offerpulse_shopify_store_domain` - Connected store domain
-- `offerpulse_auth_token` - Demo auth token
-- `offerpulse_user` - User info
+**Redis (shared, Upstash):**
+- `pending:offer-snapshot:{id}` - Serialized pending handoff (TTL 7 days)
 
-### API Functions
+**HttpOnly cookie (Dashboard origin):**
+- `offerpulse_pending_snapshot` - Signed `{pendingId}.{hmac}` until consumed or expired
 
-**Onboarding Provisioning (`/onboarding/shopify`):**
-```typescript
-1. getOnboardingIntent() → { competitorUrl, source, utm_* }
-2. If competitorUrl exists:
-   - competitorsApi.create() → Competitor
-   - monitorSettingsApi.upsert() → MonitorSettings
-   - snapshotsApi.capture() → { snapshot, changeEvent?, recommendation? }
-3. clearOnboardingIntent()
-4. Navigate to competitor detail or overview
-```
+### API / server entrypoints
 
-### Provisioning Steps UI
-
-The onboarding page shows a progress dialog with:
-1. **Connecting** - Simulated Shopify OAuth (800ms + 1500ms)
-2. **Creating competitor** - Add competitor to workspace
-3. **Capturing snapshot** - Generate first free snapshot
-4. **Complete** - Success state with redirect
-
-Progress bar updates: 0% → 33% → 66% → 100%
+- **`POST apps/marketing/.../api/tools/offer-snapshot/pending`** – validate body, enforce max size, `SET` Redis with TTL.
+- **`GET apps/app/.../api/onboarding/pending-bootstrap`** – verify pending id, allowlisted `next`, set cookie, redirect.
+- **`POST apps/app/.../api/onboarding/consume-pending-snapshot`** – authenticated consume + DB provision + Inngest capture + clear cookie.
+- **`GET /auth/after-sign-in`** (dashboard) – Google OAuth `callbackURL`; runs consume then `router.replace`.
 
 ### Error Handling
 
 **Edge Cases Handled:**
-1. Invalid competitor URL - Inline validation error in signup form
-2. Not authenticated on onboarding page - Redirect to `/login`
-3. No onboarding intent on onboarding page - Redirect to `/overview`
-4. Snapshot capture fails - Show error dialog with "Retry" and "Go to Dashboard"
-5. Already authenticated hitting signup - Redirect to `/overview`
+1. Invalid or expired pending id on bootstrap → 400 from `pending-bootstrap`.
+2. Not authenticated on onboarding page - Redirect to `/login`.
+3. Pending cookie without Redis payload → consume clears cookie and returns `next: /`.
+4. Duplicate competitor domain in workspace → consume clears state and redirects to existing competitor.
+5. Already authenticated hitting signup - Redirect to `/` (middleware).
 
 ### Middleware Updates
 

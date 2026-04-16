@@ -18,7 +18,7 @@ export function CheckoutRevealSection() {
             </h2>
             
             <p className="mt-6 text-lg leading-relaxed text-body">
-              Competitors don't always change price. They change the offer stack: free shipping thresholds, bundles, gifts, and cart incentives. OfferPulse detects it and alerts you.
+              Competitors don&apos;t always change price. They change the offer stack: free shipping thresholds, bundles, gifts, and cart incentives. OfferPulse detects it and alerts you.
             </p>
 
             <ul className="mt-8 space-y-4">

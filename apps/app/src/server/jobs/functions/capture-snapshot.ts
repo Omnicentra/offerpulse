@@ -135,6 +135,7 @@ export const captureSnapshotJob = inngest.createFunction(
           firecrawlVisibility: changeTracking?.visibility,
           firecrawlTag,
           firecrawlJson: changeTracking?.json ?? undefined,
+          captureSource: "product_capture",
         })
         .returning();
 

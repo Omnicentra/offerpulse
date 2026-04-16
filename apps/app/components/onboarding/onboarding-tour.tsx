@@ -123,6 +123,21 @@ function useStableTourSteps(): SpotlightStep[] {
           if (p !== "/weekly-pulse") routerRef.current.push("/weekly-pulse");
         },
       },
+      {
+        target: '[data-tour="sidebar-your-store"]',
+        title: "Your store (optional)",
+        content:
+          "Connect Shopify or set up your store profile so we can tailor recommendations and compare competitor offers to your catalog. You can also open this anytime from the sidebar.",
+        placement: "right" as const,
+        spotlightPadding: 8,
+        spotlightRadius: 12,
+        onAfterShow: () => {
+          const p = pathnameRef.current;
+          if (!p.startsWith("/settings/store")) {
+            routerRef.current.push("/settings/store");
+          }
+        },
+      },
     ],
     []
   );
@@ -292,7 +307,7 @@ function TourController() {
                   <ArrowRight className="h-3 w-3" />
                 </>
               ) : (
-                "Get started"
+                "Finish"
               )}
             </Button>
         </div>

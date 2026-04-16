@@ -75,6 +75,10 @@ export const historyFieldEnum = pgEnum("history_field", [
   "variants",
 ]);
 export const historySourceEnum = pgEnum("history_source", ["sync", "manual"]);
+export const snapshotCaptureSourceEnum = pgEnum("snapshot_capture_source", [
+  "product_capture",
+  "marketing_tool",
+]);
 
 // ============================================================================
 // AUTH TABLES (Better-auth)
@@ -269,6 +273,10 @@ export const competitors = pgTable(
   (table) => [
     index("competitors_workspace_idx").on(table.workspaceId),
     index("competitors_is_active_idx").on(table.isActive),
+    uniqueIndex("competitors_workspace_domain_uidx").on(
+      table.workspaceId,
+      table.domain
+    ),
   ]
 );
 
@@ -330,6 +338,13 @@ export const snapshots = pgTable(
     firecrawlDiff: jsonb("firecrawl_diff").$type<Record<string, unknown>>(),
     firecrawlJson: jsonb("firecrawl_json").$type<
       Record<string, { previous?: unknown; current?: unknown }>
+    >(),
+    captureSource: snapshotCaptureSourceEnum("capture_source")
+      .notNull()
+      .default("product_capture"),
+    /** Trimmed free-tool JSON when captureSource is marketing_tool */
+    marketingToolPayload: jsonb("marketing_tool_payload").$type<
+      Record<string, unknown>
     >(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
@@ -449,7 +464,7 @@ export const alertSettings = pgTable("alert_settings", {
   slackChannelName: text("slack_channel_name"),
   captureNotificationsEnabled: boolean("capture_notifications_enabled")
     .notNull()
-    .default(false),
+    .default(true),
   /** When true, send the weekly pulse digest via email/Slack when the job runs (Mon). */
   weeklyPulseAlertsEnabled: boolean("weekly_pulse_alerts_enabled")
     .notNull()

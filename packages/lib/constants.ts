@@ -130,3 +130,5 @@ export function hasSubscribedWorkspaceAccess(
 export const DEFAULT_OPENROUTER_MODEL = "openai/gpt-4.1-mini";
 /** OpenRouter model ID restricted to Growth/Agency plans (Best quality). */
 export const PREMIUM_OPENROUTER_MODEL = "google/gemini-3.1-pro-preview";
+/** Fast OpenRouter model for inferring brand / company name from storefront URLs (onboarding). */
+export const OPENROUTER_BRAND_NAME_FROM_URL_MODEL = "google/gemini-2.5-flash-lite";
