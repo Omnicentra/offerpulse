@@ -4,8 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
 import Image from "next/image";
-import { Search, Plus, Menu, LogOut, User as UserIcon, ChevronDown, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search, Menu, LogOut, User as UserIcon, ChevronDown, Clock } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,10 +20,9 @@ import { CommandPalette, useCommandPaletteHotkeys } from "@/components/command-p
 
 interface TopbarProps {
   onMenuClick?: () => void;
-  onAddCompetitor?: () => void;
 }
 
-export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
+export function Topbar({ onMenuClick }: TopbarProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -177,15 +175,6 @@ export function Topbar({ onMenuClick, onAddCompetitor }: TopbarProps) {
 
       {/* Right section */}
       <div className="flex items-center gap-3">
-        {/* Add competitor button */}
-        <Button
-          onClick={onAddCompetitor || (() => router.push("/competitors/new"))}
-          className="h-10 gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Add Competitor</span>
-        </Button>
-
         {/* User menu */}
         <Dialog open={showUserMenu} onOpenChange={setShowUserMenu}>
           <DialogTrigger asChild>

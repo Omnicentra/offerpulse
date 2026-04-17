@@ -265,17 +265,13 @@ export default function RecommendationsPage() {
   }
 
   return (
-    <div className="mx-auto space-y-8">
+    <div className="space-y-8 max-w-6xl mx-auto w-full">
       <div className="space-y-2">
         <PageHeader
           compact
           title="Recommendations"
           description="Scan the list collapsed; open a row for rationale, checklist, and actions."
         />
-        <p className="text-sm text-slate-500">
-          <span className="font-medium text-slate-700">{statusCounts.open}</span> open ·{" "}
-          <span className="font-medium text-slate-700">{statusCounts.all}</span> total in workspace
-        </p>
       </div>
 
       {/* Filters — status then strategy */}
