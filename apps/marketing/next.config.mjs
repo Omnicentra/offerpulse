@@ -5,6 +5,7 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "**.r2.dev", pathname: "/**" },
       { protocol: "https", hostname: "cdn.offerpulse.com", pathname: "/**" },
+      { protocol: "https", hostname: "api.producthunt.com", pathname: "/**" },
     ],
   },
   turbopack: {

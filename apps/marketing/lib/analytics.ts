@@ -13,6 +13,7 @@ type AnalyticsEvent =
   | "landing_competitor_url_submitted"
   | "landing_free_tool_clicked"
   | "landing_cta_clicked"
+  | "product_hunt_badge_clicked"
   // Snapshot events
   | "offer_snapshot_submitted"
   | "offer_snapshot_success"

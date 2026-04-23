@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { OfferPulseMark } from "@/components/OfferPulseMark"
+import { ProductHuntBadge } from "@/components/product-hunt-badge"
 import { Linkedin, Instagram } from "lucide-react"
 
 const footerLinks = {
@@ -156,23 +157,26 @@ export function Footer() {
           <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
             <div>
               <h3 className="text-sm font-semibold text-ink">Follow us</h3>
-              <div className="mt-4 flex gap-4">
-                {socialLinks.map((social) => {
-                  const Icon = social.icon;
-                  return (
-                    <a
-                      key={social.name}
-                      href={social.href}
-                      target="_blank"
-                      rel="noopener noreferrer me"
-                      aria-label={social.label}
-                      className="group flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-body transition-all hover:border-primary/50 hover:bg-primary-tint hover:text-primary"
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span>{social.name}</span>
-                    </a>
-                  );
-                })}
+              <div className="mt-4 flex flex-col gap-6 sm:flex-row sm:flex-wrap sm:items-center">
+                <div className="flex flex-wrap gap-4">
+                  {socialLinks.map((social) => {
+                    const Icon = social.icon;
+                    return (
+                      <a
+                        key={social.name}
+                        href={social.href}
+                        target="_blank"
+                        rel="noopener noreferrer me"
+                        aria-label={social.label}
+                        className="group flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-body transition-all hover:border-primary/50 hover:bg-primary-tint hover:text-primary"
+                      >
+                        <Icon className="h-5 w-5" />
+                        <span>{social.name}</span>
+                      </a>
+                    );
+                  })}
+                </div>
+                <ProductHuntBadge placement="footer" />
               </div>
             </div>
             <p className="text-center text-sm text-body/70 sm:text-right">
