@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { convertMarkdownToHtml } from "@/lib/blog/convert-markdown";
+import { PRODUCT_HUNT_BLOG_EMBED_HTML } from "@/lib/blog/product-hunt-embed";
 import { getBlogPostBySlug, getAllBlogPostSlugs, getAllBlogPosts } from "@/lib/blog/registry";
 import { CANONICAL_BASE_URL, ORGANIZATION } from "@/lib/seo/config";
 import { Calendar, Clock, User, ArrowRight, Sparkles } from "lucide-react";
@@ -190,14 +192,25 @@ export default async function BlogPostPage({ params }: Props) {
 
       {/* Article Content */}
       <Container className="py-16 sm:py-20">
-        <div className="mx-auto grid max-w-5xl gap-12 lg:grid-cols-[1fr_320px]">
+        <div className="mx-auto grid max-w-5xl gap-12 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-14">
           {/* Main Content */}
-          <article className="prose prose-slate prose-lg max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-p:text-slate-700 prose-li:text-slate-700 prose-a:text-blue-600 prose-a:font-medium prose-a:no-underline hover:prose-a:underline prose-strong:text-slate-900 prose-strong:font-semibold prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-6 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4">
-            <div dangerouslySetInnerHTML={{ __html: convertMarkdownToHtml(post.content) }} />
+          <article className="min-w-0">
+            <aside
+              className="blog-ph-embed-slot not-prose"
+              aria-label="Offer Pulse on Product Hunt"
+            >
+              <div
+                dangerouslySetInnerHTML={{ __html: PRODUCT_HUNT_BLOG_EMBED_HTML }}
+              />
+            </aside>
+            <div
+              className="blog-article-body"
+              dangerouslySetInnerHTML={{ __html: convertMarkdownToHtml(post.content) }}
+            />
 
             {/* FAQs */}
             {post.faqs.length > 0 && (
-              <div className="mt-12 not-prose">
+              <div className="mt-16 max-w-none border-t border-slate-200 pt-14 not-prose">
                 <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   Frequently Asked Questions
                 </h2>
@@ -218,7 +231,7 @@ export default async function BlogPostPage({ params }: Props) {
 
             {/* Related Posts */}
             {relatedPosts.length > 0 && (
-              <div className="mt-12 not-prose">
+              <div className="mt-16 not-prose">
                 <h2 className="mb-6 text-2xl font-bold text-slate-900">Related Articles</h2>
                 <div className="grid gap-6 sm:grid-cols-2">
                   {relatedPosts.map((relatedPost) => (
@@ -285,31 +298,4 @@ export default async function BlogPostPage({ params }: Props) {
       </Container>
     </div>
   );
-}
-
-// Simple markdown to HTML converter (basic implementation)
-// In production, you might want to use a proper markdown library
-function convertMarkdownToHtml(markdown: string): string {
-  return markdown
-    .trim()
-    .split("\n")
-    .map((line) => {
-      // Headers
-      if (line.startsWith("## ")) {
-        return `<h2>${line.slice(3)}</h2>`;
-      }
-      if (line.startsWith("### ")) {
-        return `<h3>${line.slice(4)}</h3>`;
-      }
-      // Bold
-      line = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-      // Links [text](url)
-      line = line.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>');
-      // Paragraph
-      if (line.trim() && !line.startsWith("<")) {
-        return `<p>${line}</p>`;
-      }
-      return line;
-    })
-    .join("\n");
 }
