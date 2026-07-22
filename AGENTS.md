@@ -163,7 +163,7 @@ Standard commands live in the sections above and in `apps/app/BACKEND_SETUP.md`;
 ### Environment / secrets
 - All required app + marketing env vars are injected as real environment variables in the VM (DB, Better-auth, R2, Stripe, Resend, Firecrawl, OpenRouter, Upstash, Slack, Shopify, PostHog, Sentry, app URLs). `next dev` and the `drizzle-kit`/`tsx` DB scripts read `process.env` directly, so **no `.env.local` is required just to run the dev servers**.
 - The setup session writes `apps/app/.env.local` and `apps/marketing/.env.local` from those env vars for convenience (they are git-ignored and not persisted across fresh VMs — regenerate from `process.env` if a DB script needs `dotenv -e .env.local`, e.g. `pnpm db:seed`).
-- `AIRTABLE_API_KEY` is the one required marketing var that is **not** injected. It only backs marketing email-capture (early-access queue). A `pat_dev_placeholder_replace_me` value is used so the marketing app boots; the free tools (Firecrawl + OpenRouter) work, but Airtable-backed email capture will fail until a real key is provided as a secret.
+- `AIRTABLE_API_KEY` (marketing email-capture / early-access queue) is provided as a project secret and injected like the others. If a future VM is missing it, the marketing app still boots and the free tools (Firecrawl + OpenRouter) work — only the Airtable-backed email-capture flow (`POST /api/early-access/free-queue`) would fail.
 
 ### Database
 - `DATABASE_URL` points to a **shared hosted Postgres that is already migrated and seeded** (all tables present; real workspaces/competitors/users exist). Do **not** run `pnpm db:push`, `pnpm db:migrate`, or `pnpm db:seed` against it during setup — they mutate shared data. Only run schema changes deliberately.
