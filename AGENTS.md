@@ -155,3 +155,22 @@ No test framework is configured yet. When adding tests, add commands to `apps/ap
 Dashboard app demo login:
 - Email: `demo@offerpulse.io`
 - Password: `demo123`
+
+## Cursor Cloud specific instructions
+
+Standard commands live in the sections above and in `apps/app/BACKEND_SETUP.md`; the notes below only cover non-obvious cloud gotchas.
+
+### Environment / secrets
+- All required app + marketing env vars are injected as real environment variables in the VM (DB, Better-auth, R2, Stripe, Resend, Firecrawl, OpenRouter, Upstash, Slack, Shopify, PostHog, Sentry, app URLs). `next dev` and the `drizzle-kit`/`tsx` DB scripts read `process.env` directly, so **no `.env.local` is required just to run the dev servers**.
+- The setup session writes `apps/app/.env.local` and `apps/marketing/.env.local` from those env vars for convenience (they are git-ignored and not persisted across fresh VMs — regenerate from `process.env` if a DB script needs `dotenv -e .env.local`, e.g. `pnpm db:seed`).
+- `AIRTABLE_API_KEY` (marketing email-capture / early-access queue) is provided as a project secret and injected like the others. If a future VM is missing it, the marketing app still boots and the free tools (Firecrawl + OpenRouter) work — only the Airtable-backed email-capture flow (`POST /api/early-access/free-queue`) would fail.
+
+### Database
+- `DATABASE_URL` points to a **shared hosted Postgres that is already migrated and seeded** (all tables present; real workspaces/competitors/users exist). Do **not** run `pnpm db:push`, `pnpm db:migrate`, or `pnpm db:seed` against it during setup — they mutate shared data. Only run schema changes deliberately.
+- The demo login in the section above (`demo@offerpulse.io`) does **not** exist in this DB. For a quick manual test, sign up a fresh user at `/signup` — a workspace is auto-created via a Better-auth database hook (`databaseHooks.user.create.after`).
+
+### Running / testing
+- Run `pnpm dev` (both apps), or `pnpm dev:app` (dashboard, :3001) / `pnpm dev:marketing` (marketing, :3000). Dashboard `/` redirects to `/login`.
+- `.cursor/rules/.mdc` tells normal code-change agents not to start dev servers; that guidance does not apply when the task is explicitly to run/verify the app.
+- Adding a competitor (`competitors.create`) writes straight to the DB and needs no background worker. The **Inngest dev server** (`npx inngest-cli@latest dev`, :8288) is optional and only needed to exercise background jobs (snapshot capture, change detection, AI recs, alerts).
+- `pnpm type-check` passes for both apps. `pnpm lint` currently **fails with pre-existing violations** (unused vars / `no-explicit-any`) in both `app` and `marketing` — this is existing code state, not an environment problem.
